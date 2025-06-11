@@ -1,0 +1,70 @@
+# 🐳 Docker Compose - Rifa Thomas
+# Orquestração completa para desenvolvimento e produção
+
+version: '3.8'
+
+services:
+  # Aplicação principal da rifa
+  rifa-thomas:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rifa-thomas-app
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+      - TZ=America/Sao_Paulo
+    volumes:
+      - nginx_logs:/var/log/nginx
+    restart: unless-stopped
+    networks:
+      - rifa-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rifa.rule=Host(`rifa-thomas.local`)"
+      - "traefik.http.services.rifa.loadbalancer.server.port=80"
+
+  # Reverse proxy (opcional para produção)
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: rifa-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-proxy.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - proxy_logs:/var/log/nginx
+    depends_on:
+      - rifa-thomas
+    restart: unless-stopped
+    networks:
+      - rifa-network
+    profiles:
+      - production
+
+  # Monitor de saúde (opcional)
+  health-monitor:
+    image: prom/node-exporter
+    container_name: rifa-monitor
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+    networks:
+      - rifa-network
+    profiles:
+      - monitoring
+
+volumes:
+  nginx_logs:
+    driver: local
+  proxy_logs:
+    driver: local
+
+networks:
+  rifa-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

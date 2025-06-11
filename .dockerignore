@@ -1,0 +1,78 @@
+# 🚫 .dockerignore - Rifa Thomas
+# Arquivos a serem ignorados no build Docker
+
+# Documentação
+*.md
+README*
+CHANGELOG*
+LICENSE*
+
+# Scripts de desenvolvimento
+*.ps1
+*.sh
+deploy.*
+test-*
+
+# Arquivos de configuração desnecessários
+.git/
+.gitignore
+.env*
+*.log
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Firebase específicos (manter apenas o essencial)
+.firebase/
+.firebaserc
+firebase-debug.log
+functions/
+dataconnect/
+dataconnect-generated/
+
+# Arquivos temporários
+.tmp/
+tmp/
+temp/
+*.tmp
+*.swp
+*.swo
+*~
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-*
+
+# Builds antigos
+dist/
+build/
+out/
+
+# Arquivos de teste
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Certificados e chaves (segurança)
+*.pem
+*.key
+*.crt
+ssl/
+
+# Cache
+.cache/
+*.cache
+
+# Logs específicos
+logs/
+*.log
