@@ -1,0 +1,47 @@
+{
+  "name": "rifa-cha-thomas",
+  "version": "2.0.0",
+  "description": "Sistema de Rifa Online - Chá de Bebê Thomas com Firebase",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "deploy": "firebase deploy",
+    "build": "echo 'Build completed - static files ready'",
+    "test": "echo 'Tests would run here'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/rifa-cha-thomas"
+  },
+  "keywords": [
+    "rifa",
+    "cha-de-bebe",
+    "firebase",
+    "javascript",
+    "real-time"
+  ],
+  "author": "Desenvolvedor Rifa Thomas",
+  "license": "MIT",
+  "dependencies": {
+    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
+    "firebase": "^10.11.1"
+  },
+  "firebase": {
+    "projectId": "rifa-cha-thomas",
+    "hosting": {
+      "public": ".",
+      "ignore": [
+        "node_modules/**",
+        "*.md",
+        ".git/**",
+        ".gitignore"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  }
+}

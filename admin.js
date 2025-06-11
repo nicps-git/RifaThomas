@@ -10,21 +10,106 @@ let adminData = {
             first: 'R$ 100,00',
             second: 'R$ 200,00',
             third: 'Fraldas por faixa'
-        },        contactPhone: '(11) 99999-9999',
+        },
+        contactPhone: '(11) 99999-9999',
         babyName: 'Thomas'
     },
-    drawResults: null
+    drawResults: null,
+    firebaseReady: false,
+    unsubscribe: null,
+    currentUser: null
 };
 
 // Inicializar painel administrativo
 document.addEventListener('DOMContentLoaded', function() {
-    initializeAdmin();
-    loadAdminData();
+    // Verificar se Firebase está disponível
+    if (typeof FirebaseDB !== 'undefined') {
+        initializeAdminWithFirebase();
+    } else {
+        // Fallback para versão local
+        initializeAdmin();
+        loadAdminData();
+    }
+    
     setupAdminEventListeners();
     updateDashboard();
-    loadParticipants();
     loadConfiguration();
 });
+
+// Inicializar com Firebase
+async function initializeAdminWithFirebase() {
+    try {
+        // Verificar autenticação
+        const user = await FirebaseDB.initAuth();
+        
+        if (!user) {
+            redirectToLogin();
+            return;
+        }
+        
+        // Verificar se é admin
+        const isAdmin = await FirebaseDB.isAdmin(user.uid);
+        if (!isAdmin) {
+            alert('Você não tem permissão de administrador!');
+            redirectToLogin();
+            return;
+        }
+        
+        adminData.currentUser = user;
+        adminData.firebaseReady = true;
+        
+        // Carregar dados do Firebase
+        await loadDataFromFirebase();
+        
+        // Escutar mudanças em tempo real
+        adminData.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
+            adminData.purchases = purchases;
+            loadParticipants();
+            updateDashboard();
+        });
+        
+        console.log('🔥 Admin Firebase conectado!');
+        
+    } catch (error) {
+        console.error('Erro ao inicializar Firebase admin:', error);
+        redirectToLogin();
+    }
+}
+
+// Redirecionar para login
+function redirectToLogin() {
+    window.location.href = 'login.html';
+}
+
+// Carregar dados do Firebase
+async function loadDataFromFirebase() {
+    try {
+        // Carregar compras
+        const purchasesResult = await FirebaseDB.getPurchases();
+        if (purchasesResult.success) {
+            adminData.purchases = purchasesResult.data;
+        }
+        
+        // Carregar configurações
+        const configResult = await FirebaseDB.getConfig();
+        if (configResult.success) {
+            adminData.config = { ...adminData.config, ...configResult.data };
+        }
+        
+        // Carregar resultados do sorteio
+        const drawResult = await FirebaseDB.getDrawResults();
+        if (drawResult.success) {
+            adminData.drawResults = drawResult.data;
+        }
+        
+        // Atualizar interface
+        loadParticipants();
+        updateDashboard();
+        
+    } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+    }
+}
 
 // Inicializar configurações do admin
 function initializeAdmin() {
@@ -241,8 +326,8 @@ function loadConfiguration() {
     document.getElementById('config-contact-phone').value = adminData.config.contactPhone;
 }
 
-// Salvar configurações
-function saveConfiguration(e) {
+// Salvar configurações (versão Firebase)
+async function saveConfiguration(e) {
     e.preventDefault();
     
     const newConfig = {
@@ -258,12 +343,55 @@ function saveConfiguration(e) {
         contactPhone: document.getElementById('config-contact-phone').value
     };
     
-    adminData.config = { ...adminData.config, ...newConfig };
-    localStorage.setItem('adminConfig', JSON.stringify(newConfig));
-    
-    showNotification('Configurações salvas com sucesso!', 'success');
-    updateDashboard();
+    try {
+        if (adminData.firebaseReady) {
+            const result = await FirebaseDB.saveConfig(newConfig);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+        } else {
+            localStorage.setItem('adminConfig', JSON.stringify(newConfig));
+        }
+        
+        adminData.config = { ...adminData.config, ...newConfig };
+        showNotification('Configurações salvas com sucesso!', 'success');
+        updateDashboard();
+        
+    } catch (error) {
+        console.error('Erro ao salvar configurações:', error);
+        showNotification('Erro ao salvar configurações: ' + error.message, 'error');
+    }
 }
+
+// Adicionar botão de logout no painel admin
+function addLogoutButton() {
+    if (adminData.firebaseReady && adminData.currentUser) {
+        const nav = document.querySelector('.nav-menu');
+        if (nav && !document.getElementById('logout-btn')) {
+            const logoutLi = document.createElement('li');
+            logoutLi.innerHTML = '<a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Sair</a>';
+            nav.appendChild(logoutLi);
+            
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Deseja realmente sair do painel administrativo?')) {
+                    // Fazer logout
+                    if (adminData.unsubscribe) {
+                        adminData.unsubscribe();
+                    }
+                    window.location.href = 'login.html';
+                }
+            });
+        }
+    }
+}
+
+// Cleanup ao sair da página
+window.addEventListener('beforeunload', function() {
+    if (adminData.unsubscribe) {
+        adminData.unsubscribe();
+    }
+});
 
 // Ações rápidas
 function markNumberAsSold() {
@@ -609,8 +737,8 @@ function filterByStatus(status) {
     loadParticipants(status);
 }
 
-// Confirmar doação de fraldas
-function confirmDonation(purchaseId) {
+// Confirmar doação de fraldas (versão Firebase)
+async function confirmDonation(purchaseId) {
     const purchase = adminData.purchases.find(p => p.id === purchaseId);
     if (!purchase) {
         alert('Compra não encontrada!');
@@ -621,34 +749,38 @@ function confirmDonation(purchaseId) {
     const confirmMessage = 'Confirmar doação de fraldas de ' + purchase.name + '?\n\nNúmeros: ' + numbersText + '\nTotal: R$ ' + purchase.totalAmount.toFixed(2);
     
     if (confirm(confirmMessage)) {
-        // Atualizar status
-        purchase.status = 'confirmed';
-        purchase.confirmedAt = new Date().toISOString();
-        
-        // Marcar números como vendidos definitivamente
-        const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{}');
-        purchase.numbers.forEach(number => {
-            if (rifaData.soldNumbers) {
-                rifaData.soldNumbers.push(number);
+        try {
+            // Atualizar no Firebase se disponível
+            if (adminData.firebaseReady) {
+                const result = await FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed', {
+                    confirmedAt: new Date().toISOString(),
+                    confirmedBy: adminData.currentUser.uid
+                });
+                
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                showNotification('✅ Doação confirmada com sucesso!', 'success');
             } else {
-                rifaData.soldNumbers = [number];
+                // Fallback localStorage
+                purchase.status = 'confirmed';
+                purchase.confirmedAt = new Date().toISOString();
+                localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
+                
+                loadParticipants();
+                updateDashboard();
+                alert('✅ Doação confirmada com sucesso!\nNúmeros foram marcados como vendidos.');
             }
-        });
-        
-        // Salvar dados
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        localStorage.setItem('rifaData', JSON.stringify(rifaData));
-        
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
-        
-        alert('✅ Doação confirmada com sucesso!\nNúmeros foram marcados como vendidos.');
+        } catch (error) {
+            console.error('Erro ao confirmar doação:', error);
+            showNotification('Erro ao confirmar doação: ' + error.message, 'error');
+        }
     }
 }
 
-// Rejeitar doação de fraldas
-function rejectDonation(purchaseId) {
+// Rejeitar doação de fraldas (versão Firebase)
+async function rejectDonation(purchaseId) {
     const purchase = adminData.purchases.find(p => p.id === purchaseId);
     if (!purchase) {
         alert('Compra não encontrada!');
@@ -657,29 +789,36 @@ function rejectDonation(purchaseId) {
     
     const promptMessage = 'Rejeitar doação de ' + purchase.name + '?\n\nMotivo (opcional):';
     const reason = prompt(promptMessage);
-    if (reason !== null) { // null = cancelou, string vazia = confirmou sem motivo
-        // Atualizar status
-        purchase.status = 'rejected';
-        purchase.rejectedAt = new Date().toISOString();
-        purchase.rejectionReason = reason;
-        
-        // Liberar números reservados
-        const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{}');
-        if (rifaData.reservedNumbers) {
-            rifaData.reservedNumbers = rifaData.reservedNumbers.filter(num => 
-                !purchase.numbers.includes(num)
-            );
+    if (reason !== null) {
+        try {
+            // Atualizar no Firebase se disponível
+            if (adminData.firebaseReady) {
+                const result = await FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected', {
+                    rejectedAt: new Date().toISOString(),
+                    rejectionReason: reason,
+                    rejectedBy: adminData.currentUser.uid
+                });
+                
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                showNotification('❌ Doação rejeitada. Números liberados.', 'warning');
+            } else {
+                // Fallback localStorage
+                purchase.status = 'rejected';
+                purchase.rejectedAt = new Date().toISOString();
+                purchase.rejectionReason = reason;
+                localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
+                
+                loadParticipants();
+                updateDashboard();
+                alert('❌ Doação rejeitada.\nNúmeros foram liberados para venda.');
+            }
+        } catch (error) {
+            console.error('Erro ao rejeitar doação:', error);
+            showNotification('Erro ao rejeitar doação: ' + error.message, 'error');
         }
-        
-        // Salvar dados
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        localStorage.setItem('rifaData', JSON.stringify(rifaData));
-        
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
-        
-        alert('❌ Doação rejeitada.\nNúmeros foram liberados para venda.');
     }
 }
 

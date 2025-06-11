@@ -20,17 +20,77 @@ let rifaState = {
     numbers: {},
     selectedNumbers: new Set(),
     soldNumbers: new Set(),
-    reservedNumbers: new Set()
+    reservedNumbers: new Set(),
+    firebaseReady: false,
+    unsubscribe: null
 };
 
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', function() {
-    initializeRifa();
+    // Aguardar Firebase estar disponível
+    if (typeof FirebaseDB !== 'undefined') {
+        initializeWithFirebase();
+    } else {
+        // Fallback para localStorage se Firebase não estiver disponível
+        initializeRifa();
+    }
+    
     setupEventListeners();
     startCountdown();
     generateNumbers();
     updateStatistics();
 });
+
+// Inicializar com Firebase
+async function initializeWithFirebase() {
+    try {
+        // Inicializar autenticação anônima
+        await FirebaseDB.initAuth();
+        rifaState.firebaseReady = true;
+        
+        // Carregar números vendidos em tempo real
+        loadSoldNumbersFromFirebase();
+        
+        // Escutar mudanças em tempo real
+        rifaState.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
+            updateSoldNumbersFromPurchases(purchases);
+            updateStatistics();
+        });
+        
+        console.log('🔥 Firebase conectado com sucesso!');
+    } catch (error) {
+        console.warn('⚠️ Erro ao conectar Firebase, usando localStorage:', error);
+        rifaState.firebaseReady = false;
+        initializeRifa();
+    }
+}
+
+// Carregar números vendidos do Firebase
+async function loadSoldNumbersFromFirebase() {
+    try {
+        const result = await FirebaseDB.getSoldNumbers();
+        if (result.success) {
+            rifaState.soldNumbers = new Set(result.data);
+            updateNumbersDisplay();
+        }
+    } catch (error) {
+        console.warn('Erro ao carregar números vendidos:', error);
+    }
+}
+
+// Atualizar números vendidos a partir das compras
+function updateSoldNumbersFromPurchases(purchases) {
+    const soldNumbers = new Set();
+    
+    purchases.forEach(purchase => {
+        if (purchase.status === 'confirmed' && purchase.numbers) {
+            purchase.numbers.forEach(number => soldNumbers.add(number));
+        }
+    });
+    
+    rifaState.soldNumbers = soldNumbers;
+    updateNumbersDisplay();
+}
 
 // Inicializar configurações da rifa
 function initializeRifa() {
@@ -287,7 +347,8 @@ function updateModalSummary() {
 }
 
 // Processar compra
-function handlePurchase(e) {
+// Função de compra atualizada para Firebase
+async function handlePurchase(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
@@ -313,27 +374,41 @@ function handlePurchase(e) {
         purchaseData.status = 'reserved';
     }
     
-    // Reservar números
-    purchaseData.numbers.forEach(number => {
-        rifaState.reservedNumbers.add(number);
-        rifaState.selectedNumbers.delete(number);
-        updateNumberDisplay(number);
-    });
-    
-    // Salvar no localStorage
-    saveRifaData();
-    savePurchaseData(purchaseData);
-    
-    // Atualizar interface
-    updateSelectionSummary();
-    updateStatistics();
-    closePurchaseModal();
-    
-    // Mostrar confirmação
-    showSuccessMessage(purchaseData);
-    
-    // Limpar formulário
-    document.getElementById('purchase-form').reset();
+    try {
+        // Salvar no Firebase se disponível, senão localStorage
+        if (rifaState.firebaseReady) {
+            const result = await FirebaseDB.savePurchase(purchaseData);
+            if (!result.success) {
+                throw new Error(result.error);
+            }
+            console.log('✅ Compra salva no Firebase:', result.id);
+        } else {
+            // Fallback para localStorage
+            savePurchaseData(purchaseData);
+        }
+        
+        // Reservar números localmente (atualização imediata)
+        purchaseData.numbers.forEach(number => {
+            rifaState.reservedNumbers.add(number);
+            rifaState.selectedNumbers.delete(number);
+            updateNumberDisplay(number);
+        });
+        
+        // Atualizar interface
+        updateSelectionSummary();
+        updateStatistics();
+        closePurchaseModal();
+        
+        // Mostrar confirmação
+        showSuccessMessage(purchaseData);
+        
+        // Limpar formulário
+        document.getElementById('purchase-form').reset();
+        
+    } catch (error) {
+        console.error('Erro ao salvar compra:', error);
+        alert('Erro ao processar compra. Tente novamente ou entre em contato via WhatsApp.');
+    }
 }
 
 // Validar dados da compra
@@ -356,14 +431,28 @@ function validatePurchaseData(data) {
     return true;
 }
 
-// Salvar dados da compra
+// Atualizar display de todos os números
+function updateNumbersDisplay() {
+    for (let i = 1; i <= RIFA_CONFIG.totalNumbers; i++) {
+        updateNumberDisplay(i);
+    }
+}
+
+// Função para salvar no localStorage (fallback)
 function savePurchaseData(data) {
     const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
-    data.id = Date.now(); // ID único para a compra
+    data.id = Date.now() + Math.random();
     purchases.push(data);
     localStorage.setItem('purchases', JSON.stringify(purchases));
-    console.log('Compra salva:', data);
+    console.log('💾 Compra salva no localStorage');
 }
+
+// Cleanup ao sair da página
+window.addEventListener('beforeunload', function() {
+    if (rifaState.unsubscribe) {
+        rifaState.unsubscribe();
+    }
+});
 
 // Mostrar mensagem de sucesso
 function showSuccessMessage(data) {
