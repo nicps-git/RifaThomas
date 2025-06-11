@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Chá Rifa Thomas - Tema Astronauta</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo"><i class="fas fa-rocket"></i> Chá Rifa Thomas</h1>
+                <ul class="nav-menu">
+                    <li><a href="#home">Início</a></li>
+                    <li><a href="#rifa">Rifa</a></li>
+                    <li><a href="#como-participar">Como Participar</a></li>
+                    <li><a href="#contato">Contato</a></li>
+                    <li><a href="admin.html" class="admin-btn">Admin</a></li>
+                </ul>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>        <!-- Seção Hero -->
+        <section id="home" class="hero">
+            <div class="hero-content">
+                <div class="hero-astronaut">🚀</div>
+                <h1>🌟 Chá Rifa Thomas 🌟</h1>
+                <p class="hero-subtitle">Ajude a preparar a chegada do pequeno astronauta!</p>                <div class="thomas-info">
+                    <h2 class="baby-name">Thomas</h2>
+                </div>
+                <div class="prize-info">
+                    <div class="prize-card">
+                        <h3>1º Prêmio</h3>
+                        <p class="prize-value">R$ 100,00</p>
+                        <p class="prize-desc">PIX</p>
+                    </div>
+                    <div class="prize-card">
+                        <h3>2º Prêmio</h3>
+                        <p class="prize-value">R$ 200,00</p>
+                        <p class="prize-desc">PIX</p>
+                    </div>
+                </div>
+                <a href="#rifa" class="cta-button">🚀 Participar da Rifa</a>
+            </div>
+            <div class="space-background">
+                <div class="planet planet-1">🪐</div>
+                <div class="planet planet-2">🌍</div>
+                <div class="planet planet-3">🌙</div>
+                <div class="star star-1">⭐</div>
+                <div class="star star-2">✨</div>
+                <div class="star star-3">⭐</div>
+            </div>
+        </section>
+
+        <!-- Informações da Rifa -->
+        <section class="rifa-info">
+            <div class="container">                <h2>Informações da Rifa</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h3>Data do Sorteio</h3>
+                        <p id="draw-date">11 de Julho de 2025 às 16h</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-ticket-alt"></i>
+                        <h3>Valor da Rifa</h3>
+                        <p id="ticket-price">R$ 40,00</p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-baby"></i>
+                        <h3>Números Vendidos</h3>
+                        <p><span id="sold-tickets">0</span> / <span id="total-tickets">150</span></p>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-gift"></i>
+                        <h3>Prêmios</h3>
+                        <p id="countdown">Fraldas + PIX</p>
+                    </div>
+                </div>                  <div class="premio-details">
+                    <h3>🎁 Detalhes dos Prêmios</h3>
+                    <div class="premio-grid">
+                        <div class="premio-item">
+                            <h4>Números 1-30</h4>
+                            <p>1 Fralda P</p>
+                            <small>Garantido para todos os números desta faixa</small>
+                        </div>
+                        <div class="premio-item">
+                            <h4>Números 31-100</h4>
+                            <p>1 Fralda M</p>
+                            <small>Garantido para todos os números desta faixa</small>
+                        </div>
+                        <div class="premio-item">
+                            <h4>Números 101-150</h4>
+                            <p>1 Fralda G</p>
+                            <small>Garantido para todos os números desta faixa</small>
+                        </div>
+                    </div>
+                    <div class="premio-pix-info">
+                        <h4>🎯 Prêmios PIX Especiais</h4>
+                        <p><strong>TODOS os números têm a mesma chance de ganhar:</strong></p>
+                        <ul>
+                            <li>🥇 <strong>1º Prêmio:</strong> PIX de R$ 200,00</li>
+                            <li>🥈 <strong>2º Prêmio:</strong> PIX de R$ 100,00</li>
+                        </ul>
+                    </div>
+                    <p class="premio-note">
+                        <strong>🍼 Sugestões de Marcas de Fraldas:</strong> Pampers, Huggies ou MamyPoko<br>
+                        <strong>💰 Formas de Pagamento:</strong> PIX (R$ 40,00) ou Doação de Fraldas<br>
+                        <strong>📅 Data do Sorteio:</strong> 11 de Julho de 2025 às 16h
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seleção de Números -->
+        <section id="rifa" class="rifa-section">
+            <div class="container">
+                <h2>🚀 Escolha seu Número da Sorte</h2>                <p class="rifa-instruction">
+                    <strong>Como funciona:</strong> Escolha um número de 1 a 150 e passe para o papai!<br>
+                    Cada número Fralda ou R$ 40,00 e concorre prêmios em PIX.
+                </p>
+                <div class="rifa-controls">
+                    <div class="search-container">
+                        <input type="number" id="search-number" placeholder="Buscar número específico" min="1" max="1000">
+                        <button onclick="searchNumber()"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="filter-buttons">
+                        <button onclick="showAvailable()" class="filter-btn active">Disponíveis</button>
+                        <button onclick="showSelected()" class="filter-btn">Selecionados</button>
+                        <button onclick="showSold()" class="filter-btn">Vendidos</button>
+                        <button onclick="showAll()" class="filter-btn">Todos</button>
+                    </div>
+                </div>
+                
+                <div class="numbers-grid" id="numbers-grid">
+                    <!-- Números serão gerados via JavaScript -->
+                </div>
+
+                <div class="selection-summary">
+                    <div class="selected-info">
+                        <h3>Números Selecionados: <span id="selected-count">0</span></h3>
+                        <div id="selected-numbers"></div>
+                        <p class="total-amount">Total: R$ <span id="total-amount">0,00</span></p>
+                    </div>
+                    <button id="buy-button" class="buy-button" onclick="openPurchaseModal()">
+                        <i class="fas fa-shopping-cart"></i> Comprar Bilhetes
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Como Participar -->
+        <section id="como-participar" class="how-to-section">
+            <div class="container">
+                <h2>Como Participar</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h3>Escolha seus Números</h3>
+                        <p>Selecione os números da sorte na grade acima</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h3>Preencha seus Dados</h3>
+                        <p>Informe seus dados para contato e confirmação</p>
+                    </div>                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h3>Efetue o Pagamento</h3>
+                        <p>PIX (R$ 40,00) ou doação de fraldas (Pampers, Huggies, MamyPoko)</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h3>Aguarde o Sorteio</h3>
+                        <p>Seu número será reservado até o dia do sorteio</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contato -->
+        <section id="contato" class="contact-section">
+            <div class="container">
+                <h2>Contato</h2>
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i class="fab fa-whatsapp"></i>
+                        <h3>WhatsApp</h3>
+                        <p>(11) 99999-9999</p>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <h3>Email</h3>
+                        <p>contato@rifaonline.com</p>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fab fa-instagram"></i>
+                        <h3>Instagram</h3>
+                        <p>@rifaonline</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Compra -->
+    <div id="purchase-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePurchaseModal()">&times;</span>
+            <h2>Finalizar Compra</h2>
+            <form id="purchase-form">
+                <div class="form-group">
+                    <label for="buyer-name">Nome Completo:</label>
+                    <input type="text" id="buyer-name" required>
+                </div>                <div class="form-group">
+                    <label for="buyer-phone">WhatsApp:</label>
+                    <input type="tel" id="buyer-phone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment-method">Forma de Pagamento:</label>
+                    <select id="payment-method" required onchange="togglePaymentInfo()">
+                        <option value="">Selecione...</option>
+                        <option value="pix">PIX</option>
+                        <option value="doacao">Doação de Fraldas</option>
+                    </select>
+                </div>
+                
+                <div class="purchase-summary">
+                    <h3>Resumo da Compra</h3>
+                    <div id="modal-selected-numbers"></div>
+                    <p class="modal-total">Total: R$ <span id="modal-total-amount">0,00</span></p>
+                </div>                <div class="payment-info">
+                    <div id="pix-info" class="payment-option" style="display: none;">
+                        <h4>💳 Pagamento PIX:</h4>
+                        <p class="pix-key">contato@rifaonline.com</p>
+                        <p>Após o pagamento, envie o comprovante via WhatsApp</p>
+                    </div>
+                      <div id="doacao-info" class="payment-option" style="display: none;">
+                        <h4>🍼 Pagamento por Doação:</h4>
+                        <p><strong>Aceito fraldas de qualquer tamanho!</strong></p>
+                        <p><strong>Sugestões de marcas:</strong> Pampers, Huggies ou MamyPoko</p>
+                        <p>• Entre em contato via WhatsApp para combinar a entrega</p>
+                        <p>• Suas fraldas serão contabilizadas como pagamento</p>
+                        <p>• Após confirmação do admin, seus números ficarão garantidos</p>
+                        <p class="highlight">⚠️ Números ficam pendentes até confirmação da doação</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="confirm-button">
+                    <i class="fas fa-check"></i> Confirmar Participação
+                </button>
+            </form>
+        </div>
+    </div>    <footer>
+        <div class="container">
+            <p>🚀 &copy; 2025 Chá Rifa Thomas - Tema Astronauta. Todos os direitos reservados.</p>
+            <p>🌟 Ajudando a preparar a chegada do pequeno astronauta com muito amor!</p>
+            <div class="footer-emojis">
+                🌙 ⭐ 🪐 🚀 👶 🍼 👨‍🚀
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
