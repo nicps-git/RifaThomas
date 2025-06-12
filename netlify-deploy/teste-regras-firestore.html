@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Rápido - Regras Firestore</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status { 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .instructions {
+            background: #e7f3ff;
+            border: 2px solid #007bff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .instructions h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Teste Rápido - Regras Firestore</h1>
+        <p>Este teste verifica se as regras do Firestore estão configuradas corretamente.</p>
+        
+        <div class="instructions">
+            <h3>📋 Instruções ANTES de testar:</h3>
+            <ol>
+                <li><strong>Acesse:</strong> <a href="https://console.firebase.google.com/project/rifa-cha-thomas/firestore/rules" target="_blank">Firebase Console - Regras</a></li>
+                <li><strong>Copie e cole estas regras:</strong></li>
+            </ol>
+            <pre>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+            <ol start="3">
+                <li><strong>Clique em "PUBLICAR"</strong></li>
+                <li><strong>Aguarde 30 segundos</strong></li>
+                <li><strong>Execute o teste abaixo</strong></li>
+            </ol>
+        </div>
+        
+        <div id="status" class="status info">
+            Aguardando teste...
+        </div>
+        
+        <button onclick="testarFirestore()">🧪 Testar Firestore</button>
+        <button onclick="testarCompleto()">🔥 Teste Completo</button>
+        
+        <div id="resultado"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        function log(message) {
+            console.log(`[TESTE] ${message}`);
+        }
+
+        async function testarFirestore() {
+            const statusDiv = document.getElementById('status');
+            const resultDiv = document.getElementById('resultado');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando conexão com Firestore...';
+                
+                // Aguardar Firebase carregar
+                await new Promise((resolve) => {
+                    if (typeof window.FirebaseDB !== 'undefined') {
+                        resolve();
+                    } else {
+                        const checkFirebase = () => {
+                            if (typeof window.FirebaseDB !== 'undefined') {
+                                resolve();
+                            } else {
+                                setTimeout(checkFirebase, 100);
+                            }
+                        };
+                        checkFirebase();
+                    }
+                });
+                
+                // Teste simples de escrita
+                const testData = {
+                    teste: 'Teste de regras Firestore',
+                    timestamp: new Date().toISOString(),
+                    valor: Math.random()
+                };
+                
+                log('Tentando salvar dados de teste...');
+                const saveResult = await window.FirebaseDB.saveConfig(testData);
+                
+                if (!saveResult.success) {
+                    throw new Error(`Erro ao salvar: ${saveResult.error}`);
+                }
+                
+                log('Tentando carregar dados de teste...');
+                const loadResult = await window.FirebaseDB.loadConfig();
+                
+                if (!loadResult.success) {
+                    throw new Error(`Erro ao carregar: ${loadResult.error}`);
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = `
+                    ✅ <strong>FIRESTORE FUNCIONANDO!</strong><br>
+                    Dados salvos e carregados com sucesso.
+                `;
+                
+                resultDiv.innerHTML = `
+                    <div class="status success">
+                        <h4>✅ Teste Bem-sucedido!</h4>
+                        <p><strong>Dados salvos:</strong> ${JSON.stringify(testData, null, 2)}</p>
+                        <p><strong>Dados carregados:</strong> ${JSON.stringify(loadResult.data, null, 2)}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    ❌ <strong>ERRO NO FIRESTORE</strong><br>
+                    ${error.message}
+                `;
+                
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        <h4>❌ Teste Falhou</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Possíveis causas:</strong></p>
+                        <ul>
+                            <li>Regras do Firestore não aplicadas</li>
+                            <li>Aguarde mais tempo após publicar as regras</li>
+                            <li>Problema de conexão</li>
+                        </ul>
+                        <p><strong>Solução:</strong> Verifique as regras no Firebase Console e tente novamente em 1 minuto.</p>
+                    </div>
+                `;
+                
+                console.error('Erro detalhado:', error);
+            }
+        }
+        
+        async function testarCompleto() {
+            await testarFirestore();
+            
+            if (document.getElementById('status').className.includes('success')) {
+                // Se Firestore passou, testar admin
+                try {
+                    log('Testando sistema de admin...');
+                    const adminResult = await window.FirebaseDB.createAdmin('admin@rifathomas.com', 'casaVERDE123');
+                    
+                    document.getElementById('resultado').innerHTML += `
+                        <div class="status info">
+                            <h4>🔐 Teste Admin</h4>
+                            <p><strong>Resultado:</strong> ${adminResult.success ? 'Sucesso' : adminResult.error}</p>
+                        </div>
+                    `;
+                    
+                } catch (error) {
+                    console.error('Erro no teste admin:', error);
+                }
+            }
+        }
+        
+        // Auto-inicialização
+        window.addEventListener('firebaseReady', () => {
+            log('Firebase carregado automaticamente');
+        });
+    </script>
+</body>
+</html>

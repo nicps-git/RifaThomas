@@ -195,23 +195,45 @@
         </div>
     </div>
 
-    <!-- Carregar Firebase -->
-    <script type="module" src="firebase-config-module.js"></script>
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     
-    <script type="module">
+    <script>
         let isCreateMode = false;
         
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Verificar se já está logado
-            const user = await FirebaseDB.initAuth();
-            if (user && await FirebaseDB.isAdmin(user.uid)) {
-                window.location.href = 'admin.html';
-                return;
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', async () => {
+            console.log('🔥 Firebase pronto no login!');
+            await checkExistingAuth();
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Se Firebase já estiver carregado
+            if (typeof window.FirebaseDB !== 'undefined') {
+                checkExistingAuth();
             }
             
-            // Configurar formulário de login
+            // Configurar formulário
             setupLoginForm();
         });
+        
+        async function checkExistingAuth() {
+            try {
+                console.log('🔍 Verificando autenticação existente...');
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (result.success && result.isAdmin) {
+                    console.log('✅ Admin já autenticado, redirecionando...');
+                    window.location.href = 'admin.html';
+                    return;
+                }
+            } catch (error) {
+                console.log('⚠️ Nenhuma autenticação existente:', error.message);
+            }
+        }
         
         function setupLoginForm() {
             const form = document.getElementById('login-form');
@@ -270,7 +292,7 @@
                 let result;
                 
                 if (isCreateMode) {
-                    result = await FirebaseDB.createAdmin(email, password);
+                    result = await window.FirebaseDB.createAdmin(email, password);
                     if (result.success) {
                         showSuccess('Conta de administrador criada com sucesso! Redirecionando...');
                         setTimeout(() => {
@@ -280,10 +302,10 @@
                         showError('Erro ao criar conta: ' + result.error);
                     }
                 } else {
-                    result = await FirebaseDB.adminLogin(email, password);
+                    result = await window.FirebaseDB.adminLogin(email, password);
                     if (result.success) {
                         // Verificar se é admin
-                        const isAdmin = await FirebaseDB.isAdmin(result.user.uid);
+                        const isAdmin = await window.FirebaseDB.isAdmin(result.user.uid);
                         if (isAdmin) {
                             showSuccess('Login realizado com sucesso! Redirecionando...');
                             setTimeout(() => {

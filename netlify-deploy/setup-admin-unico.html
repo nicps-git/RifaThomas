@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Admin Único - Rifa Thomas</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            min-height: 100vh;
+            color: white;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.95); 
+            padding: 40px; 
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            color: #333;
+        }
+        .status { 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 5px solid #007bff;
+            font-size: 16px;
+        }
+        .status.success { background: #d4edda; border-left-color: #28a745; }
+        .status.error { background: #f8d7da; border-left-color: #dc3545; }
+        .status.warning { background: #fff3cd; border-left-color: #ffc107; }
+        
+        button { 
+            padding: 15px 30px; 
+            margin: 10px; 
+            border: none; 
+            border-radius: 10px; 
+            cursor: pointer;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+        }
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        h1 { 
+            text-align: center; 
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            color: #2c3e50;
+        }
+        
+        .credentials {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .step {
+            background: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .step.completed {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        .step.current {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Setup do Administrador Único</h1>
+        
+        <div class="credentials">
+            <h3>👤 Credenciais do Admin Único</h3>
+            <p><strong>Email:</strong> admin@rifathomas.com</p>
+            <p><strong>Senha:</strong> casaVERDE123</p>
+        </div>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        
+        <div id="step1" class="step current">
+            <strong>Passo 1:</strong> Conectar ao Firebase
+        </div>
+        <div id="step2" class="step">
+            <strong>Passo 2:</strong> Limpar administradores não autorizados
+        </div>
+        <div id="step3" class="step">
+            <strong>Passo 3:</strong> Criar administrador único
+        </div>
+        <div id="step4" class="step">
+            <strong>Passo 4:</strong> Validar configuração
+        </div>
+        <div id="step5" class="step">
+            <strong>Passo 5:</strong> Sistema pronto
+        </div>
+        
+        <div id="status" class="status">Aguardando Firebase carregar...</div>
+        
+        <button id="setup-btn" onclick="runSetup()" disabled>
+            🚀 Iniciar Setup Automático
+        </button>
+        
+        <button onclick="testLogin()" disabled id="test-btn" style="background: linear-gradient(135deg, #007bff, #0056b3);">
+            🔐 Testar Login
+        </button>
+        
+        <button onclick="openAdminPanel()" disabled id="admin-btn" style="background: linear-gradient(135deg, #6f42c1, #e83e8c);">
+            🎛️ Abrir Painel Admin
+        </button>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+            console.log(`[SETUP] ${message}`);
+        }
+        
+        function updateProgress(step) {
+            currentStep = step;
+            const percentage = (step / totalSteps) * 100;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+            
+            // Atualizar visual dos passos
+            for (let i = 1; i <= totalSteps; i++) {
+                const stepEl = document.getElementById(`step${i}`);
+                if (i < step) {
+                    stepEl.className = 'step completed';
+                } else if (i === step) {
+                    stepEl.className = 'step current';
+                } else {
+                    stepEl.className = 'step';
+                }
+            }
+        }
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            updateStatus('✅ Firebase conectado e pronto!', 'success');
+            updateProgress(2);
+            document.getElementById('setup-btn').disabled = false;
+        });
+        
+        async function runSetup() {
+            const setupBtn = document.getElementById('setup-btn');
+            setupBtn.disabled = true;
+            setupBtn.textContent = '⏳ Executando setup...';
+            
+            try {
+                // Passo 2: Limpar admins não autorizados
+                updateStatus('🧹 Limpando administradores não autorizados...', 'warning');
+                updateProgress(2);
+                
+                const cleanResult = await window.FirebaseDB.cleanUnauthorizedAdmins();
+                if (cleanResult.success) {
+                    updateStatus(`✅ Limpeza concluída: ${cleanResult.removed} admin(s) removido(s)`, 'success');
+                } else {
+                    updateStatus(`⚠️ Aviso na limpeza: ${cleanResult.error}`, 'warning');
+                }
+                
+                await new Promise(r => setTimeout(r, 1000));
+                
+                // Passo 3: Criar admin único
+                updateStatus('👤 Criando administrador único...', 'warning');
+                updateProgress(3);
+                
+                const createResult = await window.FirebaseDB.createAdmin('admin@rifathomas.com', 'casaVERDE123');
+                if (createResult.success) {
+                    updateStatus(`✅ Administrador único criado! UID: ${createResult.user.uid}`, 'success');
+                } else {
+                    if (createResult.error.includes('já existe')) {
+                        updateStatus('✅ Administrador único já existe (normal)', 'success');
+                    } else {
+                        throw new Error(`Erro ao criar admin: ${createResult.error}`);
+                    }
+                }
+                
+                await new Promise(r => setTimeout(r, 1000));
+                
+                // Passo 4: Validar configuração
+                updateStatus('🔍 Validando configuração...', 'warning');
+                updateProgress(4);
+                
+                const loginResult = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                if (loginResult.success) {
+                    const isAdmin = await window.FirebaseDB.isAdmin(loginResult.user.uid);
+                    if (isAdmin) {
+                        updateStatus('✅ Validação bem-sucedida: Admin único está funcionando!', 'success');
+                    } else {
+                        throw new Error('Falha na validação: Usuário criado mas não tem permissões de admin');
+                    }
+                } else {
+                    throw new Error(`Falha na validação: ${loginResult.error}`);
+                }
+                
+                await new Promise(r => setTimeout(r, 1000));
+                
+                // Passo 5: Finalizar
+                updateProgress(5);
+                updateStatus('🎉 Setup concluído com sucesso! Sistema de admin único está ativo.', 'success');
+                
+                // Habilitar botões de teste
+                document.getElementById('test-btn').disabled = false;
+                document.getElementById('admin-btn').disabled = false;
+                
+            } catch (error) {
+                updateStatus(`❌ Erro no setup: ${error.message}`, 'error');
+                console.error('Erro no setup:', error);
+            } finally {
+                setupBtn.disabled = false;
+                setupBtn.textContent = '🔄 Executar Setup Novamente';
+            }
+        }
+        
+        async function testLogin() {
+            updateStatus('🔐 Testando login...', 'warning');
+            
+            try {
+                const result = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                if (result.success) {
+                    updateStatus('✅ Login teste realizado com sucesso!', 'success');
+                } else {
+                    updateStatus(`❌ Falha no login teste: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateStatus(`❌ Erro no teste de login: ${error.message}`, 'error');
+            }
+        }
+        
+        function openAdminPanel() {
+            updateStatus('🎛️ Abrindo painel administrativo...', 'info');
+            window.open('login.html', '_blank');
+        }
+        
+        // Inicialização
+        updateStatus('⏳ Aguardando Firebase carregar...', 'warning');
+        updateProgress(1);
+    </script>
+</body>
+</html>

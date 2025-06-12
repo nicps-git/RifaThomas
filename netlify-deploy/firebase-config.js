@@ -231,6 +231,277 @@ waitForFirebase().then(() => {
         console.error('❌ Erro ao obter estatísticas:', error);
         return { success: false, error: error.message };
       }
+    },
+
+    // ========== FUNÇÕES DE ADMINISTRAÇÃO ==========
+    
+    // Email do único administrador permitido
+    ADMIN_AUTORIZADO: 'admin@rifathomas.com',
+    
+    // Criar conta de administrador (RESTRITO)
+    async createAdmin(email, password) {
+      try {
+        console.log('👤 Tentando criar conta de administrador...', email);
+        
+        // VERIFICAR SE É O EMAIL AUTORIZADO
+        if (email !== this.ADMIN_AUTORIZADO) {
+          console.log('❌ Email não autorizado:', email);
+          return { 
+            success: false, 
+            error: 'Apenas o administrador autorizado pode ter uma conta. Contate o responsável.' 
+          };
+        }
+        
+        // Verificar se já existe um admin cadastrado
+        const existingAdmins = await firebase.firestore()
+          .collection('admin_users')
+          .where('isAdmin', '==', true)
+          .get();
+        
+        if (!existingAdmins.empty) {
+          // Se já existe um admin, verificar se é o email correto
+          let isCorrectAdmin = false;
+          existingAdmins.forEach(doc => {
+            if (doc.data().email === this.ADMIN_AUTORIZADO) {
+              isCorrectAdmin = true;
+            }
+          });
+          
+          if (isCorrectAdmin) {
+            console.log('⚠️ Admin autorizado já existe');
+            return { 
+              success: false, 
+              error: 'Conta de administrador já existe. Use a opção de login.' 
+            };
+          } else {
+            // Limpar admins não autorizados
+            console.log('🧹 Removendo admins não autorizados...');
+            const batch = firebase.firestore().batch();
+            existingAdmins.forEach(doc => {
+              batch.delete(doc.ref);
+            });
+            await batch.commit();
+          }
+        }
+        
+        // Criar usuário no Firebase Auth
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        // Marcar usuário como admin no Firestore
+        await firebase.firestore().collection('admin_users').doc(user.uid).set({
+          email: email,
+          isAdmin: true,
+          isAuthorized: true,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastLogin: null
+        });
+        
+        console.log('✅ Admin autorizado criado:', user.uid);
+        return { success: true, user: user };
+      } catch (error) {
+        console.error('❌ Erro ao criar conta de administrador:', error);
+        
+        // Se o usuário já existe no Auth, tentar fazer login
+        if (error.code === 'auth/email-already-in-use') {
+          console.log('⚠️ Email já existe no Auth, tentando login...');
+          return await this.adminLogin(email, password);
+        }
+        
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Login de administrador (RESTRITO)
+    async adminLogin(email, password) {
+      try {
+        console.log('🔐 Fazendo login de administrador...', email);
+        
+        // VERIFICAR SE É O EMAIL AUTORIZADO
+        if (email !== this.ADMIN_AUTORIZADO) {
+          console.log('❌ Login não autorizado:', email);
+          return { 
+            success: false, 
+            error: 'Acesso negado. Apenas o administrador autorizado pode fazer login.' 
+          };
+        }
+        
+        // Fazer login no Firebase Auth
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        const user = userCredential.user;
+        
+        // Verificar se o usuário tem registro como admin autorizado
+        const adminDoc = await firebase.firestore().collection('admin_users').doc(user.uid).get();
+        
+        if (!adminDoc.exists) {
+          // Se não existe registro, criar automaticamente
+          await firebase.firestore().collection('admin_users').doc(user.uid).set({
+            email: email,
+            isAdmin: true,
+            isAuthorized: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          console.log('✅ Registro de admin criado automaticamente');
+        } else {
+          // Atualizar último login
+          await firebase.firestore().collection('admin_users').doc(user.uid).update({
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+            isAuthorized: true // Garantir que está marcado como autorizado
+          });
+        }
+        
+        console.log('✅ Login de administrador autorizado realizado:', user.uid);
+        return { success: true, user: user };
+      } catch (error) {
+        console.error('❌ Erro no login de administrador:', error);
+        
+        // Personalizar mensagens de erro
+        let errorMessage = error.message;
+        if (error.code === 'auth/user-not-found') {
+          errorMessage = 'Usuário não encontrado';
+        } else if (error.code === 'auth/wrong-password') {
+          errorMessage = 'Senha incorreta';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'Email inválido';
+        } else if (error.code === 'auth/too-many-requests') {
+          errorMessage = 'Muitas tentativas. Tente novamente mais tarde';
+        }
+        
+        return { success: false, error: errorMessage };
+      }
+    },
+
+    // Verificar se usuário é administrador (COM VERIFICAÇÃO DE AUTORIZAÇÃO)
+    async isAdmin(uid) {
+      try {
+        console.log('🔍 Verificando se usuário é admin autorizado...', uid);
+        
+        const docRef = firebase.firestore().collection('admin_users').doc(uid);
+        const doc = await docRef.get();
+        
+        if (doc.exists) {
+          const data = doc.data();
+          
+          // Verificar se é admin E se é autorizado E se tem o email correto
+          const isAdmin = data.isAdmin === true;
+          const isAuthorized = data.isAuthorized === true;
+          const hasCorrectEmail = data.email === this.ADMIN_AUTORIZADO;
+          
+          const isValidAdmin = isAdmin && isAuthorized && hasCorrectEmail;
+          
+          console.log(`✅ Verificação de admin: isAdmin=${isAdmin}, isAuthorized=${isAuthorized}, correctEmail=${hasCorrectEmail}, valid=${isValidAdmin}`);
+          
+          // Se não é autorizado ou não tem email correto, remover da coleção
+          if (isAdmin && (!isAuthorized || !hasCorrectEmail)) {
+            console.log('🧹 Removendo admin não autorizado...');
+            await docRef.delete();
+            return false;
+          }
+          
+          return isValidAdmin;
+        } else {
+          console.log('⚠️ Usuário não encontrado na coleção admin_users');
+          return false;
+        }
+      } catch (error) {
+        console.error('❌ Erro ao verificar admin:', error);
+        return false;
+      }
+    },
+
+    // Logout de administrador
+    async adminLogout() {
+      try {
+        console.log('🚪 Fazendo logout de administrador...');
+        await auth.signOut();
+        console.log('✅ Logout realizado');
+        return { success: true };
+      } catch (error) {
+        console.error('❌ Erro no logout:', error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Verificar se há admin autenticado
+    async getCurrentAdmin() {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const isAdmin = await this.isAdmin(user.uid);
+          if (isAdmin) {
+            return { success: true, user: user, isAdmin: true };
+          }
+        }
+        return { success: false, error: 'Nenhum administrador autenticado' };
+      } catch (error) {
+        console.error('❌ Erro ao verificar admin atual:', error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Listar todos os administradores
+    async listAdmins() {
+      try {
+        console.log('📋 Listando administradores...');
+        const snapshot = await firebase.firestore()
+          .collection('admin_users')
+          .where('isAdmin', '==', true)
+          .orderBy('createdAt', 'desc')
+          .get();
+        
+        const admins = [];
+        snapshot.forEach(doc => {
+          admins.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        
+        console.log(`✅ ${admins.length} administradores encontrados`);
+        return { success: true, data: admins };
+      } catch (error) {
+        console.error('❌ Erro ao listar administradores:', error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Limpar todos os admins não autorizados (FUNÇÃO DE SEGURANÇA)
+    async cleanUnauthorizedAdmins() {
+      try {
+        console.log('🧹 Limpando administradores não autorizados...');
+        
+        const snapshot = await firebase.firestore()
+          .collection('admin_users')
+          .get();
+        
+        const batch = firebase.firestore().batch();
+        let removedCount = 0;
+        
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const email = data.email;
+          
+          // Remover se não for o email autorizado
+          if (email !== this.ADMIN_AUTORIZADO) {
+            console.log(`🗑️ Removendo admin não autorizado: ${email}`);
+            batch.delete(doc.ref);
+            removedCount++;
+          }
+        });
+        
+        if (removedCount > 0) {
+          await batch.commit();
+          console.log(`✅ ${removedCount} admin(s) não autorizado(s) removido(s)`);
+        } else {
+          console.log('✅ Nenhum admin não autorizado encontrado');
+        }
+        
+        return { success: true, removed: removedCount };
+      } catch (error) {
+        console.error('❌ Erro ao limpar admins não autorizados:', error);
+        return { success: false, error: error.message };
+      }
     }
   };
   
@@ -246,6 +517,7 @@ waitForFirebase().then(() => {
   
   // Criar versão mock para desenvolvimento
   window.FirebaseDB = {
+    ADMIN_AUTORIZADO: 'admin@rifathomas.com',
     initAuth: async () => ({ uid: 'mock-user' }),
     saveConfig: async () => ({ success: false, error: 'Firebase não disponível' }),
     loadConfig: async () => ({ success: false, error: 'Firebase não disponível' }),
@@ -254,7 +526,15 @@ waitForFirebase().then(() => {
     updatePurchaseStatus: async () => ({ success: false, error: 'Firebase não disponível' }),
     listenToChanges: () => null,
     isNumberAvailable: async () => true,
-    getStats: async () => ({ success: false, error: 'Firebase não disponível' })
+    getStats: async () => ({ success: false, error: 'Firebase não disponível' }),
+    // Funções de administração (mock)
+    createAdmin: async () => ({ success: false, error: 'Firebase não disponível' }),
+    adminLogin: async () => ({ success: false, error: 'Firebase não disponível' }),
+    isAdmin: async () => false,
+    adminLogout: async () => ({ success: false, error: 'Firebase não disponível' }),
+    getCurrentAdmin: async () => ({ success: false, error: 'Firebase não disponível' }),
+    listAdmins: async () => ({ success: false, error: 'Firebase não disponível' }),
+    cleanUnauthorizedAdmins: async () => ({ success: false, error: 'Firebase não disponível' })
   };
   
   console.log('⚠️ Usando versão mock do FirebaseDB');

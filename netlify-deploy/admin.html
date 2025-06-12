@@ -258,7 +258,63 @@
                 </div>
             </div>
         </div>
-    </div>    <script type="module" src="firebase-config-module.js"></script>
-    <script type="module" src="admin.js"></script>
+    </div>    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <!-- Script de proteção de autenticação -->
+    <script>
+        // Verificar autenticação de admin ao carregar a página
+        window.addEventListener('firebaseReady', async () => {
+            try {
+                console.log('🔐 Verificando autenticação de admin...');
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (!result.success || !result.isAdmin) {
+                    console.log('❌ Usuário não autenticado como admin. Redirecionando...');
+                    alert('Acesso negado. Você precisa fazer login como administrador.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                console.log('✅ Admin autenticado:', result.user.email);
+                // Mostrar email do admin na interface
+                const adminInfo = document.createElement('div');
+                adminInfo.innerHTML = `
+                    <div style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; z-index: 1000; font-size: 12px;">
+                        👤 ${result.user.email} 
+                        <button onclick="adminLogout()" style="margin-left: 10px; padding: 2px 8px; border: none; border-radius: 3px; cursor: pointer;">Sair</button>
+                    </div>
+                `;
+                document.body.appendChild(adminInfo);
+                
+            } catch (error) {
+                console.error('❌ Erro na verificação de autenticação:', error);
+                alert('Erro na verificação de autenticação. Redirecionando para login.');
+                window.location.href = 'login.html';
+            }
+        });
+        
+        // Função de logout
+        async function adminLogout() {
+            try {
+                const result = await window.FirebaseDB.adminLogout();
+                if (result.success) {
+                    alert('Logout realizado com sucesso!');
+                    window.location.href = 'login.html';
+                } else {
+                    console.error('Erro no logout:', result.error);
+                    alert('Erro no logout: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Erro inesperado no logout:', error);
+                alert('Erro inesperado no logout: ' + error.message);
+            }
+        }
+    </script>
+    
+    <script src="admin.js"></script>
 </body>
 </html>

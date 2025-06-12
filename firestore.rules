@@ -1,32 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permitir leitura de compras para todos (visualização pública dos números vendidos)
-    match /purchases/{document} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-    
-    // Apenas admins podem acessar dados de admin
-    match /admins/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Configurações podem ser lidas por todos, escritas apenas por admins
-    match /config/{document} {
-      allow read: if true;
-      allow write: if exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-    
-    // Resultados do sorteio podem ser lidos por todos
-    match /draw/{document} {
-      allow read: if true;
-      allow write: if exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-    
-    // Reservas temporárias
-    match /reservations/{document} {
-      allow read, write: if request.auth != null;
+    // REGRAS TEMPORÁRIAS PARA DESENVOLVIMENTO E TESTES
+    // ATENÇÃO: Permitir acesso total - ALTERAR EM PRODUÇÃO
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

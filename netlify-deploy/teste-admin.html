@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Admin - Rifa Thomas</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section { 
+            margin-bottom: 30px; 
+            padding: 20px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        button:hover { background: #0056b3; }
+        input { 
+            padding: 8px; 
+            margin: 5px; 
+            border: 1px solid #ddd; 
+            border-radius: 3px;
+            width: 200px;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px;
+            background: #e9ecef;
+        }
+        h1 { color: #333; text-align: center; }
+        h2 { color: #666; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Teste Sistema de Administração</h1>
+        <p><strong>Projeto:</strong> rifa-cha-thomas</p>
+        
+        <!-- Teste 1: Verificar Firebase -->
+        <div class="test-section">
+            <h2>1. Status do Firebase</h2>
+            <div id="firebase-status" class="status">Verificando Firebase...</div>
+            <button onclick="checkFirebase()">🔄 Verificar Firebase</button>
+        </div>
+
+        <!-- Teste 2: Criar Admin -->
+        <div class="test-section">
+            <h2>2. Criar Conta de Administrador</h2>
+            <div>
+                <input type="email" id="create-email" placeholder="Email do Admin" value="admin@rifathomas.com">
+                <input type="password" id="create-password" placeholder="Senha (mín. 6 chars)" value="123456">
+                <button onclick="testCreateAdmin()">👤 Criar Admin</button>
+            </div>
+            <div id="create-admin-result" class="status"></div>
+        </div>
+
+        <!-- Teste 3: Login Admin -->
+        <div class="test-section">
+            <h2>3. Login de Administrador</h2>
+            <div>
+                <input type="email" id="login-email" placeholder="Email do Admin" value="admin@rifathomas.com">
+                <input type="password" id="login-password" placeholder="Senha" value="123456">
+                <button onclick="testAdminLogin()">🔐 Fazer Login</button>
+            </div>
+            <div id="login-result" class="status"></div>
+        </div>
+
+        <!-- Teste 4: Verificar Admin -->
+        <div class="test-section">
+            <h2>4. Verificar Permissões</h2>
+            <button onclick="testIsAdmin()">🔍 Verificar se é Admin</button>
+            <button onclick="testGetCurrentAdmin()">👤 Admin Atual</button>
+            <button onclick="testListAdmins()">📋 Listar Admins</button>
+            <div id="admin-check-result" class="status"></div>
+        </div>
+
+        <!-- Teste 5: Logout -->
+        <div class="test-section">
+            <h2>5. Logout</h2>
+            <button onclick="testAdminLogout()">🚪 Fazer Logout</button>
+            <div id="logout-result" class="status"></div>
+        </div>
+
+        <!-- Log de atividades -->
+        <div class="test-section">
+            <h2>📋 Log de Atividades</h2>
+            <div id="activity-log" style="max-height: 300px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;"></div>
+            <button onclick="clearLog()">🧹 Limpar Log</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let currentUser = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[TESTE] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('activity-log').innerHTML = '';
+        }
+
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            log('✅ Firebase carregado e pronto!', 'success');
+            checkFirebase();
+        });
+
+        async function checkFirebase() {
+            const statusDiv = document.getElementById('firebase-status');
+            
+            if (typeof window.FirebaseDB === 'undefined') {
+                statusDiv.innerHTML = '<span class="error">❌ FirebaseDB não encontrado</span>';
+                log('❌ FirebaseDB não está disponível', 'error');
+                return;
+            }
+
+            // Verificar se as funções de admin existem
+            const adminFunctions = ['createAdmin', 'adminLogin', 'isAdmin', 'adminLogout', 'getCurrentAdmin', 'listAdmins'];
+            const missingFunctions = adminFunctions.filter(func => typeof window.FirebaseDB[func] !== 'function');
+            
+            if (missingFunctions.length > 0) {
+                statusDiv.innerHTML = `<span class="error">❌ Funções faltando: ${missingFunctions.join(', ')}</span>`;
+                log(`❌ Funções de admin faltando: ${missingFunctions.join(', ')}`, 'error');
+                return;
+            }
+
+            statusDiv.innerHTML = '<span class="success">✅ Firebase e funções de admin carregados</span>';
+            log('✅ Todas as funções de admin estão disponíveis', 'success');
+        }
+
+        async function testCreateAdmin() {
+            const email = document.getElementById('create-email').value;
+            const password = document.getElementById('create-password').value;
+            const resultDiv = document.getElementById('create-admin-result');
+
+            if (!email || !password) {
+                resultDiv.innerHTML = '<span class="error">❌ Preencha email e senha</span>';
+                return;
+            }
+
+            if (password.length < 6) {
+                resultDiv.innerHTML = '<span class="error">❌ Senha deve ter pelo menos 6 caracteres</span>';
+                return;
+            }
+
+            try {
+                log(`🔄 Criando admin: ${email}...`);
+                resultDiv.innerHTML = '<span class="warning">⏳ Criando conta...</span>';
+                
+                const result = await window.FirebaseDB.createAdmin(email, password);
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<span class="success">✅ Admin criado! UID: ${result.user.uid}</span>`;
+                    log(`✅ Admin criado com sucesso: ${result.user.uid}`, 'success');
+                    currentUser = result.user;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ Erro: ${result.error}</span>`;
+                    log(`❌ Erro ao criar admin: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Erro inesperado: ${error.message}</span>`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const resultDiv = document.getElementById('login-result');
+
+            if (!email || !password) {
+                resultDiv.innerHTML = '<span class="error">❌ Preencha email e senha</span>';
+                return;
+            }
+
+            try {
+                log(`🔄 Fazendo login: ${email}...`);
+                resultDiv.innerHTML = '<span class="warning">⏳ Fazendo login...</span>';
+                
+                const result = await window.FirebaseDB.adminLogin(email, password);
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<span class="success">✅ Login realizado! UID: ${result.user.uid}</span>`;
+                    log(`✅ Login realizado com sucesso: ${result.user.uid}`, 'success');
+                    currentUser = result.user;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ Erro: ${result.error}</span>`;
+                    log(`❌ Erro no login: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Erro inesperado: ${error.message}</span>`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testIsAdmin() {
+            const resultDiv = document.getElementById('admin-check-result');
+
+            if (!currentUser) {
+                resultDiv.innerHTML = '<span class="error">❌ Nenhum usuário logado</span>';
+                return;
+            }
+
+            try {
+                log(`🔄 Verificando se ${currentUser.uid} é admin...`);
+                resultDiv.innerHTML = '<span class="warning">⏳ Verificando permissões...</span>';
+                
+                const isAdmin = await window.FirebaseDB.isAdmin(currentUser.uid);
+                
+                if (isAdmin) {
+                    resultDiv.innerHTML = `<span class="success">✅ Usuário é administrador!</span>`;
+                    log(`✅ Usuário ${currentUser.uid} é admin`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ Usuário NÃO é administrador</span>`;
+                    log(`❌ Usuário ${currentUser.uid} NÃO é admin`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Erro inesperado: ${error.message}</span>`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testGetCurrentAdmin() {
+            const resultDiv = document.getElementById('admin-check-result');
+
+            try {
+                log('🔄 Verificando admin atual...');
+                resultDiv.innerHTML = '<span class="warning">⏳ Verificando admin atual...</span>';
+                
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<span class="success">✅ Admin atual: ${result.user.email} (${result.user.uid})</span>`;
+                    log(`✅ Admin atual: ${result.user.email}`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ ${result.error}</span>`;
+                    log(`❌ ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Erro inesperado: ${error.message}</span>`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testListAdmins() {
+            const resultDiv = document.getElementById('admin-check-result');
+
+            try {
+                log('🔄 Listando administradores...');
+                resultDiv.innerHTML = '<span class="warning">⏳ Carregando lista de admins...</span>';
+                
+                const result = await window.FirebaseDB.listAdmins();
+                
+                if (result.success) {
+                    const count = result.data.length;
+                    const adminsList = result.data.map(admin => admin.email).join(', ');
+                    resultDiv.innerHTML = `<span class="success">✅ ${count} admin(s) encontrado(s): ${adminsList}</span>`;
+                    log(`✅ ${count} administradores encontrados`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ Erro: ${result.error}</span>`;
+                    log(`❌ Erro ao listar admins: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Erro inesperado: ${error.message}</span>`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminLogout() {
+            const resultDiv = document.getElementById('logout-result');
+
+            try {
+                log('🔄 Fazendo logout...');
+                resultDiv.innerHTML = '<span class="warning">⏳ Fazendo logout...</span>';
+                
+                const result = await window.FirebaseDB.adminLogout();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = '<span class="success">✅ Logout realizado!</span>';
+                    log('✅ Logout realizado com sucesso', 'success');
+                    currentUser = null;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ Erro: ${result.error}</span>`;
+                    log(`❌ Erro no logout: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ Erro inesperado: ${error.message}</span>`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicialização
+        log('🚀 Teste de administração iniciado');
+        log('⏳ Aguardando Firebase carregar...');
+    </script>
+</body>
+</html>

@@ -22,13 +22,14 @@ let adminData = {
 
 // Inicializar painel administrativo
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar se Firebase está disponível
-    if (typeof FirebaseDB !== 'undefined') {
+    // Aguardar Firebase estar pronto
+    if (typeof window.FirebaseDB !== 'undefined') {
         initializeAdminWithFirebase();
     } else {
-        // Fallback para versão local
-        initializeAdmin();
-        loadAdminData();
+        // Aguardar evento firebaseReady
+        window.addEventListener('firebaseReady', () => {
+            initializeAdminWithFirebase();
+        });
     }
     
     setupAdminEventListeners();
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function initializeAdminWithFirebase() {
     try {
         // Verificar autenticação
-        const user = await FirebaseDB.initAuth();
+        const user = await window.FirebaseDB.initAuth();
         
         if (!user) {
             redirectToLogin();
@@ -48,7 +49,7 @@ async function initializeAdminWithFirebase() {
         }
         
         // Verificar se é admin
-        const isAdmin = await FirebaseDB.isAdmin(user.uid);
+        const isAdmin = await window.FirebaseDB.isAdmin(user.uid);
         if (!isAdmin) {
             alert('Você não tem permissão de administrador!');
             redirectToLogin();
@@ -62,7 +63,7 @@ async function initializeAdminWithFirebase() {
         await loadDataFromFirebase();
         
         // Escutar mudanças em tempo real
-        adminData.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
+        adminData.unsubscribe = window.FirebaseDB.onPurchasesChange((purchases) => {
             adminData.purchases = purchases;
             loadParticipants();
             updateDashboard();
@@ -85,19 +86,19 @@ function redirectToLogin() {
 async function loadDataFromFirebase() {
     try {
         // Carregar compras
-        const purchasesResult = await FirebaseDB.getPurchases();
+        const purchasesResult = await window.FirebaseDB.getPurchases();
         if (purchasesResult.success) {
             adminData.purchases = purchasesResult.data;
         }
         
         // Carregar configurações
-        const configResult = await FirebaseDB.getConfig();
+        const configResult = await window.FirebaseDB.getConfig();
         if (configResult.success) {
             adminData.config = { ...adminData.config, ...configResult.data };
         }
         
         // Carregar resultados do sorteio
-        const drawResult = await FirebaseDB.getDrawResults();
+        const drawResult = await window.FirebaseDB.getDrawResults();
         if (drawResult.success) {
             adminData.drawResults = drawResult.data;
         }
@@ -345,7 +346,7 @@ async function saveConfiguration(e) {
     
     try {
         if (adminData.firebaseReady) {
-            const result = await FirebaseDB.saveConfig(newConfig);
+            const result = await window.FirebaseDB.saveConfig(newConfig);
             if (!result.success) {
                 throw new Error(result.error);
             }
@@ -752,7 +753,7 @@ async function confirmDonation(purchaseId) {
         try {
             // Atualizar no Firebase se disponível
             if (adminData.firebaseReady) {
-                const result = await FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed', {
+                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed', {
                     confirmedAt: new Date().toISOString(),
                     confirmedBy: adminData.currentUser.uid
                 });
@@ -793,7 +794,7 @@ async function rejectDonation(purchaseId) {
         try {
             // Atualizar no Firebase se disponível
             if (adminData.firebaseReady) {
-                const result = await FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected', {
+                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected', {
                     rejectedAt: new Date().toISOString(),
                     rejectionReason: reason,
                     rejectedBy: adminData.currentUser.uid

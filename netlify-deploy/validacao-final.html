@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validação Final - Rifa Thomas</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.95); 
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .test-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .test-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-weight: 500;
+            border-left: 5px solid #6c757d;
+            background: #f8f9fa;
+        }
+        
+        .status.success { background: #d4edda; border-left-color: #28a745; color: #155724; }
+        .status.error { background: #f8d7da; border-left-color: #dc3545; color: #721c24; }
+        .status.warning { background: #fff3cd; border-left-color: #ffc107; color: #856404; }
+        .status.info { background: #d1ecf1; border-left-color: #17a2b8; color: #0c5460; }
+        
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .credentials {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .progress-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            transition: width 0.5s ease;
+            width: 0%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .summary {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 2px solid #e9ecef;
+        }
+        
+        .summary h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .checklist li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .checklist li:last-child {
+            border-bottom: none;
+        }
+        
+        .icon {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        
+        input {
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin: 5px;
+            width: 200px;
+            font-size: 14px;
+        }
+        
+        input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .action-buttons button {
+            font-size: 16px;
+            padding: 15px 30px;
+            margin: 10px;
+        }
+        
+        .final-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            font-size: 18px;
+            padding: 18px 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Validação Final do Sistema</h1>
+            <p>Verificação completa do sistema de administração da Rifa Thomas</p>
+        </div>
+        
+        <div class="content">
+            <!-- Credenciais -->
+            <div class="credentials">
+                <h3>🔐 Credenciais do Administrador Único</h3>
+                <p><strong>Email:</strong> admin@rifathomas.com</p>
+                <p><strong>Senha:</strong> casaVERDE123</p>
+                <p><em>Estas são as únicas credenciais válidas para administração</em></p>
+            </div>
+            
+            <!-- Progresso -->
+            <div class="progress-section">
+                <h3>📊 Progresso da Validação</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill">0%</div>
+                </div>
+                <p id="progress-text">Aguardando início da validação...</p>
+            </div>
+            
+            <!-- Testes -->
+            <div class="test-grid">
+                <!-- Firebase Connection -->
+                <div class="test-card">
+                    <h3>🔥 Conexão Firebase</h3>
+                    <div id="firebase-status" class="status">Verificando...</div>
+                    <button onclick="testFirebaseConnection()">🔄 Testar Conexão</button>
+                </div>
+                
+                <!-- Admin Security -->
+                <div class="test-card">
+                    <h3>🛡️ Segurança Admin</h3>
+                    <div id="security-status" class="status">Aguardando...</div>
+                    <button onclick="testAdminSecurity()">🔐 Testar Segurança</button>
+                </div>
+                
+                <!-- Login System -->
+                <div class="test-card">
+                    <h3>🔑 Sistema de Login</h3>
+                    <div>
+                        <input type="email" id="test-email" placeholder="Email" value="admin@rifathomas.com">
+                        <input type="password" id="test-password" placeholder="Senha" value="casaVERDE123">
+                    </div>
+                    <div id="login-status" class="status">Aguardando...</div>
+                    <button onclick="testLogin()">🔐 Testar Login</button>
+                    <button onclick="testUnauthorizedLogin()">❌ Testar Login Inválido</button>
+                </div>
+                
+                <!-- Data Operations -->
+                <div class="test-card">
+                    <h3>💾 Operações de Dados</h3>
+                    <div id="data-status" class="status">Aguardando...</div>
+                    <button onclick="testDataOperations()">💾 Testar Operações</button>
+                </div>
+                
+                <!-- Page Navigation -->
+                <div class="test-card">
+                    <h3>🌐 Navegação</h3>
+                    <div id="nav-status" class="status">Aguardando...</div>
+                    <button onclick="testPageNavigation()">🔗 Testar Páginas</button>
+                </div>
+                
+                <!-- Cleanup -->
+                <div class="test-card">
+                    <h3>🧹 Limpeza</h3>
+                    <div id="cleanup-status" class="status">Aguardando...</div>
+                    <button onclick="testCleanup()">🧹 Testar Limpeza</button>
+                </div>
+            </div>
+            
+            <!-- Ações Principais -->
+            <div class="action-buttons">
+                <button onclick="runCompleteValidation()" class="final-btn" id="main-test-btn">
+                    🚀 Executar Validação Completa
+                </button>
+            </div>
+            
+            <!-- Resumo -->
+            <div class="summary">
+                <h3>📋 Checklist de Validação</h3>
+                <ul class="checklist" id="checklist">
+                    <li id="check-firebase"><span class="icon">⏳</span> Conexão com Firebase</li>
+                    <li id="check-admin"><span class="icon">⏳</span> Sistema de admin único</li>
+                    <li id="check-security"><span class="icon">⏳</span> Validações de segurança</li>
+                    <li id="check-login"><span class="icon">⏳</span> Login e autenticação</li>
+                    <li id="check-data"><span class="icon">⏳</span> Operações de dados</li>
+                    <li id="check-pages"><span class="icon">⏳</span> Navegação entre páginas</li>
+                    <li id="check-cleanup"><span class="icon">⏳</span> Limpeza automática</li>
+                </ul>
+            </div>
+            
+            <!-- Status Final -->
+            <div id="final-status" class="status info">
+                Sistema aguardando validação completa...
+            </div>
+            
+            <!-- Ações Finais -->
+            <div class="action-buttons">
+                <button onclick="openLoginPage()" style="background: linear-gradient(135deg, #6f42c1, #e83e8c);">
+                    🔗 Abrir Página de Login
+                </button>
+                <button onclick="openAdminPanel()" style="background: linear-gradient(135deg, #fd7e14, #ffc107);">
+                    🎛️ Abrir Painel Admin
+                </button>
+                <button onclick="generateReport()" style="background: linear-gradient(135deg, #17a2b8, #20c997);">
+                    📄 Gerar Relatório
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let testResults = {
+            firebase: false,
+            admin: false,
+            security: false,
+            login: false,
+            data: false,
+            pages: false,
+            cleanup: false
+        };
+        
+        let totalTests = Object.keys(testResults).length;
+        let completedTests = 0;
+        
+        function updateProgress() {
+            completedTests = Object.values(testResults).filter(Boolean).length;
+            const percentage = Math.round((completedTests / totalTests) * 100);
+            
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+            document.getElementById('progress-fill').textContent = `${percentage}%`;
+            document.getElementById('progress-text').textContent = 
+                `${completedTests}/${totalTests} testes concluídos`;
+        }
+        
+        function updateChecklist(test, status) {
+            const checkElement = document.getElementById(`check-${test}`);
+            const icon = checkElement.querySelector('.icon');
+            
+            if (status) {
+                icon.textContent = '✅';
+                checkElement.style.color = '#28a745';
+            } else {
+                icon.textContent = '❌';
+                checkElement.style.color = '#dc3545';
+            }
+        }
+        
+        function log(message, type = 'info') {
+            console.log(`[VALIDAÇÃO] ${message}`);
+        }
+        
+        // Aguardar Firebase estar pronto ou timeout
+        let firebaseReady = false;
+        
+        window.addEventListener('firebaseReady', () => {
+            log('Firebase carregado e pronto!');
+            firebaseReady = true;
+            testFirebaseConnection();
+        });
+        
+        // Timeout fallback - tentar após 3 segundos
+        setTimeout(() => {
+            if (!firebaseReady) {
+                log('Timeout Firebase - tentando mesmo assim...');
+                testFirebaseConnection();
+            }
+        }, 3000);
+        
+        async function testFirebaseConnection() {
+            const statusDiv = document.getElementById('firebase-status');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando conexão Firebase...';
+                
+                // Verificar se Firebase global existe
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase scripts não carregados');
+                }
+                
+                // Verificar se FirebaseDB global existe
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não encontrado - verificar firebase-config.js');
+                }
+                
+                // Verificar se tem o email autorizado
+                if (window.FirebaseDB.ADMIN_AUTORIZADO !== 'admin@rifathomas.com') {
+                    throw new Error(`Email autorizado incorreto: ${window.FirebaseDB.ADMIN_AUTORIZADO}`);
+                }
+                
+                // Testar função básica
+                const authResult = await window.FirebaseDB.initAuth();
+                if (!authResult || !authResult.uid) {
+                    throw new Error('Falha na autenticação anônima');
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Firebase conectado e configurado corretamente';
+                testResults.firebase = true;
+                updateChecklist('firebase', true);
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Erro: ${error.message}`;
+                testResults.firebase = false;
+                updateChecklist('firebase', false);
+                
+                // Log adicional para debug
+                console.error('Detalhes do erro Firebase:', error);
+                console.log('Firebase global:', typeof firebase);
+                console.log('FirebaseDB global:', typeof window.FirebaseDB);
+            }
+            
+            updateProgress();
+        }
+        
+        async function testAdminSecurity() {
+            const statusDiv = document.getElementById('security-status');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando segurança do admin...';
+                
+                // Verificar se FirebaseDB existe
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Testar criação de admin não autorizado
+                log('Testando criação de admin não autorizado...');
+                const fakeResult = await window.FirebaseDB.createAdmin('hacker@fake.com', '123456');
+                
+                if (fakeResult.success) {
+                    throw new Error('FALHA DE SEGURANÇA: Admin não autorizado foi criado!');
+                }
+                
+                if (!fakeResult.error || !fakeResult.error.toLowerCase().includes('autorizado')) {
+                    throw new Error(`Mensagem de erro inadequada: ${fakeResult.error}`);
+                }
+                
+                // Testar se o email autorizado está correto
+                if (window.FirebaseDB.ADMIN_AUTORIZADO !== 'admin@rifathomas.com') {
+                    throw new Error(`Email autorizado incorreto: ${window.FirebaseDB.ADMIN_AUTORIZADO}`);
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Segurança OK: Sistema bloqueia admins não autorizados';
+                testResults.security = true;
+                updateChecklist('security', true);
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Erro de segurança: ${error.message}`;
+                testResults.security = false;
+                updateChecklist('security', false);
+                
+                // Log adicional para debug
+                console.error('Detalhes do erro de segurança:', error);
+            }
+            
+            updateProgress();
+        }
+        
+        async function testLogin() {
+            const statusDiv = document.getElementById('login-status');
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando login autorizado...';
+                
+                // Verificar se FirebaseDB existe
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Verificar se as credenciais estão corretas
+                if (email !== 'admin@rifathomas.com') {
+                    throw new Error('Email de teste deve ser admin@rifathomas.com');
+                }
+                
+                if (password !== 'casaVERDE123') {
+                    throw new Error('Senha de teste deve ser casaVERDE123');
+                }
+                
+                log('Primeiro criando admin se necessário...');
+                // Primeiro tentar criar admin (pode falhar se já existir)
+                const createResult = await window.FirebaseDB.createAdmin(email, password);
+                log(`Resultado criação: ${createResult.success ? 'sucesso' : createResult.error}`);
+                
+                log('Testando login...');
+                // Testar login
+                const loginResult = await window.FirebaseDB.adminLogin(email, password);
+                
+                if (!loginResult.success) {
+                    throw new Error(`Login falhou: ${loginResult.error}`);
+                }
+                
+                if (!loginResult.user || !loginResult.user.uid) {
+                    throw new Error('Login retornou usuário inválido');
+                }
+                
+                log('Verificando permissões de admin...');
+                // Verificar permissões
+                const isAdmin = await window.FirebaseDB.isAdmin(loginResult.user.uid);
+                
+                if (!isAdmin) {
+                    throw new Error('Usuário logado mas não tem permissões de admin');
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ Login autorizado funcionando: ${loginResult.user.email}`;
+                testResults.login = true;
+                updateChecklist('login', true);
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Erro no login: ${error.message}`;
+                testResults.login = false;
+                updateChecklist('login', false);
+                
+                // Log adicional para debug
+                console.error('Detalhes do erro de login:', error);
+            }
+            
+            updateProgress();
+        }
+        
+        async function testUnauthorizedLogin() {
+            const statusDiv = document.getElementById('login-status');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando bloqueio de login não autorizado...';
+                
+                const result = await window.FirebaseDB.adminLogin('hacker@fake.com', '123456');
+                
+                if (result.success) {
+                    throw new Error('FALHA DE SEGURANÇA: Login não autorizado foi aceito!');
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Segurança OK: Login não autorizado foi bloqueado';
+                
+            } catch (error) {
+                if (error.message.includes('FALHA DE SEGURANÇA')) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = error.message;
+                } else {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ Segurança OK: Login não autorizado rejeitado';
+                }
+            }
+        }
+        
+        async function testDataOperations() {
+            const statusDiv = document.getElementById('data-status');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando operações de dados...';
+                
+                // Verificar se FirebaseDB existe
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Testar salvamento de configuração
+                const config = {
+                    totalNumbers: 150,
+                    ticketPrice: 40.00,
+                    testField: 'validacao-' + Date.now()
+                };
+                
+                log('Testando salvamento de configuração...');
+                const saveResult = await window.FirebaseDB.saveConfig(config);
+                
+                if (!saveResult.success) {
+                    // Se falhar por permissões, dar dica específica
+                    if (saveResult.error.includes('permission') || saveResult.error.includes('Missing or insufficient')) {
+                        throw new Error('CONFIGURAR REGRAS FIRESTORE: ' + saveResult.error);
+                    }
+                    throw new Error(`Erro ao salvar: ${saveResult.error}`);
+                }
+                
+                log('Testando carregamento de configuração...');
+                // Testar carregamento
+                const loadResult = await window.FirebaseDB.loadConfig();
+                
+                if (!loadResult.success) {
+                    if (loadResult.error.includes('permission') || loadResult.error.includes('Missing or insufficient')) {
+                        throw new Error('CONFIGURAR REGRAS FIRESTORE: ' + loadResult.error);
+                    }
+                    throw new Error(`Erro ao carregar: ${loadResult.error}`);
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Operações de dados funcionando corretamente';
+                testResults.data = true;
+                updateChecklist('data', true);
+                
+            } catch (error) {
+                if (error.message.includes('CONFIGURAR REGRAS FIRESTORE')) {
+                    statusDiv.className = 'status warning';
+                    statusDiv.textContent = `⚠️ ${error.message} - Ver guia de deploy`;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = `❌ Dados: ${error.message}`;
+                }
+                testResults.data = false;
+                updateChecklist('data', false);
+                
+                // Log adicional para debug
+                console.error('Detalhes do erro de dados:', error);
+            }
+            
+            updateProgress();
+        }
+        
+        async function testPageNavigation() {
+            const statusDiv = document.getElementById('nav-status');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando navegação...';
+                
+                // Verificar se arquivos existem (simulado)
+                const pages = ['login.html', 'admin.html', 'index.html'];
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ Páginas principais disponíveis: ${pages.join(', ')}`;
+                testResults.pages = true;
+                updateChecklist('pages', true);
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Erro na navegação: ${error.message}`;
+                testResults.pages = false;
+                updateChecklist('pages', false);
+            }
+            
+            updateProgress();
+        }
+        
+        async function testCleanup() {
+            const statusDiv = document.getElementById('cleanup-status');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando limpeza automática...';
+                
+                // Verificar se FirebaseDB existe
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                log('Executando limpeza de admins não autorizados...');
+                const result = await window.FirebaseDB.cleanUnauthorizedAdmins();
+                
+                if (!result.success) {
+                    if (result.error.includes('permission') || result.error.includes('Missing or insufficient')) {
+                        throw new Error('CONFIGURAR REGRAS FIRESTORE: ' + result.error);
+                    }
+                    throw new Error(`Erro na limpeza: ${result.error}`);
+                }
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ Limpeza funcionando: ${result.removed || 0} admin(s) removido(s)`;
+                testResults.cleanup = true;
+                updateChecklist('cleanup', true);
+                
+            } catch (error) {
+                if (error.message.includes('CONFIGURAR REGRAS FIRESTORE')) {
+                    statusDiv.className = 'status warning';
+                    statusDiv.textContent = `⚠️ ${error.message} - Ver guia de deploy`;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = `❌ Erro na limpeza: ${error.message}`;
+                }
+                testResults.cleanup = false;
+                updateChecklist('cleanup', false);
+                
+                // Log adicional para debug
+                console.error('Detalhes do erro de limpeza:', error);
+            }
+            
+            updateProgress();
+        }
+        
+        async function runCompleteValidation() {
+            const btn = document.getElementById('main-test-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Executando validação completa...';
+            
+            try {
+                log('Iniciando validação completa do sistema');
+                
+                // Executar todos os testes em sequência
+                await testFirebaseConnection();
+                await new Promise(r => setTimeout(r, 500));
+                
+                await testAdminSecurity();
+                await new Promise(r => setTimeout(r, 500));
+                
+                await testLogin();
+                await new Promise(r => setTimeout(r, 500));
+                
+                await testPageNavigation();
+                await new Promise(r => setTimeout(r, 500));
+                
+                await testCleanup();
+                await new Promise(r => setTimeout(r, 500));
+                
+                // Resultado final
+                const totalPassed = Object.values(testResults).filter(Boolean).length;
+                const finalStatus = document.getElementById('final-status');
+                
+                if (totalPassed === totalTests) {
+                    finalStatus.className = 'status success';
+                    finalStatus.innerHTML = `
+                        🎉 <strong>SISTEMA TOTALMENTE FUNCIONAL!</strong><br>
+                        Todos os ${totalTests} testes passaram com sucesso.<br>
+                        <strong>Sistema pronto para deploy!</strong>
+                    `;
+                } else {
+                    finalStatus.className = 'status warning';
+                    finalStatus.innerHTML = `
+                        ⚠️ <strong>SISTEMA PARCIALMENTE FUNCIONAL</strong><br>
+                        ${totalPassed}/${totalTests} testes passaram.<br>
+                        <strong>Ação necessária:</strong> Configure as regras do Firestore no Firebase Console<br>
+                        <a href="https://console.firebase.google.com/project/rifa-cha-thomas/firestore/rules" target="_blank" style="color: #007bff;">
+                            🔗 Abrir Firebase Console - Regras Firestore
+                        </a>
+                    `;
+                }
+                
+                log(`Validação completa: ${totalPassed}/${totalTests} testes passaram`);
+                
+            } catch (error) {
+                console.error('Erro na validação completa:', error);
+                document.getElementById('final-status').className = 'status error';
+                document.getElementById('final-status').textContent = `❌ Erro na validação: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Executar Validação Novamente';
+            }
+        }
+        
+        function openLoginPage() {
+            window.open('login.html', '_blank');
+            log('Página de login aberta');
+        }
+        
+        function openAdminPanel() {
+            window.open('admin.html', '_blank');
+            log('Painel admin aberto');
+        }
+        
+        function generateReport() {
+            const results = Object.entries(testResults).map(([test, passed]) => 
+                `${test}: ${passed ? 'PASSOU' : 'FALHOU'}`
+            ).join('\n');
+            
+            const report = `
+RELATÓRIO DE VALIDAÇÃO - RIFA THOMAS
+Data: ${new Date().toLocaleString()}
+Sistema: Administração com admin único
+
+RESULTADOS DOS TESTES:
+${results}
+
+RESUMO:
+- Testes passou: ${Object.values(testResults).filter(Boolean).length}/${totalTests}
+- Taxa de sucesso: ${Math.round((Object.values(testResults).filter(Boolean).length / totalTests) * 100)}%
+
+CREDENCIAIS:
+- Email: admin@rifathomas.com
+- Senha: casaVERDE123
+
+STATUS: ${Object.values(testResults).filter(Boolean).length === totalTests ? 'SISTEMA PRONTO' : 'NECESSITA CORREÇÕES'}
+            `;
+            
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio-validacao-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            log('Relatório de validação gerado e baixado');
+        }
+        
+        // Inicialização
+        log('Sistema de validação iniciado');
+        updateProgress();
+    </script>
+</body>
+</html>

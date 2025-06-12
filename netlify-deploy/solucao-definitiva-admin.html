@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solução Definitiva Admin - Firebase</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.95); 
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-weight: 500;
+            border-left: 5px solid #6c757d;
+        }
+        
+        .status.success { background: #d4edda; border-left-color: #28a745; color: #155724; }
+        .status.error { background: #f8d7da; border-left-color: #dc3545; color: #721c24; }
+        .status.warning { background: #fff3cd; border-left-color: #ffc107; color: #856404; }
+        .status.info { background: #d1ecf1; border-left-color: #17a2b8; color: #0c5460; }
+        
+        button {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .alert {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .solution {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        
+        .manual-steps {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .manual-steps ol {
+            padding-left: 20px;
+        }
+        
+        .manual-steps li {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🆘 Solução Definitiva Admin</h1>
+            <p>Correção final do problema auth/invalid-login-credentials</p>
+        </div>
+        
+        <div class="content">
+            <div class="alert">
+                <h3>🚨 PROBLEMA PERSISTENTE</h3>
+                <p><strong>Erro:</strong> auth/invalid-login-credentials continua</p>
+                <p><strong>Causa:</strong> Configuração Firebase Auth corrompida ou inconsistente</p>
+                <p><strong>Solução:</strong> Abordagem manual + automática</p>
+            </div>
+            
+            <div class="solution">
+                <h3>💡 SOLUÇÃO DEFINITIVA</h3>
+                <p>Vamos usar o Console Firebase diretamente + automação para garantir funcionamento</p>
+            </div>
+            
+            <div class="step">
+                <h3>🔗 Passo 1: Configuração Manual no Console Firebase</h3>
+                <div class="manual-steps">
+                    <h4>Execute estes passos no Console Firebase:</h4>
+                    <ol>
+                        <li><strong>Abra:</strong> <a href="https://console.firebase.google.com/project/rifa-cha-thomas/authentication/users" target="_blank">Firebase Console - Authentication</a></li>
+                        <li><strong>Vá em:</strong> Authentication → Users</li>
+                        <li><strong>Se existir usuário admin@rifathomas.com:</strong> Delete ele</li>
+                        <li><strong>Clique em:</strong> "Add user" (Adicionar usuário)</li>
+                        <li><strong>Email:</strong> admin@rifathomas.com</li>
+                        <li><strong>Password:</strong> casaVERDE123</li>
+                        <li><strong>Clique em:</strong> "Add user"</li>
+                        <li><strong>Anote o UID</strong> do usuário criado</li>
+                    </ol>
+                </div>
+                <div id="manual-status" class="status info">Execute os passos acima primeiro</div>
+                <button onclick="confirmManualStep()">✅ Concluí a Configuração Manual</button>
+            </div>
+            
+            <div class="step">
+                <h3>🤖 Passo 2: Configuração Automática do Firestore</h3>
+                <div id="auto-status" class="status info">Aguardando confirmação do passo 1...</div>
+                <button onclick="setupFirestoreAdmin()" disabled id="auto-btn">🤖 Configurar Firestore</button>
+            </div>
+            
+            <div class="step">
+                <h3>🧪 Passo 3: Teste de Funcionamento</h3>
+                <div id="test-status" class="status info">Aguardando configuração...</div>
+                <button onclick="testCompleteLogin()" disabled id="test-btn">🧪 Testar Login</button>
+            </div>
+            
+            <div class="step">
+                <h3>🚀 Passo 4: Validação Final</h3>
+                <div id="final-status" class="status info">Aguardando teste...</div>
+                <button onclick="openFinalValidation()" disabled id="final-btn" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">
+                    🚀 Abrir Validação Final
+                </button>
+            </div>
+            
+            <div class="step">
+                <h3>🆘 Alternativa: Sistema Sem Login</h3>
+                <div class="manual-steps">
+                    <p><strong>Se o problema persistir:</strong> Podemos implementar um sistema admin sem login tradicional, usando:</p>
+                    <ul>
+                        <li>Autenticação por código/token</li>
+                        <li>Sistema baseado em localStorage</li>
+                        <li>Proteção por senha simples</li>
+                    </ul>
+                </div>
+                <button onclick="implementAlternative()" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                    🔧 Implementar Sistema Alternativo
+                </button>
+            </div>
+            
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let firebaseReady = false;
+        let manualStepDone = false;
+        let firestoreConfigured = false;
+        let loginTested = false;
+        
+        const ADMIN_EMAIL = 'admin@rifathomas.com';
+        const ADMIN_PASSWORD = 'casaVERDE123';
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'style="color: #dc3545;"' : 
+                              type === 'success' ? 'style="color: #28a745;"' : 
+                              type === 'warning' ? 'style="color: #ffc107;"' : '';
+            
+            logDiv.innerHTML += `<div ${colorClass}>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[SOLUTION] ${message}`);
+        }
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            log('Firebase carregado!', 'success');
+            firebaseReady = true;
+        });
+        
+        setTimeout(() => {
+            if (!firebaseReady) {
+                log('Firebase carregando via timeout...', 'warning');
+                firebaseReady = true;
+            }
+        }, 3000);
+        
+        function confirmManualStep() {
+            const statusDiv = document.getElementById('manual-status');
+            const autoBtn = document.getElementById('auto-btn');
+            
+            log('=== PASSO MANUAL CONFIRMADO ===');
+            log('Usuário admin@rifathomas.com criado no Firebase Console', 'success');
+            
+            statusDiv.className = 'status success';
+            statusDiv.textContent = '✅ Configuração manual concluída';
+            
+            autoBtn.disabled = false;
+            manualStepDone = true;
+            
+            log('Próximo: Configure o Firestore automaticamente', 'info');
+        }
+        
+        async function setupFirestoreAdmin() {
+            const statusDiv = document.getElementById('auto-status');
+            const testBtn = document.getElementById('test-btn');
+            
+            if (!manualStepDone) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Complete o passo manual primeiro';
+                return;
+            }
+            
+            try {
+                log('=== CONFIGURANDO FIRESTORE ===');
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Configurando Firestore...';
+                
+                // 1. Fazer login com as credenciais criadas manualmente
+                log('1. Fazendo login com credenciais criadas...');
+                const userCredential = await firebase.auth()
+                    .signInWithEmailAndPassword(ADMIN_EMAIL, ADMIN_PASSWORD);
+                
+                const user = userCredential.user;
+                log(`✓ Login funcionou! UID: ${user.uid}`, 'success');
+                
+                // 2. Criar documento admin no Firestore
+                log('2. Criando documento admin no Firestore...');
+                await firebase.firestore()
+                    .collection('admin_users')
+                    .doc(user.uid)
+                    .set({
+                        email: ADMIN_EMAIL,
+                        isAdmin: true,
+                        isAuthorized: true,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                        manuallyCreated: true
+                    });
+                
+                log('✓ Documento admin criado', 'success');
+                
+                // 3. Fazer logout
+                await firebase.auth().signOut();
+                log('✓ Logout realizado', 'success');
+                
+                log('=== FIRESTORE CONFIGURADO ===', 'success');
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Firestore configurado com sucesso';
+                
+                testBtn.disabled = false;
+                firestoreConfigured = true;
+                
+            } catch (error) {
+                log(`Erro na configuração: ${error.message}`, 'error');
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Erro: ${error.message}`;
+                
+                if (error.code === 'auth/invalid-login-credentials') {
+                    log('SOLUÇÃO: Verifique se o usuário foi criado corretamente no Console Firebase', 'warning');
+                    statusDiv.innerHTML = `
+                        ❌ Usuário não encontrado<br>
+                        <small>Verifique se criou o usuário no Console Firebase com as credenciais exatas</small>
+                    `;
+                }
+            }
+        }
+        
+        async function testCompleteLogin() {
+            const statusDiv = document.getElementById('test-status');
+            const finalBtn = document.getElementById('final-btn');
+            
+            if (!firestoreConfigured) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Configure o Firestore primeiro';
+                return;
+            }
+            
+            try {
+                log('=== TESTE COMPLETO DE LOGIN ===');
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Testando login completo...';
+                
+                // 1. Teste direto Firebase Auth
+                log('1. Testando Firebase Auth...');
+                const userCredential = await firebase.auth()
+                    .signInWithEmailAndPassword(ADMIN_EMAIL, ADMIN_PASSWORD);
+                
+                log(`✓ Firebase Auth OK: ${userCredential.user.email}`, 'success');
+                
+                // 2. Teste FirebaseDB.adminLogin
+                log('2. Testando FirebaseDB.adminLogin...');
+                const loginResult = await window.FirebaseDB.adminLogin(ADMIN_EMAIL, ADMIN_PASSWORD);
+                
+                if (loginResult.success) {
+                    log(`✓ FirebaseDB.adminLogin OK: ${loginResult.user.email}`, 'success');
+                } else {
+                    throw new Error(`FirebaseDB.adminLogin falhou: ${loginResult.error}`);
+                }
+                
+                // 3. Teste permissões
+                log('3. Testando permissões...');
+                const isAdmin = await window.FirebaseDB.isAdmin(userCredential.user.uid);
+                
+                if (isAdmin) {
+                    log('✓ Permissões de admin confirmadas', 'success');
+                } else {
+                    throw new Error('Permissões de admin não encontradas');
+                }
+                
+                // 4. Fazer logout
+                await firebase.auth().signOut();
+                log('✓ Logout de teste realizado', 'success');
+                
+                log('=== TESTE COMPLETO PASSOU ===', 'success');
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Login funcionando perfeitamente!';
+                
+                finalBtn.disabled = false;
+                loginTested = true;
+                
+            } catch (error) {
+                log(`Erro no teste: ${error.message}`, 'error');
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Erro: ${error.message}`;
+            }
+        }
+        
+        function openFinalValidation() {
+            if (loginTested) {
+                window.open('validacao-final.html', '_blank');
+                log('Abrindo validação final...', 'success');
+                
+                const statusDiv = document.getElementById('final-status');
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Sistema funcionando - validação aberta';
+            } else {
+                alert('Complete o teste de login primeiro!');
+            }
+        }
+        
+        async function implementAlternative() {
+            log('=== IMPLEMENTANDO SISTEMA ALTERNATIVO ===', 'warning');
+            
+            // Criar sistema admin alternativo sem Firebase Auth
+            const alternativeSystem = `
+            // Sistema Admin Alternativo - Sem Firebase Auth
+            window.AdminAlternativo = {
+                ADMIN_CODE: 'RIFA2025',
+                ADMIN_EMAIL: 'admin@rifathomas.com',
+                
+                // Login por código
+                loginWithCode(code) {
+                    if (code === this.ADMIN_CODE) {
+                        localStorage.setItem('adminAuthenticated', 'true');
+                        localStorage.setItem('adminEmail', this.ADMIN_EMAIL);
+                        return { success: true, admin: true };
+                    }
+                    return { success: false, error: 'Código inválido' };
+                },
+                
+                // Verificar se está logado
+                isLoggedIn() {
+                    return localStorage.getItem('adminAuthenticated') === 'true';
+                },
+                
+                // Logout
+                logout() {
+                    localStorage.removeItem('adminAuthenticated');
+                    localStorage.removeItem('adminEmail');
+                },
+                
+                // Substituir FirebaseDB.adminLogin
+                adminLogin(email, password) {
+                    if (email === this.ADMIN_EMAIL && password === 'casaVERDE123') {
+                        return this.loginWithCode(this.ADMIN_CODE);
+                    }
+                    return { success: false, error: 'Credenciais inválidas' };
+                },
+                
+                // Substituir FirebaseDB.isAdmin
+                isAdmin() {
+                    return this.isLoggedIn();
+                }
+            };
+            
+            console.log('Sistema Admin Alternativo carregado');
+            `;
+            
+            // Adicionar ao head da página
+            const script = document.createElement('script');
+            script.textContent = alternativeSystem;
+            document.head.appendChild(script);
+            
+            log('Sistema alternativo implementado', 'success');
+            log('Código de acesso: RIFA2025', 'info');
+            log('Use este sistema se o Firebase Auth não funcionar', 'warning');
+        }
+        
+        // Inicialização
+        log('Sistema de solução definitiva carregado');
+        log('IMPORTANTE: Execute o passo manual no Console Firebase primeiro!', 'warning');
+    </script>
+</body>
+</html>

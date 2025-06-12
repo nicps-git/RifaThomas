@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Login - Rifa Thomas</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .test-section { 
+            margin-bottom: 30px; 
+            padding: 20px; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 10px;
+            background: #fafafa;
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .warning { color: #ff9800; font-weight: bold; }
+        .info { color: #2196f3; font-weight: bold; }
+        
+        button { 
+            padding: 12px 24px; 
+            margin: 8px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer;
+            background: #2196f3;
+            color: white;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        button:hover { 
+            background: #1976d2; 
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        input { 
+            padding: 12px; 
+            margin: 8px; 
+            border: 2px solid #ddd; 
+            border-radius: 8px;
+            width: 300px;
+            font-size: 14px;
+        }
+        input:focus {
+            border-color: #2196f3;
+            outline: none;
+        }
+        
+        .status { 
+            padding: 15px; 
+            margin: 15px 0; 
+            border-radius: 8px;
+            background: #f0f0f0;
+            border-left: 4px solid #2196f3;
+        }
+        .status.success { background: #e8f5e9; border-left-color: #4caf50; }
+        .status.error { background: #ffebee; border-left-color: #f44336; }
+        .status.warning { background: #fff3e0; border-left-color: #ff9800; }
+        
+        h1 { 
+            color: #333; 
+            text-align: center; 
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        h2 { 
+            color: #555; 
+            border-bottom: 3px solid #2196f3; 
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .log-container {
+            background: #263238;
+            color: #eceff1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .credentials-box {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .quick-test-btn {
+            background: #4caf50;
+            font-size: 16px;
+            padding: 15px 30px;
+        }
+        .quick-test-btn:hover {
+            background: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Teste de Login - Sistema Admin</h1>
+        <p style="text-align: center; color: #666;"><strong>Projeto:</strong> rifa-cha-thomas</p>
+        
+        <!-- Status Firebase -->
+        <div class="test-section">
+            <h2>🔥 Status do Firebase</h2>
+            <div id="firebase-status" class="status">Verificando Firebase...</div>
+            <button onclick="checkFirebaseStatus()">🔄 Verificar Firebase</button>
+        </div>
+
+        <!-- Credenciais -->
+        <div class="test-section">
+            <h2>👤 Credenciais de Teste</h2>
+            <div class="credentials-box">
+                <h4>📋 Use estas credenciais:</h4>
+                <p><strong>Email:</strong> admin@rifathomas.com</p>
+                <p><strong>Senha:</strong> RifaThomas2024!</p>
+            </div>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <button onclick="quickLoginTest()" class="quick-test-btn">⚡ Teste Rápido de Login</button>
+            </div>
+        </div>
+
+        <!-- Teste Manual -->
+        <div class="test-section">
+            <h2>🧪 Teste Manual</h2>
+            
+            <div>
+                <input type="email" id="test-email" placeholder="Email" value="admin@rifathomas.com">
+                <input type="password" id="test-password" placeholder="Senha" value="RifaThomas2024!">
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <button onclick="testCreateAdmin()">👤 Criar Admin</button>
+                <button onclick="testLogin()">🔐 Fazer Login</button>
+                <button onclick="testCurrentAdmin()">🔍 Admin Atual</button>
+                <button onclick="testLogout()">🚪 Logout</button>
+            </div>
+            
+            <div id="manual-test-result" class="status"></div>
+        </div>
+
+        <!-- Teste do Login.html -->
+        <div class="test-section">
+            <h2>🌐 Teste da Página de Login</h2>
+            <p>Teste a página de login real:</p>
+            
+            <div style="text-align: center;">
+                <button onclick="openLoginPage()" style="background: #ff5722;">🔗 Abrir login.html</button>
+                <button onclick="openAdminPage()" style="background: #9c27b0;">🎛️ Abrir admin.html</button>
+            </div>
+            
+            <div id="page-test-result" class="status">Clique nos botões acima para testar as páginas reais.</div>
+        </div>
+
+        <!-- Log -->
+        <div class="test-section">
+            <h2>📋 Log de Atividades</h2>
+            <div id="activity-log" class="log-container"></div>
+            <button onclick="clearLog()">🧹 Limpar Log</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logDiv.innerHTML += `<div>[${timestamp}] ${icon} ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[LOGIN-TEST] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('activity-log').innerHTML = '';
+            log('Log limpo', 'info');
+        }
+
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 Firebase carregado e pronto!', 'success');
+            checkFirebaseStatus();
+        });
+
+        async function checkFirebaseStatus() {
+            const statusDiv = document.getElementById('firebase-status');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não encontrado');
+                }
+
+                // Verificar funções de admin
+                const adminFunctions = ['createAdmin', 'adminLogin', 'isAdmin', 'adminLogout', 'getCurrentAdmin'];
+                const missingFunctions = adminFunctions.filter(func => typeof window.FirebaseDB[func] !== 'function');
+                
+                if (missingFunctions.length > 0) {
+                    throw new Error(`Funções faltando: ${missingFunctions.join(', ')}`);
+                }
+
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ Firebase carregado e todas as funções de admin disponíveis';
+                log('✅ Firebase status OK - todas as funções disponíveis', 'success');
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Erro: ${error.message}`;
+                log(`❌ Erro no Firebase: ${error.message}`, 'error');
+            }
+        }
+
+        async function quickLoginTest() {
+            const email = 'admin@rifathomas.com';
+            const password = 'RifaThomas2024!';
+            
+            log('⚡ Iniciando teste rápido de login...', 'info');
+            
+            try {
+                // 1. Tentar criar admin
+                log('👤 Tentando criar admin...', 'info');
+                const createResult = await window.FirebaseDB.createAdmin(email, password);
+                
+                if (createResult.success) {
+                    log('✅ Admin criado com sucesso!', 'success');
+                } else {
+                    if (createResult.error.includes('already-in-use') || createResult.error.includes('email-already-in-use')) {
+                        log('⚠️ Admin já existe (normal)', 'warning');
+                    } else {
+                        log(`❌ Erro ao criar admin: ${createResult.error}`, 'error');
+                    }
+                }
+                
+                // 2. Fazer login
+                log('🔐 Fazendo login...', 'info');
+                const loginResult = await window.FirebaseDB.adminLogin(email, password);
+                
+                if (loginResult.success) {
+                    log(`✅ Login realizado! UID: ${loginResult.user.uid}`, 'success');
+                    
+                    // 3. Verificar se é admin
+                    const isAdmin = await window.FirebaseDB.isAdmin(loginResult.user.uid);
+                    if (isAdmin) {
+                        log('✅ Permissões de admin confirmadas!', 'success');
+                        log('🎉 TESTE RÁPIDO: SUCESSO TOTAL!', 'success');
+                    } else {
+                        log('❌ Usuário não tem permissões de admin', 'error');
+                    }
+                    
+                } else {
+                    log(`❌ Erro no login: ${loginResult.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateAdmin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            const resultDiv = document.getElementById('manual-test-result');
+
+            if (!email || !password) {
+                resultDiv.className = 'status error';
+                resultDiv.innerHTML = '❌ Preencha email e senha';
+                return;
+            }
+
+            try {
+                log(`👤 Criando admin: ${email}...`, 'info');
+                resultDiv.className = 'status warning';
+                resultDiv.innerHTML = '⏳ Criando admin...';
+                
+                const result = await window.FirebaseDB.createAdmin(email, password);
+                
+                if (result.success) {
+                    resultDiv.className = 'status success';
+                    resultDiv.innerHTML = `✅ Admin criado! UID: ${result.user.uid}`;
+                    log(`✅ Admin criado: ${result.user.uid}`, 'success');
+                } else {
+                    if (result.error.includes('already-in-use')) {
+                        resultDiv.className = 'status warning';
+                        resultDiv.innerHTML = '⚠️ Admin já existe (tente fazer login)';
+                        log('⚠️ Admin já existe', 'warning');
+                    } else {
+                        resultDiv.className = 'status error';
+                        resultDiv.innerHTML = `❌ Erro: ${result.error}`;
+                        log(`❌ Erro: ${result.error}`, 'error');
+                    }
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.innerHTML = `❌ Erro inesperado: ${error.message}`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            const resultDiv = document.getElementById('manual-test-result');
+
+            try {
+                log(`🔐 Fazendo login: ${email}...`, 'info');
+                resultDiv.className = 'status warning';
+                resultDiv.innerHTML = '⏳ Fazendo login...';
+                
+                const result = await window.FirebaseDB.adminLogin(email, password);
+                
+                if (result.success) {
+                    const isAdmin = await window.FirebaseDB.isAdmin(result.user.uid);
+                    if (isAdmin) {
+                        resultDiv.className = 'status success';
+                        resultDiv.innerHTML = `✅ Login OK! Admin: ${result.user.email}`;
+                        log(`✅ Login realizado: ${result.user.email}`, 'success');
+                    } else {
+                        resultDiv.className = 'status error';
+                        resultDiv.innerHTML = '❌ Usuário não é administrador';
+                        log('❌ Usuário não é admin', 'error');
+                    }
+                } else {
+                    resultDiv.className = 'status error';
+                    resultDiv.innerHTML = `❌ Erro: ${result.error}`;
+                    log(`❌ Erro no login: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.innerHTML = `❌ Erro inesperado: ${error.message}`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCurrentAdmin() {
+            const resultDiv = document.getElementById('manual-test-result');
+
+            try {
+                log('🔍 Verificando admin atual...', 'info');
+                resultDiv.className = 'status warning';
+                resultDiv.innerHTML = '⏳ Verificando admin atual...';
+                
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (result.success) {
+                    resultDiv.className = 'status success';
+                    resultDiv.innerHTML = `✅ Admin ativo: ${result.user.email}`;
+                    log(`✅ Admin ativo: ${result.user.email}`, 'success');
+                } else {
+                    resultDiv.className = 'status warning';
+                    resultDiv.innerHTML = '⚠️ Nenhum admin autenticado';
+                    log('⚠️ Nenhum admin autenticado', 'warning');
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.innerHTML = `❌ Erro inesperado: ${error.message}`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogout() {
+            const resultDiv = document.getElementById('manual-test-result');
+
+            try {
+                log('🚪 Fazendo logout...', 'info');
+                resultDiv.className = 'status warning';
+                resultDiv.innerHTML = '⏳ Fazendo logout...';
+                
+                const result = await window.FirebaseDB.adminLogout();
+                
+                if (result.success) {
+                    resultDiv.className = 'status success';
+                    resultDiv.innerHTML = '✅ Logout realizado!';
+                    log('✅ Logout realizado', 'success');
+                } else {
+                    resultDiv.className = 'status error';
+                    resultDiv.innerHTML = `❌ Erro: ${result.error}`;
+                    log(`❌ Erro no logout: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'status error';
+                resultDiv.innerHTML = `❌ Erro inesperado: ${error.message}`;
+                log(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+
+        function openLoginPage() {
+            log('🌐 Abrindo página de login...', 'info');
+            window.open('login.html', '_blank');
+            document.getElementById('page-test-result').innerHTML = '🔗 Página login.html aberta em nova aba. Teste lá!';
+        }
+
+        function openAdminPage() {
+            log('🎛️ Abrindo painel admin...', 'info');
+            window.open('admin.html', '_blank');
+            document.getElementById('page-test-result').innerHTML = '🎛️ Página admin.html aberta em nova aba. Teste lá!';
+        }
+
+        // Inicialização
+        log('🔐 Teste de login iniciado', 'info');
+        log('⏳ Aguardando Firebase carregar...', 'info');
+    </script>
+</body>
+</html>
