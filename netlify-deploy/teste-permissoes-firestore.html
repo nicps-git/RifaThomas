@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Permissões Firestore</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 700px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        .rules-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Teste Permissões Firestore</h1>
+        <p>Este teste verifica especificamente as permissões de leitura e gravação do Firestore.</p>
+        
+        <div id="main-status" class="status info">🔄 Clique em "Testar Permissões" para começar</div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="testarPermissoes()" id="test-btn">🧪 Testar Permissões</button>
+            <button onclick="abrirConsole()" id="console-btn">🔧 Abrir Console Firebase</button>
+            <button onclick="limparLog()" id="clear-btn">🗑️ Limpar Log</button>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ Se der erro de permissão:</h3>
+            <p><strong>1. Acesse:</strong> <a href="https://console.firebase.google.com/project/rifa-cha-thomas/firestore/rules" target="_blank" class="link">Regras do Firestore</a></p>
+            <p><strong>2. Cole estas regras temporárias:</strong></p>
+            <div class="rules-box">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}</div>
+            <p><strong>3. Clique em "Publish"</strong></p>
+            <p><strong>4. Teste novamente</strong></p>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+    <script>
+        // Configuração correta (não mexer!)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDtB1YfeOLWm6_xH1pI8mXJzO-IxIC4vHc",
+            authDomain: "rifa-cha-thomas.firebaseapp.com",
+            projectId: "rifa-cha-thomas",
+            storageBucket: "rifa-cha-thomas.firebasestorage.app",
+            messagingSenderId: "761618695276",
+            appId: "1:761618695276:web:bf72f84cbbf5026fa74449"
+        };
+
+        let firebase_db, firebase_auth;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('main-status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        function limparLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        function abrirConsole() {
+            window.open('https://console.firebase.google.com/project/rifa-cha-thomas/firestore/rules', '_blank');
+        }
+        
+        async function testarPermissoes() {
+            limparLog();
+            log('🔄 Iniciando teste de permissões...');
+            updateStatus('🔄 Testando permissões...', 'info');
+            
+            try {
+                // 1. Verificar Firebase
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase não carregou');
+                }
+                log('✅ Firebase disponível', 'success');
+                
+                // 2. Inicializar Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                log('✅ Firebase inicializado', 'success');
+                
+                firebase_db = firebase.firestore();
+                firebase_auth = firebase.auth();
+                log('✅ Serviços obtidos', 'success');
+                
+                // 3. Autenticação anônima
+                log('🔐 Fazendo login anônimo...');
+                const userCredential = await firebase_auth.signInAnonymously();
+                log(`✅ Autenticado: ${userCredential.user.uid.substring(0, 8)}...`, 'success');
+                
+                // 4. TESTE DE LEITURA
+                log('📖 TESTANDO LEITURA...');
+                try {
+                    const readSnapshot = await firebase_db.collection('teste_permissoes').limit(1).get();
+                    log(`✅ LEITURA OK - ${readSnapshot.size} documentos`, 'success');
+                } catch (readError) {
+                    log(`❌ LEITURA FALHOU: ${readError.message}`, 'error');
+                    if (readError.code === 'permission-denied') {
+                        log('🔒 PROBLEMA: Regras do Firestore bloqueando leitura', 'error');
+                        updateStatus('❌ Permissão de LEITURA negada - Configure as regras!', 'error');
+                        return;
+                    }
+                    throw readError;
+                }
+                
+                // 5. TESTE DE GRAVAÇÃO
+                log('💾 TESTANDO GRAVAÇÃO...');
+                try {
+                    const testData = {
+                        teste: true,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        usuario: userCredential.user.uid,
+                        numero_aleatorio: Math.floor(Math.random() * 1000)
+                    };
+                    
+                    const writeResult = await firebase_db.collection('teste_permissoes').add(testData);
+                    log(`✅ GRAVAÇÃO OK - ID: ${writeResult.id.substring(0, 8)}...`, 'success');
+                } catch (writeError) {
+                    log(`❌ GRAVAÇÃO FALHOU: ${writeError.message}`, 'error');
+                    if (writeError.code === 'permission-denied') {
+                        log('🔒 PROBLEMA: Regras do Firestore bloqueando gravação', 'error');
+                        updateStatus('❌ Permissão de GRAVAÇÃO negada - Configure as regras!', 'error');
+                        return;
+                    }
+                    throw writeError;
+                }
+                
+                // 6. TESTE DE ATUALIZAÇÃO
+                log('🔄 TESTANDO ATUALIZAÇÃO...');
+                try {
+                    const updateDoc = await firebase_db.collection('teste_permissoes').limit(1).get();
+                    if (!updateDoc.empty) {
+                        const docRef = updateDoc.docs[0].ref;
+                        await docRef.update({
+                            ultima_atualizacao: firebase.firestore.FieldValue.serverTimestamp(),
+                            teste_update: true
+                        });
+                        log('✅ ATUALIZAÇÃO OK', 'success');
+                    } else {
+                        log('⚠️ Nenhum documento para atualizar', 'warning');
+                    }
+                } catch (updateError) {
+                    log(`❌ ATUALIZAÇÃO FALHOU: ${updateError.message}`, 'error');
+                    if (updateError.code === 'permission-denied') {
+                        log('🔒 PROBLEMA: Regras do Firestore bloqueando atualização', 'error');
+                    }
+                }
+                
+                // SUCESSO TOTAL
+                updateStatus('🎉 Todas as permissões estão funcionando!', 'success');
+                log('🎉 TESTE CONCLUÍDO: Todas as operações funcionaram!', 'success');
+                
+            } catch (error) {
+                log(`❌ ERRO GERAL: ${error.message}`, 'error');
+                updateStatus(`❌ Erro: ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+                
+                // Diagnóstico adicional
+                if (error.code) {
+                    log(`🔍 Código do erro: ${error.code}`, 'info');
+                }
+                
+                if (error.code === 'permission-denied') {
+                    log('💡 SOLUÇÃO: Configure as regras do Firestore (veja instruções acima)', 'warning');
+                } else if (error.code === 'unauthenticated') {
+                    log('💡 SOLUÇÃO: Habilite autenticação anônima no Console Firebase', 'warning');
+                } else if (error.message.includes('not found')) {
+                    log('💡 SOLUÇÃO: Crie o banco Firestore no Console Firebase', 'warning');
+                }
+            }
+        }
+        
+        // Auto-inicializar quando página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página carregada. Pronto para testar permissões.');
+        });
+    </script>
+</body>
+</html>

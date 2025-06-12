@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Botão Comprar - Versão Corrigida</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        .number-btn {
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            cursor: pointer;
+            text-align: center;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .number-btn.selected {
+            background: #007bff;
+            color: white;
+        }
+        .selected-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛒 Teste Botão Comprar - Versão Corrigida</h1>
+        <p>Testando a funcionalidade com Firebase corrigido.</p>
+        
+        <div id="firebase-status" class="status info">🔄 Verificando Firebase...</div>
+        
+        <h3>1. Selecione alguns números:</h3>
+        <div class="number-grid" id="number-grid"></div>
+        
+        <div class="selected-info">
+            <h3>Números Selecionados: <span id="selected-count">0</span></h3>
+            <div id="selected-numbers"></div>
+            <p>Total: R$ <span id="total-amount">0,00</span></p>
+        </div>
+        
+        <h3>2. Teste o botão comprar:</h3>
+        <button id="buy-button" onclick="testarCompra()" disabled>
+            🛒 Comprar Bilhetes
+        </button>
+        
+        <button onclick="verificarFirebase()">
+            🔥 Verificar Firebase
+        </button>
+        
+        <button onclick="testarFuncaoOriginal()">
+            🧪 Testar Função Original
+        </button>
+        
+        <button onclick="limparLog()">
+            🗑️ Limpar Log
+        </button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Carregar Firebase e scripts da aplicação -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // Estado local
+        let rifaState = {
+            selectedNumbers: new Set(),
+            firebaseReady: false
+        };
+        
+        const TICKET_PRICE = 40.00;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('firebase-status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        function limparLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // Gerar números para teste
+        function generateTestNumbers() {
+            const grid = document.getElementById('number-grid');
+            for (let i = 1; i <= 20; i++) {
+                const btn = document.createElement('div');
+                btn.className = 'number-btn';
+                btn.textContent = i.toString().padStart(3, '0');
+                btn.onclick = () => toggleNumber(i);
+                btn.id = `number-${i}`;
+                grid.appendChild(btn);
+            }
+            log('✅ Números gerados para teste');
+        }
+        
+        // Alternar seleção de número
+        function toggleNumber(number) {
+            const btn = document.getElementById(`number-${number}`);
+            
+            if (rifaState.selectedNumbers.has(number)) {
+                rifaState.selectedNumbers.delete(number);
+                btn.classList.remove('selected');
+                log(`➖ Número ${number} desmarcado`);
+            } else {
+                rifaState.selectedNumbers.add(number);
+                btn.classList.add('selected');
+                log(`➕ Número ${number} selecionado`);
+            }
+            
+            updateSummary();
+        }
+        
+        // Atualizar resumo
+        function updateSummary() {
+            const count = rifaState.selectedNumbers.size;
+            const total = count * TICKET_PRICE;
+            
+            document.getElementById('selected-count').textContent = count;
+            document.getElementById('total-amount').textContent = total.toFixed(2);
+            
+            const numbersDiv = document.getElementById('selected-numbers');
+            numbersDiv.innerHTML = Array.from(rifaState.selectedNumbers)
+                .sort((a, b) => a - b)
+                .map(num => `<span style="background: #007bff; color: white; padding: 2px 6px; margin: 2px; border-radius: 3px;">${num.toString().padStart(3, '0')}</span>`)
+                .join('');
+                
+            // Habilitar/desabilitar botão
+            document.getElementById('buy-button').disabled = count === 0;
+        }
+        
+        // Teste da função de compra
+        async function testarCompra() {
+            log('🛒 Iniciando teste de compra...');
+            
+            if (rifaState.selectedNumbers.size === 0) {
+                log('⚠️ Nenhum número selecionado', 'error');
+                alert('Selecione pelo menos um número!');
+                return;
+            }
+            
+            log(`📋 Números selecionados: ${Array.from(rifaState.selectedNumbers).join(', ')}`);
+            
+            // Verificar se FirebaseDB está disponível
+            if (typeof window.FirebaseDB === 'undefined') {
+                log('❌ FirebaseDB não disponível', 'error');
+                alert('Firebase não está carregado. Verifique a configuração.');
+                return;
+            }
+            
+            try {
+                // Teste de autenticação
+                log('🔐 Testando autenticação...');
+                const user = await window.FirebaseDB.initAuth();
+                log(`✅ Autenticado: ${user.uid.substring(0, 8)}...`, 'success');
+                
+                // Simular dados de compra
+                const purchaseData = {
+                    name: 'Teste User',
+                    phone: '(11) 99999-9999',
+                    paymentMethod: 'pix',
+                    numbers: Array.from(rifaState.selectedNumbers),
+                    totalAmount: rifaState.selectedNumbers.size * TICKET_PRICE
+                };
+                
+                log('💾 Salvando compra de teste...');
+                log(`📊 Dados: ${JSON.stringify(purchaseData, null, 2)}`);
+                
+                const result = await window.FirebaseDB.savePurchase(purchaseData);
+                
+                if (result.success) {
+                    log(`✅ Compra salva com sucesso! ID: ${result.id}`, 'success');
+                    alert(`Compra de teste salva com sucesso!\\nID: ${result.id}\\nVerifique o console Firebase.`);
+                } else {
+                    log(`❌ Erro ao salvar: ${result.error}`, 'error');
+                    alert(`Erro ao salvar: ${result.error}`);
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`, 'error');
+                alert(`Erro: ${error.message}`);
+                console.error('Erro completo:', error);
+            }
+        }
+        
+        // Verificar Firebase
+        function verificarFirebase() {
+            log('🔥 Verificando estado do Firebase...');
+            
+            // Verificar variáveis globais
+            const checks = [
+                { name: 'firebase', obj: window.firebase },
+                { name: 'FirebaseDB', obj: window.FirebaseDB },
+                { name: 'firebase.firestore', obj: window.firebase?.firestore },
+                { name: 'firebase.auth', obj: window.firebase?.auth }
+            ];
+            
+            checks.forEach(check => {
+                if (check.obj) {
+                    log(`✅ ${check.name} disponível`, 'success');
+                } else {
+                    log(`❌ ${check.name} não encontrado`, 'error');
+                }
+            });
+            
+            // Verificar se app foi inicializado
+            if (window.firebase && window.firebase.apps && window.firebase.apps.length > 0) {
+                log(`✅ Firebase app inicializado: ${window.firebase.apps[0].name}`, 'success');
+            } else {
+                log('❌ Firebase app não inicializado', 'error');
+            }
+        }
+        
+        // Testar função original openPurchaseModal
+        function testarFuncaoOriginal() {
+            log('🧪 Testando função original...');
+            
+            if (typeof openPurchaseModal === 'function') {
+                log('✅ Função openPurchaseModal encontrada', 'success');
+                try {
+                    openPurchaseModal();
+                    log('✅ Função executada sem erro', 'success');
+                } catch (error) {
+                    log(`❌ Erro ao executar: ${error.message}`, 'error');
+                }
+            } else {
+                log('❌ Função openPurchaseModal não encontrada', 'error');
+                log('ℹ️ Isso pode indicar que script.js não carregou ou tem erro', 'info');
+            }
+        }
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', function(event) {
+            log('🎉 Firebase está pronto!', 'success');
+            updateStatus('✅ Firebase carregado e funcionando', 'success');
+            rifaState.firebaseReady = true;
+        });
+        
+        // Inicializar quando página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página carregada');
+            generateTestNumbers();
+            
+            // Verificar Firebase após um tempo
+            setTimeout(() => {
+                verificarFirebase();
+                
+                if (!rifaState.firebaseReady) {
+                    updateStatus('⚠️ Firebase ainda não está pronto', 'error');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

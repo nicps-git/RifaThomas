@@ -3,12 +3,12 @@
 
 // Configuração do Firebase com API Key correta
 const firebaseConfig = {
-  apiKey: "AIzaSyDtB1YfeOLWm6_xH1pI8mXJzO-IxIC4vHc",
-  authDomain: "rifa-cha-thomas.firebaseapp.com",
-  projectId: "rifa-cha-thomas",
-  storageBucket: "rifa-cha-thomas.firebasestorage.app",
-  messagingSenderId: "761618695276",
-  appId: "1:761618695276:web:bf72f84cbbf5026fa74449"
+  apiKey: "AIzaSyDrTY8pnDXwDPnWkTGYVxpKTxXy8p8zAmo",
+  authDomain: "raffle-thomas.firebaseapp.com",
+  projectId: "raffle-thomas",
+  storageBucket: "raffle-thomas.firebasestorage.app",
+  messagingSenderId: "159264133906",
+  appId: "1:159264133906:web:4c02a04e29e5b0a896fe09"
 };
 
 console.log('🔄 Carregando Firebase...');

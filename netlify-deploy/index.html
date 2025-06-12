@@ -268,9 +268,14 @@
         </div>
     </footer>
 
+    <!-- Firebase v9 compat - CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
     <!-- Carregar Firebase primeiro -->
-    <script type="module" src="firebase-config-module.js"></script>
+    <script src="firebase-config.js"></script>
     <!-- Depois carregar o script principal -->
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

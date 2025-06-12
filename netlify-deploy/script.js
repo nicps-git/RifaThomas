@@ -27,18 +27,35 @@ let rifaState = {
 
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', function() {
-    // Aguardar Firebase estar disponível
-    if (typeof FirebaseDB !== 'undefined') {
-        initializeWithFirebase();
-    } else {
-        // Fallback para localStorage se Firebase não estiver disponível
-        initializeRifa();
-    }
+    console.log('🚀 DOM carregado, iniciando aplicação...');
     
+    // Configurar eventos e UI básica primeiro
     setupEventListeners();
     startCountdown();
     generateNumbers();
     updateStatistics();
+    
+    // Aguardar Firebase estar pronto
+    if (typeof window.FirebaseDB !== 'undefined') {
+        console.log('✅ FirebaseDB já disponível');
+        initializeWithFirebase();
+    } else {
+        console.log('⏳ Aguardando Firebase estar pronto...');
+        
+        // Escutar evento firebaseReady
+        window.addEventListener('firebaseReady', function(event) {
+            console.log('🎉 Firebase está pronto, inicializando...');
+            initializeWithFirebase();
+        });
+        
+        // Fallback após timeout
+        setTimeout(() => {
+            if (!rifaState.firebaseReady) {
+                console.log('⚠️ Timeout do Firebase, usando fallback localStorage');
+                initializeRifa();
+            }
+        }, 5000);
+    }
 });
 
 // Inicializar com Firebase
@@ -47,13 +64,13 @@ async function initializeWithFirebase() {
         console.log('🔄 Inicializando Firebase...');
         
         // Verificar se FirebaseDB está disponível
-        if (typeof FirebaseDB === 'undefined') {
+        if (typeof window.FirebaseDB === 'undefined') {
             throw new Error('FirebaseDB não carregado');
         }
         
         console.log('🔐 Inicializando autenticação anônima...');
         // Inicializar autenticação anônima
-        const user = await FirebaseDB.initAuth();
+        const user = await window.FirebaseDB.initAuth();
         console.log('👤 Usuário autenticado:', user?.uid);
         
         rifaState.firebaseReady = true;
@@ -64,7 +81,7 @@ async function initializeWithFirebase() {
         
         // Escutar mudanças em tempo real
         console.log('🔄 Configurando listener em tempo real...');
-        rifaState.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
+        rifaState.unsubscribe = window.FirebaseDB.listenToChanges('purchases', (purchases) => {
             console.log('📥 Atualização em tempo real:', purchases.length, 'compras');
             updateSoldNumbersFromPurchases(purchases);
             updateStatistics();
@@ -83,7 +100,7 @@ async function initializeWithFirebase() {
 async function loadSoldNumbersFromFirebase() {
     try {
         console.log('📊 Buscando números vendidos no Firebase...');
-        const result = await FirebaseDB.getSoldNumbers();
+        const result = await window.FirebaseDB.loadPurchases();
         console.log('📥 Resultado da busca:', result);
         
         if (result.success) {
@@ -404,14 +421,14 @@ async function handlePurchase(e) {
     
     try {
         // Verificar se Firebase está inicializado
-        if (typeof FirebaseDB === 'undefined') {
+        if (typeof window.FirebaseDB === 'undefined') {
             throw new Error('FirebaseDB não está disponível');
         }
         
         // Salvar no Firebase se disponível, senão localStorage
         if (rifaState.firebaseReady) {
             console.log('💾 Salvando no Firebase...');
-            const result = await FirebaseDB.savePurchase(purchaseData);
+            const result = await window.FirebaseDB.savePurchase(purchaseData);
             
             console.log('📤 Resultado do Firebase:', result);
             
