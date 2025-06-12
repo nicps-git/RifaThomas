@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Firebase - Diagnóstico</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        
+        button:hover { background: #0056b3; }
+        .success-btn { background: #28a745; }
+        .warning-btn { background: #ffc107; color: black; }
+        .danger-btn { background: #dc3545; }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .data-box {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 Teste Firebase - Diagnóstico de Conexão</h1>
+    
+    <div id="status" class="status">Iniciando testes...</div>
+    
+    <div class="section">
+        <h2>📋 1. Teste de Carregamento do Firebase</h2>
+        <button onclick="testFirebaseLoad()" class="success-btn">🔄 Testar Carregamento</button>
+        <button onclick="clearLog()" class="warning-btn">🧹 Limpar Log</button>
+        
+        <div id="firebase-log" class="log">Aguardando teste...</div>
+    </div>
+
+    <div class="section">
+        <h2>🔐 2. Teste de Autenticação</h2>
+        <button onclick="testAuth()" class="success-btn">🔑 Testar Autenticação</button>
+        
+        <div id="auth-status" class="data-box">Status da autenticação aparecerá aqui...</div>
+    </div>
+
+    <div class="section">
+        <h2>📊 3. Teste de Leitura de Dados</h2>
+        <button onclick="testReadData()" class="success-btn">📖 Ler Compras do Firebase</button>
+        <button onclick="testSoldNumbers()" class="success-btn">🔢 Ler Números Vendidos</button>
+        
+        <div id="data-status" class="data-box">Dados do Firebase aparecerão aqui...</div>
+    </div>
+
+    <div class="section">
+        <h2>✍️ 4. Teste de Escrita de Dados</h2>
+        <button onclick="testWriteData()" class="warning-btn">📝 Criar Compra de Teste</button>
+        <button onclick="testUpdateData()" class="warning-btn">🔄 Atualizar Status</button>
+        
+        <div id="write-status" class="data-box">Status das operações de escrita...</div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 5. Comparação localStorage vs Firebase</h2>
+        <button onclick="compareData()" class="success-btn">⚖️ Comparar Dados</button>
+        
+        <div id="comparison" class="data-box">Comparação aparecerá aqui...</div>
+    </div>
+
+    <!-- Carregar Firebase -->
+    <script type="module" src="firebase-config.js"></script>
+    
+    <script>
+        let testResults = {
+            firebaseLoaded: false,
+            authenticated: false,
+            canRead: false,
+            canWrite: false,
+            lastTestPurchaseId: null
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('firebase-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            
+            logDiv.textContent += `[${timestamp}] ${emoji} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(`${emoji} ${message}`);
+            
+            // Atualizar status geral
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const statusDiv = document.getElementById('status');
+            let statusText = '';
+            let statusClass = '';
+            
+            if (testResults.firebaseLoaded && testResults.authenticated && testResults.canRead) {
+                statusText = '✅ Firebase funcionando corretamente!';
+                statusClass = 'success';
+            } else if (testResults.firebaseLoaded) {
+                statusText = '⚠️ Firebase carregado, mas com problemas de conexão';
+                statusClass = 'warning';
+            } else {
+                statusText = '❌ Firebase não carregado corretamente';
+                statusClass = 'error';
+            }
+            
+            statusDiv.textContent = statusText;
+            statusDiv.className = `status ${statusClass}`;
+        }
+
+        function clearLog() {
+            document.getElementById('firebase-log').textContent = '';
+            log('Log limpo', 'info');
+        }
+
+        async function testFirebaseLoad() {
+            log('🔄 Testando carregamento do Firebase...', 'info');
+            
+            // Aguardar um pouco para Firebase carregar
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            if (typeof window.FirebaseDB !== 'undefined') {
+                log('✅ Firebase carregado com sucesso!', 'success');
+                log(`🔧 Funções disponíveis: ${Object.keys(window.FirebaseDB).join(', ')}`, 'info');
+                testResults.firebaseLoaded = true;
+            } else {
+                log('❌ Firebase não foi carregado!', 'error');
+                log('🔍 Verificando se o script foi incluído...', 'info');
+                
+                const scripts = Array.from(document.scripts);
+                const firebaseScript = scripts.find(s => s.src.includes('firebase-config.js'));
+                
+                if (firebaseScript) {
+                    log('✅ Script firebase-config.js encontrado', 'info');
+                    log(`📍 Tipo: ${firebaseScript.type || 'text/javascript'}`, 'info');
+                } else {
+                    log('❌ Script firebase-config.js não encontrado!', 'error');
+                }
+                
+                testResults.firebaseLoaded = false;
+            }
+        }
+
+        async function testAuth() {
+            if (!testResults.firebaseLoaded) {
+                log('❌ Firebase não carregado. Execute primeiro o teste de carregamento.', 'error');
+                return;
+            }
+
+            log('🔑 Testando autenticação...', 'info');
+            
+            try {
+                const user = await window.FirebaseDB.initAuth();
+                log('✅ Autenticação bem-sucedida!', 'success');
+                log(`👤 Usuário: ${user.uid}`, 'info');
+                
+                document.getElementById('auth-status').textContent = JSON.stringify({
+                    uid: user.uid,
+                    isAnonymous: user.isAnonymous,
+                    authenticated: true
+                }, null, 2);
+                
+                testResults.authenticated = true;
+                
+            } catch (error) {
+                log(`❌ Erro na autenticação: ${error.message}`, 'error');
+                document.getElementById('auth-status').textContent = `Erro: ${error.message}`;
+                testResults.authenticated = false;
+            }
+        }
+
+        async function testReadData() {
+            if (!testResults.authenticated) {
+                log('❌ Não autenticado. Execute primeiro o teste de autenticação.', 'error');
+                return;
+            }
+
+            log('📖 Testando leitura de dados...', 'info');
+            
+            try {
+                const result = await window.FirebaseDB.getPurchases();
+                
+                if (result.success) {
+                    log(`✅ Leitura bem-sucedida! ${result.data.length} compras encontradas`, 'success');
+                    
+                    document.getElementById('data-status').textContent = 
+                        `Compras encontradas: ${result.data.length}\n\n` +
+                        JSON.stringify(result.data, null, 2);
+                    
+                    testResults.canRead = true;
+                    
+                } else {
+                    log(`❌ Erro na leitura: ${result.error}`, 'error');
+                    document.getElementById('data-status').textContent = `Erro: ${result.error}`;
+                    testResults.canRead = false;
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na leitura: ${error.message}`, 'error');
+                document.getElementById('data-status').textContent = `Erro: ${error.message}`;
+                testResults.canRead = false;
+            }
+        }
+
+        async function testSoldNumbers() {
+            if (!testResults.authenticated) {
+                log('❌ Não autenticado. Execute primeiro o teste de autenticação.', 'error');
+                return;
+            }
+
+            log('🔢 Testando busca de números vendidos...', 'info');
+            
+            try {
+                const result = await window.FirebaseDB.getSoldNumbers();
+                
+                if (result.success) {
+                    log(`✅ Números vendidos obtidos! ${result.data.length} números`, 'success');
+                    log(`🔢 Números: [${result.data.sort((a,b) => a-b).join(', ')}]`, 'info');
+                    
+                    const currentData = document.getElementById('data-status').textContent;
+                    document.getElementById('data-status').textContent = 
+                        currentData + `\n\nNúmeros vendidos (${result.data.length}): [${result.data.join(', ')}]`;
+                    
+                } else {
+                    log(`❌ Erro ao obter números: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao obter números: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWriteData() {
+            if (!testResults.authenticated) {
+                log('❌ Não autenticado. Execute primeiro o teste de autenticação.', 'error');
+                return;
+            }
+
+            log('📝 Testando escrita de dados...', 'info');
+            
+            const testPurchase = {
+                buyerName: 'Teste Firebase',
+                buyerPhone: '(11) 99999-9999',
+                numbers: [Math.floor(Math.random() * 150) + 1],
+                totalAmount: 40.00,
+                paymentMethod: 'pix',
+                status: 'confirmed',
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const result = await window.FirebaseDB.savePurchase(testPurchase);
+                
+                if (result.success) {
+                    log(`✅ Escrita bem-sucedida! ID: ${result.id}`, 'success');
+                    log(`🔢 Número testado: ${testPurchase.numbers[0]}`, 'info');
+                    
+                    testResults.lastTestPurchaseId = result.id;
+                    testResults.canWrite = true;
+                    
+                    document.getElementById('write-status').textContent = 
+                        `Compra de teste criada:\nID: ${result.id}\nNúmero: ${testPurchase.numbers[0]}\nStatus: confirmed`;
+                    
+                } else {
+                    log(`❌ Erro na escrita: ${result.error}`, 'error');
+                    document.getElementById('write-status').textContent = `Erro: ${result.error}`;
+                    testResults.canWrite = false;
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na escrita: ${error.message}`, 'error');
+                document.getElementById('write-status').textContent = `Erro: ${error.message}`;
+                testResults.canWrite = false;
+            }
+        }
+
+        async function testUpdateData() {
+            if (!testResults.lastTestPurchaseId) {
+                log('❌ Nenhuma compra de teste criada. Execute primeiro o teste de escrita.', 'error');
+                return;
+            }
+
+            log('🔄 Testando atualização de dados...', 'info');
+            
+            try {
+                const result = await window.FirebaseDB.updatePurchaseStatus(
+                    testResults.lastTestPurchaseId, 
+                    'pending_donation',
+                    { updatedBy: 'teste-automatico' }
+                );
+                
+                if (result.success) {
+                    log('✅ Atualização bem-sucedida!', 'success');
+                    
+                    const currentStatus = document.getElementById('write-status').textContent;
+                    document.getElementById('write-status').textContent = 
+                        currentStatus + `\n\nStatus atualizado para: pending_donation`;
+                    
+                } else {
+                    log(`❌ Erro na atualização: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na atualização: ${error.message}`, 'error');
+            }
+        }
+
+        async function compareData() {
+            log('⚖️ Comparando dados localStorage vs Firebase...', 'info');
+            
+            // Dados do localStorage
+            const localPurchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const localSold = new Set();
+            localPurchases.forEach(p => {
+                if (p.status === 'confirmed' && p.numbers) {
+                    p.numbers.forEach(n => localSold.add(n));
+                }
+            });
+            
+            // Dados do Firebase
+            let firebaseSold = new Set();
+            if (testResults.authenticated) {
+                try {
+                    const result = await window.FirebaseDB.getSoldNumbers();
+                    if (result.success) {
+                        firebaseSold = new Set(result.data);
+                    }
+                } catch (error) {
+                    log(`❌ Erro ao ler Firebase: ${error.message}`, 'error');
+                }
+            }
+            
+            const comparison = {
+                localStorage: {
+                    totalPurchases: localPurchases.length,
+                    soldNumbers: Array.from(localSold).sort((a,b) => a-b),
+                    count: localSold.size
+                },
+                firebase: {
+                    soldNumbers: Array.from(firebaseSold).sort((a,b) => a-b),
+                    count: firebaseSold.size
+                },
+                differences: {
+                    onlyInLocal: Array.from(localSold).filter(n => !firebaseSold.has(n)),
+                    onlyInFirebase: Array.from(firebaseSold).filter(n => !localSold.has(n))
+                }
+            };
+            
+            document.getElementById('comparison').textContent = JSON.stringify(comparison, null, 2);
+            
+            if (comparison.differences.onlyInLocal.length === 0 && comparison.differences.onlyInFirebase.length === 0) {
+                log('✅ Dados sincronizados! localStorage e Firebase têm os mesmos números.', 'success');
+            } else {
+                log('⚠️ Dados diferentes entre localStorage e Firebase!', 'warning');
+                log(`📦 Só no localStorage: [${comparison.differences.onlyInLocal.join(', ')}]`, 'warning');
+                log(`🔥 Só no Firebase: [${comparison.differences.onlyInFirebase.join(', ')}]`, 'warning');
+            }
+        }
+
+        // Inicialização automática
+        window.addEventListener('load', () => {
+            log('🚀 Página de teste carregada', 'info');
+            log('▶️ Execute os testes na ordem para diagnosticar problemas', 'info');
+            
+            // Teste automático após 2 segundos
+            setTimeout(() => {
+                log('🔄 Iniciando teste automático...', 'info');
+                testFirebaseLoad();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

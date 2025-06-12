@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Teste Final - Confirmação Funcionando</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { max-width: 800px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; backdrop-filter: blur(10px); }
+        .step { background: rgba(255,255,255,0.2); padding: 20px; margin: 15px 0; border-radius: 10px; border-left: 4px solid #00ff88; }
+        .step h3 { margin-top: 0; color: #00ff88; }
+        button { background: linear-gradient(45deg, #00ff88, #00cc6a); color: white; padding: 15px 30px; border: none; border-radius: 25px; cursor: pointer; margin: 10px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,255,136,0.3); transition: all 0.3s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,255,136,0.4); }
+        .red { background: linear-gradient(45deg, #ff4757, #c44569); box-shadow: 0 4px 15px rgba(255,71,87,0.3); }
+        .red:hover { box-shadow: 0 6px 20px rgba(255,71,87,0.4); }
+        .status { padding: 15px; margin: 10px 0; border-radius: 10px; }
+        .success { background: rgba(0,255,136,0.2); border: 1px solid #00ff88; }
+        .error { background: rgba(255,71,87,0.2); border: 1px solid #ff4757; }
+        .info { background: rgba(116,185,255,0.2); border: 1px solid #74b9ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Teste Final - Confirmação de Pendentes</h1>
+        <p>Vamos testar se a correção funcionou de verdade!</p>
+        
+        <div class="step">
+            <h3>📋 Passo 1: Preparar Dados</h3>
+            <p>Primeiro, vamos criar dados de teste frescos com doações pendentes.</p>
+            <button onclick="prepareTestData()">🆕 Criar Dados de Teste</button>
+            <div id="step1-status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>🔗 Passo 2: Abrir Admin</h3>
+            <p>Abrir o admin em uma nova aba para teste manual.</p>
+            <button onclick="openAdmin()">🚀 Abrir Admin</button>
+            <div id="step2-status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>✅ Passo 3: Teste Manual</h3>
+            <p>Na página admin que abriu:</p>
+            <ol>
+                <li>Clique no filtro <strong>"🍼 Doações Pendentes"</strong></li>
+                <li>Você deve ver as doações pendentes listadas</li>
+                <li>Clique no botão <strong>"✅ Confirmar"</strong> de uma doação</li>
+                <li>Confirme no popup</li>
+                <li>A doação deve sair da lista de pendentes!</li>
+            </ol>
+            <button onclick="checkResults()">🔍 Verificar Resultados</button>
+            <div id="step3-status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>🧹 Limpeza</h3>
+            <p>Limpar dados de teste quando terminar.</p>
+            <button onclick="cleanUp()" class="red">🗑️ Limpar Dados</button>
+            <div id="cleanup-status"></div>
+        </div>
+        
+        <div id="console-output" style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin-top: 20px; font-family: monospace; font-size: 14px; max-height: 400px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('console-output');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'success' ? '#00ff88' : type === 'error' ? '#ff4757' : '#74b9ff';
+            
+            output.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${time}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function updateStatus(stepId, message, type = 'info') {
+            const element = document.getElementById(stepId);
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            element.innerHTML = `<div class="status ${className}">${message}</div>`;
+        }
+        
+        function prepareTestData() {
+            log('🆕 Criando dados de teste para confirmação...', 'info');
+            
+            try {
+                const testData = [
+                    {
+                        id: 'pending_test_001',
+                        name: '👤 Maria Silva (TESTE PENDENTE)',
+                        buyerName: 'Maria Silva',
+                        phone: '(11) 99999-1111',
+                        buyerPhone: '(11) 99999-1111',
+                        numbers: [1, 2, 3],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date().toISOString(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        id: 'pending_test_002',
+                        name: '👤 João Santos (TESTE PENDENTE)',
+                        buyerName: 'João Santos',
+                        phone: '(11) 99999-2222',
+                        buyerPhone: '(11) 99999-2222',
+                        numbers: [4, 5, 6],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date().toISOString(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        id: 'confirmed_test_001',
+                        name: '👤 Ana Costa (JÁ CONFIRMADO)',
+                        buyerName: 'Ana Costa',
+                        phone: '(11) 99999-3333',
+                        buyerPhone: '(11) 99999-3333',
+                        numbers: [7, 8, 9],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date().toISOString(),
+                        date: new Date().toISOString()
+                    }
+                ];
+                
+                localStorage.setItem('purchases', JSON.stringify(testData));
+                
+                log('✅ Dados de teste criados com sucesso!', 'success');
+                log(`📊 Total: ${testData.length} compras`, 'info');
+                log(`🍼 Pendentes: 2 doações`, 'info');
+                log(`✅ Confirmados: 1 compra`, 'info');
+                
+                updateStatus('step1-status', '✅ Dados de teste criados com sucesso! 2 doações pendentes prontas para teste.', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados: ${error.message}`, 'error');
+                updateStatus('step1-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function openAdmin() {
+            log('🚀 Abrindo admin em nova aba...', 'info');
+            
+            const adminWindow = window.open('admin.html', '_blank', 'width=1200,height=800');
+            
+            if (adminWindow) {
+                log('✅ Admin aberto em nova aba!', 'success');
+                updateStatus('step2-status', '✅ Admin aberto! Agora teste manualmente na nova aba.', 'success');
+                
+                log('📝 INSTRUÇÕES PARA TESTE:', 'info');
+                log('1. Aguarde o admin carregar completamente', 'info');
+                log('2. Clique no filtro "🍼 Doações Pendentes"', 'info');
+                log('3. Deve mostrar 2 doações pendentes', 'info');
+                log('4. Clique "✅ Confirmar" em uma delas', 'info');
+                log('5. Confirme no popup', 'info');
+                log('6. A doação deve sair da lista!', 'info');
+                
+            } else {
+                log('❌ Falha ao abrir admin - popup bloqueado?', 'error');
+                updateStatus('step2-status', '❌ Falha ao abrir admin. Verifique se popups estão habilitados.', 'error');
+            }
+        }
+        
+        function checkResults() {
+            log('🔍 Verificando resultados do teste...', 'info');
+            
+            try {
+                const purchases = localStorage.getItem('purchases');
+                if (!purchases) {
+                    log('❌ Nenhum dado encontrado', 'error');
+                    updateStatus('step3-status', '❌ Nenhum dado encontrado. Execute o Passo 1 primeiro.', 'error');
+                    return;
+                }
+                
+                const data = JSON.parse(purchases);
+                
+                const stats = {
+                    total: data.length,
+                    pending: data.filter(p => p.status === 'pending_donation').length,
+                    confirmed: data.filter(p => p.status === 'confirmed').length,
+                    rejected: data.filter(p => p.status === 'rejected').length
+                };
+                
+                log('📊 Resultados atuais:', 'info');
+                log(`📋 Total de compras: ${stats.total}`, 'info');
+                log(`🍼 Pendentes: ${stats.pending}`, 'info');
+                log(`✅ Confirmados: ${stats.confirmed}`, 'info');
+                log(`❌ Rejeitados: ${stats.rejected}`, 'info');
+                
+                // Verificar se houve confirmações
+                const confirmedItems = data.filter(p => p.status === 'confirmed' && p.confirmedAt);
+                
+                if (confirmedItems.length > 1) { // Original tinha 1, se tem mais é porque confirmou
+                    log('🎉 SUCESSO! Detectadas confirmações feitas pelo admin!', 'success');
+                    updateStatus('step3-status', '🎉 TESTE PASSOU! Confirmações funcionando corretamente!', 'success');
+                    
+                    confirmedItems.forEach(item => {
+                        if (item.confirmedAt) {
+                            log(`✅ ${item.name} - confirmado em ${new Date(item.confirmedAt).toLocaleString()}`, 'success');
+                        }
+                    });
+                    
+                } else if (stats.pending === 2) {
+                    log('⚠️ Ainda há 2 pendentes. Teste ainda não foi executado.', 'info');
+                    updateStatus('step3-status', '⚠️ Ainda há 2 pendentes. Execute o teste manual no admin.', 'info');
+                    
+                } else {
+                    log('✅ Mudanças detectadas nos dados!', 'success');
+                    updateStatus('step3-status', '✅ Mudanças detectadas! Verifique os logs.', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar: ${error.message}`, 'error');
+                updateStatus('step3-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function cleanUp() {
+            if (!confirm('🗑️ Limpar todos os dados de teste?')) {
+                return;
+            }
+            
+            try {
+                localStorage.clear();
+                log('✅ Dados limpos com sucesso!', 'success');
+                updateStatus('cleanup-status', '✅ Dados de teste removidos.', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao limpar: ${error.message}`, 'error');
+                updateStatus('cleanup-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Verificar dados existentes ao carregar
+        setTimeout(() => {
+            const purchases = localStorage.getItem('purchases');
+            if (purchases) {
+                const data = JSON.parse(purchases);
+                log(`📋 Dados existentes encontrados: ${data.length} compras`, 'info');
+            } else {
+                log('📭 Nenhum dado existente. Execute o Passo 1 para começar.', 'info');
+            }
+        }, 500);
+    </script>
+</body>
+</html>

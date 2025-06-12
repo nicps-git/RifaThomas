@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Confirmações - Admin RifaThomas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-info { background: #17a2b8; color: white; }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .status-card {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .status-card.ready {
+            background: #d4edda;
+        }
+        .status-card.error {
+            background: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Teste de Confirmações - Admin</h1>
+        <p>Esta página testa especificamente as funcionalidades de confirmação/rejeição do painel admin.</p>
+
+        <div class="test-section">
+            <h3>📊 Status do Sistema</h3>
+            <div id="system-status" class="status-card">
+                Verificando...
+            </div>
+            <button class="btn btn-info" onclick="checkSystemStatus()">Verificar Status</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Carregar Admin</h3>
+            <p>Primeiro, carregue o sistema admin no contexto desta página:</p>
+            <button class="btn btn-primary" onclick="loadAdminSystem()">Carregar Admin</button>
+            <button class="btn btn-info" onclick="openAdminInNewTab()">Abrir Admin (Nova Aba)</button>
+            <div id="admin-load-status" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Criar Dados de Teste</h3>
+            <p>Crie dados de teste para verificar as confirmações:</p>
+            <button class="btn btn-warning" onclick="createTestPurchase()">Criar Compra Teste</button>
+            <button class="btn btn-info" onclick="listPurchases()">Listar Compras</button>
+            <div id="test-data-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ Testar Confirmações</h3>
+            <p>Teste as funções de confirmação e rejeição:</p>
+            <button class="btn btn-success" onclick="testConfirmFunction()">Testar Confirmação</button>
+            <button class="btn btn-danger" onclick="testRejectFunction()">Testar Rejeição</button>
+            <button class="btn btn-info" onclick="testTableDisplay()">Testar Exibição Tabela</button>
+            <div id="confirmation-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Debug Avançado</h3>
+            <p>Ferramentas de debug para identificar problemas:</p>
+            <button class="btn btn-info" onclick="debugSystemState()">Debug Estado</button>
+            <button class="btn btn-warning" onclick="forceFunctionTest()">Forçar Teste Funções</button>
+            <button class="btn btn-primary" onclick="checkDOMElements()">Verificar DOM</button>
+            <div id="debug-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Console Log</h3>
+            <p>Logs em tempo real (abra o console do navegador também):</p>
+            <div id="console-log" class="result" style="max-height: 300px; overflow-y: auto;"></div>
+            <button class="btn btn-warning" onclick="clearConsole()">Limpar Console</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let testState = {
+            adminLoaded: false,
+            firebaseReady: false,
+            testData: []
+        };
+
+        // Log function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const consoleDiv = document.getElementById('console-log');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            consoleDiv.textContent += logEntry;
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            
+            const colors = {
+                info: 'color: #007bff;',
+                success: 'color: #28a745;',
+                error: 'color: #dc3545;',
+                warning: 'color: #ffc107;'
+            };
+            
+            console.log(`%c[TEST ${type.toUpperCase()}] ${message}`, colors[type] || colors.info);
+        }
+
+        function updateResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = `result ${type}`;
+        }
+
+        async function checkSystemStatus() {
+            log('🔍 Verificando status do sistema...', 'info');
+            
+            const statusDiv = document.getElementById('system-status');
+            let status = '';
+            let statusClass = 'status-card';
+            
+            // Check Firebase
+            if (typeof window.FirebaseDB !== 'undefined') {
+                testState.firebaseReady = true;
+                status += '✅ Firebase carregado\n';
+                
+                try {
+                    const user = await window.FirebaseDB.getCurrentAdmin();
+                    if (user.success) {
+                        status += `✅ Admin logado: ${user.user.email}\n`;
+                        statusClass += ' ready';
+                    } else {
+                        status += '⚠️ Firebase OK mas não logado como admin\n';
+                        statusClass += ' error';
+                    }
+                } catch (error) {
+                    status += `❌ Erro Firebase: ${error.message}\n`;
+                    statusClass += ' error';
+                }
+            } else {
+                status += '❌ Firebase não carregado\n';
+                statusClass += ' error';
+            }
+            
+            // Check Admin functions
+            const adminFunctions = ['confirmDonation', 'rejectDonation', 'loadParticipants'];
+            adminFunctions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    status += `✅ ${funcName}() disponível\n`;
+                } else {
+                    status += `❌ ${funcName}() não encontrada\n`;
+                    statusClass += ' error';
+                }
+            });
+            
+            statusDiv.textContent = status;
+            statusDiv.className = statusClass;
+            
+            log('Status verificado', 'success');
+        }
+
+        function loadAdminSystem() {
+            log('🔗 Carregando sistema admin...', 'info');
+            
+            // Create iframe to load admin
+            const iframe = document.createElement('iframe');
+            iframe.src = 'admin.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = () => {
+                log('📱 Admin iframe carregado', 'success');
+                
+                // Try to access admin functions
+                setTimeout(() => {
+                    try {
+                        const adminWindow = iframe.contentWindow;
+                        if (adminWindow.confirmDonation) {
+                            testState.adminLoaded = true;
+                            updateResult('admin-load-status', 'Admin carregado com sucesso!', 'success');
+                            log('✅ Funções admin acessíveis', 'success');
+                        } else {
+                            updateResult('admin-load-status', 'Admin carregado mas funções não acessíveis', 'error');
+                            log('⚠️ Funções admin não acessíveis (cross-origin)', 'warning');
+                        }
+                    } catch (error) {
+                        updateResult('admin-load-status', `Erro ao acessar admin: ${error.message}`, 'error');
+                        log(`❌ Erro: ${error.message}`, 'error');
+                    }
+                }, 2000);
+            };
+        }
+
+        function openAdminInNewTab() {
+            log('🔗 Abrindo admin em nova aba...', 'info');
+            window.open('admin.html', '_blank');
+            updateResult('admin-load-status', 'Admin aberto em nova aba - verifique o console da outra aba', 'info');
+        }
+
+        async function createTestPurchase() {
+            log('🧪 Criando compra de teste...', 'info');
+            
+            if (!testState.firebaseReady) {
+                updateResult('test-data-result', 'Firebase não está pronto', 'error');
+                return;
+            }
+            
+            try {
+                const testPurchase = {
+                    buyerName: 'Teste Confirmação ' + Date.now(),
+                    buyerPhone: '(11) 99999-9999',
+                    numbers: [Math.floor(Math.random() * 150) + 1],
+                    totalAmount: 40.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                };
+                
+                const result = await window.FirebaseDB.savePurchase(testPurchase);
+                
+                if (result.success) {
+                    testState.testData.push(result.id);
+                    updateResult('test-data-result', `Compra criada: ${result.id}`, 'success');
+                    log(`✅ Compra criada: ${result.id}`, 'success');
+                } else {
+                    updateResult('test-data-result', `Erro: ${result.error}`, 'error');
+                    log(`❌ Erro: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateResult('test-data-result', `Erro: ${error.message}`, 'error');
+                log(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        async function listPurchases() {
+            log('📊 Listando compras...', 'info');
+            
+            if (!testState.firebaseReady) {
+                updateResult('test-data-result', 'Firebase não está pronto', 'error');
+                return;
+            }
+            
+            try {
+                const result = await window.FirebaseDB.getPurchases();
+                
+                if (result.success) {
+                    const purchases = result.data;
+                    const pendingDonations = purchases.filter(p => p.status === 'pending_donation');
+                    
+                    let listText = `Total: ${purchases.length} compras\n`;
+                    listText += `Doações pendentes: ${pendingDonations.length}\n\n`;
+                    
+                    pendingDonations.forEach(p => {
+                        listText += `ID: ${p.id}\n`;
+                        listText += `Nome: ${p.buyerName || p.name}\n`;
+                        listText += `Status: ${p.status}\n\n`;
+                    });
+                    
+                    updateResult('test-data-result', listText, 'success');
+                    log(`✅ ${purchases.length} compras carregadas`, 'success');
+                } else {
+                    updateResult('test-data-result', `Erro: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateResult('test-data-result', `Erro: ${error.message}`, 'error');
+            }
+        }
+
+        function testConfirmFunction() {
+            log('✅ Testando função de confirmação...', 'info');
+            
+            if (typeof confirmDonation === 'function') {
+                updateResult('confirmation-result', 'Função confirmDonation encontrada!', 'success');
+                log('✅ confirmDonation() disponível', 'success');
+                
+                // Simular teste sem executar
+                log('💡 Para testar: use o console e chame confirmDonation("ID_DA_COMPRA")', 'info');
+            } else {
+                updateResult('confirmation-result', 'Função confirmDonation NÃO encontrada', 'error');
+                log('❌ confirmDonation() não disponível', 'error');
+                log('💡 A função pode estar em outro contexto (iframe/outra aba)', 'warning');
+            }
+        }
+
+        function testRejectFunction() {
+            log('❌ Testando função de rejeição...', 'info');
+            
+            if (typeof rejectDonation === 'function') {
+                updateResult('confirmation-result', 'Função rejectDonation encontrada!', 'success');
+                log('✅ rejectDonation() disponível', 'success');
+            } else {
+                updateResult('confirmation-result', 'Função rejectDonation NÃO encontrada', 'error');
+                log('❌ rejectDonation() não disponível', 'error');
+            }
+        }
+
+        function testTableDisplay() {
+            log('📋 Testando exibição da tabela...', 'info');
+            
+            const tbody = document.getElementById('participants-tbody');
+            if (tbody) {
+                updateResult('confirmation-result', 'Elemento participants-tbody encontrado nesta página!', 'success');
+                log('✅ participants-tbody encontrado', 'success');
+            } else {
+                updateResult('confirmation-result', 'Elemento participants-tbody NÃO encontrado nesta página', 'error');
+                log('❌ participants-tbody não encontrado', 'error');
+                log('💡 Normal - este elemento está na página admin.html', 'info');
+            }
+        }
+
+        function debugSystemState() {
+            log('🔧 Debug do estado do sistema...', 'info');
+            
+            const debugInfo = {
+                window_FirebaseDB: typeof window.FirebaseDB,
+                window_confirmDonation: typeof window.confirmDonation,
+                window_rejectDonation: typeof window.rejectDonation,
+                window_adminData: typeof window.adminData,
+                window_debugAdmin: typeof window.debugAdmin,
+                document_readyState: document.readyState,
+                location_href: window.location.href
+            };
+            
+            updateResult('debug-result', JSON.stringify(debugInfo, null, 2), 'info');
+            log('🔍 Estado do sistema logado', 'info');
+        }
+
+        function forceFunctionTest() {
+            log('⚡ Forçando teste das funções...', 'warning');
+            
+            // Tentar executar via eval (apenas para debug)
+            try {
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    log('✅ Firebase disponível para teste', 'success');
+                } else {
+                    log('❌ Firebase não disponível', 'error');
+                }
+                
+                updateResult('debug-result', 'Teste forçado concluído - veja o console', 'info');
+            } catch (error) {
+                updateResult('debug-result', `Erro no teste forçado: ${error.message}`, 'error');
+            }
+        }
+
+        function checkDOMElements() {
+            log('🔍 Verificando elementos DOM...', 'info');
+            
+            const importantElements = [
+                'participants-tbody',
+                'total-participants',
+                'total-revenue',
+                'config-form'
+            ];
+            
+            let domCheck = 'Verificação DOM:\n';
+            importantElements.forEach(id => {
+                const element = document.getElementById(id);
+                domCheck += `${id}: ${element ? '✅ Encontrado' : '❌ Não encontrado'}\n`;
+            });
+            
+            updateResult('debug-result', domCheck, 'info');
+            log('🔍 Verificação DOM concluída', 'info');
+        }
+
+        function clearConsole() {
+            document.getElementById('console-log').textContent = '';
+            log('🧹 Console limpo', 'info');
+        }
+
+        // Auto-initialize
+        window.addEventListener('load', () => {
+            log('🚀 Página de teste carregada', 'info');
+            setTimeout(checkSystemStatus, 1000);
+        });
+
+        // Listen for Firebase ready
+        window.addEventListener('firebaseReady', () => {
+            testState.firebaseReady = true;
+            log('🔥 Firebase ready detectado', 'success');
+            checkSystemStatus();
+        });
+    </script>
+</body>
+</html>

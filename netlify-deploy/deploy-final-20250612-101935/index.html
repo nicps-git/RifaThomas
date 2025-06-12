@@ -268,14 +268,13 @@
         </div>
     </footer>
 
-    <!-- Carregar Firebase CDN primeiro (fallback) -->
+    <!-- Firebase v9 compat - CDN -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     
-    <!-- Carregar configuração Firebase otimizada -->
-    <script src="firebase-config-fixed.js"></script>
-    
+    <!-- Carregar Firebase primeiro -->
+    <script src="firebase-config.js"></script>
     <!-- Depois carregar o script principal -->
     <script src="script.js"></script>
 </body>

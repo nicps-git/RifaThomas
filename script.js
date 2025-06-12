@@ -27,13 +27,14 @@ let rifaState = {
 
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', function() {
-    // Aguardar Firebase estar disponível
-    if (typeof FirebaseDB !== 'undefined') {
-        initializeWithFirebase();
-    } else {
-        // Fallback para localStorage se Firebase não estiver disponível
-        initializeRifa();
-    }
+    console.log('🚀 Iniciando aplicação RifaThomas...');
+    
+    // Estratégia de carregamento de dados:
+    // 1. Tentar Firebase primeiro (dados em tempo real)
+    // 2. Se Firebase falhar, usar localStorage (backup local)
+    // 3. Se ambos falharem, inicializar vazio
+    
+    initializeDataSources();
     
     setupEventListeners();
     startCountdown();
@@ -41,66 +42,134 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStatistics();
 });
 
-// Inicializar com Firebase
-async function initializeWithFirebase() {
-    try {
-        // Inicializar autenticação anônima
-        await FirebaseDB.initAuth();
-        rifaState.firebaseReady = true;
+async function initializeDataSources() {
+    console.log('📊 Inicializando fontes de dados...');
+    
+    // Aguardar Firebase estar pronto
+    const firebaseTimeout = new Promise(resolve => setTimeout(() => resolve(false), 3000));
+    const firebaseReady = new Promise(resolve => {
+        if (typeof window.FirebaseDB !== 'undefined') {
+            resolve(true);
+        } else {
+            window.addEventListener('firebaseReady', () => resolve(true));
+        }
+    });
+    
+    const hasFirebase = await Promise.race([firebaseReady, firebaseTimeout]);
+    
+    if (hasFirebase && typeof window.FirebaseDB !== 'undefined') {
+        console.log('🔥 Firebase disponível, tentando conectar...');
+        const firebaseSuccess = await tryFirebaseFirst();
         
-        // Carregar números vendidos em tempo real
-        loadSoldNumbersFromFirebase();
-        
-        // Escutar mudanças em tempo real
-        rifaState.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
-            updateSoldNumbersFromPurchases(purchases);
-            updateStatistics();
-        });
-        
-        console.log('🔥 Firebase conectado com sucesso!');
-    } catch (error) {
-        console.warn('⚠️ Erro ao conectar Firebase, usando localStorage:', error);
-        rifaState.firebaseReady = false;
-        initializeRifa();
+        if (!firebaseSuccess) {
+            console.log('📦 Firebase falhou, usando localStorage...');
+            loadFromLocalStorageWithMonitoring();
+        }
+    } else {
+        console.log('📦 Firebase não disponível após timeout, usando localStorage...');
+        loadFromLocalStorageWithMonitoring();
     }
+}
+}
+
+async function tryFirebaseFirst() {
+    try {
+        console.log('🔥 Tentando conectar ao Firebase...');
+        
+        // Autenticar
+        await window.FirebaseDB.initAuth();
+        rifaState.firebaseReady = true;
+        console.log('✅ Firebase autenticado');
+        
+        // Carregar dados iniciais
+        const success = await loadSoldNumbersFromFirebase();
+        
+        if (success) {
+            // Configurar listener em tempo real
+            rifaState.unsubscribe = window.FirebaseDB.onPurchasesChange((purchases) => {
+                console.log('🔄 Dados Firebase atualizados:', purchases.length, 'compras');
+                updateSoldNumbersFromPurchases(purchases);
+                updateStatistics();
+            });
+            
+            console.log('🔥 Firebase ativo com dados em tempo real!');
+            return true;
+        } else {
+            throw new Error('Falha ao carregar dados do Firebase');
+        }
+        
+    } catch (error) {
+        console.warn('⚠️ Firebase não funcionou:', error.message);
+        rifaState.firebaseReady = false;
+        return false;
+    }
+}
+
+function loadFromLocalStorageWithMonitoring() {
+    console.log('📦 Carregando dados do localStorage...');
+    
+    // Carregar dados locais
+    loadSoldNumbersFromLocalStorage();
+    
+    // Monitorar mudanças no localStorage
+    startLocalStorageMonitoring();
+    
+    console.log('📦 localStorage ativo com monitoramento');
 }
 
 // Carregar números vendidos do Firebase
 async function loadSoldNumbersFromFirebase() {
     try {
-        const result = await FirebaseDB.getSoldNumbers();
+        console.log('🔍 Buscando números vendidos no Firebase...');
+        const result = await window.FirebaseDB.getSoldNumbers();
+        
         if (result.success) {
             rifaState.soldNumbers = new Set(result.data);
+            console.log(`✅ ${result.data.length} números vendidos carregados do Firebase:`, result.data);
             updateNumbersDisplay();
+            return true;
+        } else {
+            console.warn('⚠️ Erro ao buscar números do Firebase:', result.error);
+            return false;
         }
+        
     } catch (error) {
-        console.warn('Erro ao carregar números vendidos:', error);
+        console.warn('⚠️ Erro ao carregar números vendidos do Firebase:', error);
+        return false;
     }
 }
 
 // Atualizar números vendidos a partir das compras
 function updateSoldNumbersFromPurchases(purchases) {
+    console.log('📊 Processando compras do Firebase:', purchases.length);
     const soldNumbers = new Set();
+    const reservedNumbers = new Set();
     
     purchases.forEach(purchase => {
         if (purchase.status === 'confirmed' && purchase.numbers) {
             purchase.numbers.forEach(number => soldNumbers.add(number));
+        } else if (purchase.status === 'pending_donation' && purchase.numbers) {
+            purchase.numbers.forEach(number => reservedNumbers.add(number));
         }
     });
     
     rifaState.soldNumbers = soldNumbers;
+    rifaState.reservedNumbers = reservedNumbers;
+    
+    console.log(`🔢 Firebase: ${soldNumbers.size} vendidos, ${reservedNumbers.size} reservados`);
     updateNumbersDisplay();
 }
 
 // Inicializar configurações da rifa
 function initializeRifa() {
-    // Limpar dados antigos para garantir que todos os números estejam disponíveis
-    localStorage.removeItem('rifaData');
-    localStorage.removeItem('purchases');
+    // CORREÇÃO: NÃO remover purchases (dados do admin), apenas carregar estado atual
+    // localStorage.removeItem('rifaData'); // REMOVIDO - não apagar dados importantes
+    // localStorage.removeItem('purchases'); // REMOVIDO - não apagar compras confirmadas
     
-    // Reinicializar estado limpo
-    rifaState.soldNumbers = new Set();
-    rifaState.reservedNumbers = new Set();
+    // Carregar números vendidos das compras existentes
+    loadSoldNumbersFromLocalStorage();
+    
+    // Manter estado de seleção limpo para nova sessão
     rifaState.selectedNumbers = new Set();
     
     // Configurar informações na página
@@ -445,6 +514,87 @@ function savePurchaseData(data) {
     purchases.push(data);
     localStorage.setItem('purchases', JSON.stringify(purchases));
     console.log('💾 Compra salva no localStorage');
+}
+
+// Carregar números vendidos do localStorage (sem Firebase)
+function loadSoldNumbersFromLocalStorage() {
+    try {
+        const purchasesData = localStorage.getItem('purchases');
+        if (purchasesData) {
+            const purchases = JSON.parse(purchasesData);
+            const soldNumbers = new Set();
+            const reservedNumbers = new Set();
+            
+            purchases.forEach(purchase => {
+                if (purchase.status === 'confirmed' && purchase.numbers) {
+                    purchase.numbers.forEach(number => soldNumbers.add(number));
+                } else if (purchase.status === 'pending_donation' && purchase.numbers) {
+                    // Números com doação pendente aparecem como reservados
+                    purchase.numbers.forEach(number => reservedNumbers.add(number));
+                }
+            });
+            
+            rifaState.soldNumbers = soldNumbers;
+            rifaState.reservedNumbers = reservedNumbers;
+            
+            console.log(`📦 Carregados do localStorage: ${soldNumbers.size} vendidos, ${reservedNumbers.size} reservados`);
+            updateNumbersDisplay();
+        } else {
+            // Se não há compras, inicializar conjuntos vazios
+            rifaState.soldNumbers = new Set();
+            rifaState.reservedNumbers = new Set();
+            console.log('📦 Nenhuma compra encontrada no localStorage');
+        }
+    } catch (error) {
+        console.warn('⚠️ Erro ao carregar números do localStorage:', error);
+        rifaState.soldNumbers = new Set();
+        rifaState.reservedNumbers = new Set();
+    }
+}
+
+// Sistema de monitoramento do localStorage para sincronização em tempo real
+let lastPurchasesUpdate = null;
+let localStorageMonitorInterval = null;
+
+function startLocalStorageMonitoring() {
+    console.log('🔄 Iniciando monitoramento do localStorage...');
+    
+    function checkForUpdates() {
+        // Não monitorar se Firebase estiver ativo
+        if (rifaState.firebaseReady) {
+            console.log('📦 Parando monitoramento localStorage (Firebase ativo)');
+            if (localStorageMonitorInterval) {
+                clearInterval(localStorageMonitorInterval);
+                localStorageMonitorInterval = null;
+            }
+            return;
+        }
+        
+        try {
+            const purchasesData = localStorage.getItem('purchases');
+            if (purchasesData) {
+                const currentData = JSON.stringify(JSON.parse(purchasesData));
+                
+                if (lastPurchasesUpdate !== currentData) {
+                    console.log('🔄 Mudanças detectadas no localStorage, atualizando...');
+                    lastPurchasesUpdate = currentData;
+                    loadSoldNumbersFromLocalStorage();
+                    updateStatistics();
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ Erro no monitoramento do localStorage:', error);
+        }
+    }
+    
+    // Iniciar monitoramento apenas se Firebase não estiver ativo
+    if (!rifaState.firebaseReady) {
+        localStorageMonitorInterval = setInterval(checkForUpdates, 2000);
+        console.log('📦 Monitoramento do localStorage ativo');
+    }
+    
+    // Verificação inicial
+    checkForUpdates();
 }
 
 // Cleanup ao sair da página

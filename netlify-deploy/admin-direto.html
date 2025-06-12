@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Admin Direto - Rifa Thomas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Estilos específicos para os botões de confirmação */
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-confirm {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-confirm:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-reject:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-edit:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .participants-table th,
+        .participants-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .participants-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .participants-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .filter-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 15px;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .admin-header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        .admin-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .quick-actions {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .quick-actions h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        
+        .action-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .action-btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .action-btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .action-btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .action-btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .action-btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="admin-header">
+        <h1><i class="fas fa-shield-alt"></i> Painel Administrativo - Rifa Thomas</h1>
+        <p>Acesso direto sem verificação - Sistema de confirmação funcional</p>
+    </div>
+
+    <div class="container">
+        <!-- Ações Rápidas -->
+        <div class="quick-actions">
+            <h3><i class="fas fa-bolt"></i> Ações Rápidas</h3>
+            <div class="action-buttons-grid">
+                <button class="action-btn action-btn-primary" onclick="loadParticipants()">
+                    <i class="fas fa-sync"></i> Recarregar Dados
+                </button>
+                <button class="action-btn action-btn-success" onclick="createTestData()">
+                    <i class="fas fa-plus"></i> Criar Dados de Teste
+                </button>
+                <button class="action-btn action-btn-warning" onclick="exportParticipants()">
+                    <i class="fas fa-download"></i> Exportar CSV
+                </button>
+                <button class="action-btn action-btn-danger" onclick="resetAllNumbers()">
+                    <i class="fas fa-trash"></i> Resetar Tudo
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Estatísticas -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;"><i class="fas fa-users"></i> Participantes</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #007bff;" id="total-participants">0</p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;"><i class="fas fa-money-bill-wave"></i> Receita</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #28a745;" id="total-revenue">R$ 0,00</p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;"><i class="fas fa-ticket-alt"></i> Números Vendidos</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #17a2b8;" id="sold-numbers">0</p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;"><i class="fas fa-chart-line"></i> Progresso</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #ffc107;" id="completion-rate">0%</p>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3><i class="fas fa-users-cog"></i> Gerenciar Participantes</h3>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterParticipants('all')" id="filter-all">
+                    <i class="fas fa-list"></i> Todos
+                </button>
+                <button class="filter-btn" onclick="filterParticipants('pending_donation')" id="filter-pending_donation">
+                    <i class="fas fa-baby"></i> Doações Pendentes
+                </button>
+                <button class="filter-btn" onclick="filterParticipants('confirmed')" id="filter-confirmed">
+                    <i class="fas fa-check-circle"></i> Confirmados
+                </button>
+                <button class="filter-btn" onclick="filterParticipants('rejected')" id="filter-rejected">
+                    <i class="fas fa-times-circle"></i> Rejeitados
+                </button>
+            </div>
+
+            <!-- Tabela de Participantes -->
+            <div class="participants-table-container">
+                <table class="participants-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>WhatsApp</th>
+                            <th>Números</th>
+                            <th>Valor</th>
+                            <th>Método</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="participants-tbody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                <i class="fas fa-spinner fa-spin"></i> Carregando dados dos participantes...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Log de Atividades -->
+        <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #007bff;">
+            <h4 style="margin: 0 0 15px 0; color: #007bff;"><i class="fas fa-history"></i> Log de Atividades</h4>
+            <div id="activity-log" style="font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; background: white; padding: 10px; border-radius: 5px;">
+                <div style="color: #28a745;">✅ [<span id="current-time"></span>] Sistema inicializado com sucesso</div>
+                <div style="color: #007bff;">ℹ️ [<span id="current-time-2"></span>] Event Delegation ativo - Botões funcionais</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Admin -->
+    <script src="admin.js"></script>
+    
+    <script>
+        // Função para adicionar logs no debug
+        function addActivityLog(message, type = 'info') {
+            const logContainer = document.getElementById('activity-log');
+            if (logContainer) {
+                const timestamp = new Date().toLocaleTimeString();
+                const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+                const color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#007bff';
+                
+                const logEntry = document.createElement('div');
+                logEntry.style.color = color;
+                logEntry.innerHTML = `${icon} [${timestamp}] ${message}`;
+                
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                
+                // Manter apenas últimas 20 entradas
+                while (logContainer.children.length > 20) {
+                    logContainer.removeChild(logContainer.firstChild);
+                }
+            }
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Função para criar dados de teste
+        window.createTestData = function() {
+            if (typeof window.adminData !== 'undefined') {
+                window.adminData.purchases = [
+                    {
+                        id: 'test-pending-1',
+                        buyerName: 'Ana Clara Silva',
+                        buyerPhone: '(11) 98765-4321',
+                        numbers: [5, 15, 25],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        date: new Date().toISOString()
+                    },
+                    {
+                        id: 'test-pending-2',
+                        buyerName: 'Carlos Eduardo Santos',
+                        buyerPhone: '(11) 91234-5678',
+                        numbers: [50, 75, 100],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        date: new Date(Date.now() - 1000 * 60 * 60).toISOString()
+                    },
+                    {
+                        id: 'test-confirmed-1',
+                        buyerName: 'Marina Oliveira',
+                        buyerPhone: '(11) 99999-8888',
+                        numbers: [10, 20, 30],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
+                    },
+                    {
+                        id: 'test-rejected-1',
+                        buyerName: 'José Silva',
+                        buyerPhone: '(11) 95555-5555',
+                        numbers: [80, 90, 95],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'rejected',
+                        date: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString()
+                    }
+                ];
+                
+                localStorage.setItem('purchases', JSON.stringify(window.adminData.purchases));
+                
+                if (typeof window.loadParticipants === 'function') {
+                    window.loadParticipants();
+                }
+                if (typeof window.updateDashboard === 'function') {
+                    window.updateDashboard();
+                }
+                
+                addActivityLog('Dados de teste criados com sucesso!', 'success');
+                alert('✅ Dados de teste criados!\n\n- 2 doações pendentes\n- 1 confirmado\n- 1 rejeitado\n\nTeste os botões de confirmação agora!');
+            } else {
+                addActivityLog('Erro: adminData não encontrado', 'error');
+                alert('❌ Erro: Sistema não inicializado');
+            }
+        };
+        
+        // Interceptar cliques para logging
+        document.addEventListener('click', function(event) {
+            const button = event.target.closest('button');
+            if (button && button.hasAttribute('data-action')) {
+                const action = button.getAttribute('data-action');
+                const purchaseId = button.getAttribute('data-purchase-id');
+                addActivityLog(`Ação executada: ${action} (ID: ${purchaseId})`, 'info');
+            }
+        });
+        
+        // Atualizar horários iniciais
+        function updateTimes() {
+            const now = new Date().toLocaleTimeString();
+            const timeElements = document.querySelectorAll('#current-time, #current-time-2');
+            timeElements.forEach(el => {
+                if (el) el.textContent = now;
+            });
+        }
+        
+        updateTimes();
+        
+        // Log de carregamento
+        window.addEventListener('load', function() {
+            addActivityLog('Página carregada completamente', 'success');
+            setTimeout(() => {
+                addActivityLog('Sistema pronto para uso - Teste os botões!', 'success');
+            }, 1000);
+        });
+        
+        console.log('🔧 Admin Direto carregado - Sem verificação de acesso!');
+    </script>
+</body>
+</html>

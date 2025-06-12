@@ -1,17 +1,12 @@
 // Configuração do Firebase para Rifa Thomas
-// Para configurar:
-// 1. Acesse: https://console.firebase.google.com/
-// 2. Crie um novo projeto: "Rifa Chá Thomas"
-// 3. Ative Authentication (Anonymous + Email/Password)
-// 4. Ative Firestore Database
-// 5. Copie as configurações e substitua abaixo
+// Inicializar Firebase com módulos ES6
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// Importar funções do Firebase
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js';
+import { getFirestore, doc, setDoc, getDoc, getDocs, collection, onSnapshot, updateDoc, deleteDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js';
+import { getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js';
 
-// Your web app's Firebase configuration
+// Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDtB1YfeOLWm6_xH1pI8mXJzO-IxIC4vHc",
   authDomain: "rifa-cha-thomas.firebaseapp.com",
@@ -20,11 +15,6 @@ const firebaseConfig = {
   messagingSenderId: "761618695276",
   appId: "1:761618695276:web:bf72f84cbbf5026fa74449"
 };
-
-// Inicializar Firebase
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc, getDocs, collection, onSnapshot, updateDoc, deleteDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js';
-import { getAuth, signInAnonymously, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js';
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);

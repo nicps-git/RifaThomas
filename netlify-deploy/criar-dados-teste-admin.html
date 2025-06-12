@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Criar Dados de Teste para Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        .green { background: #28a745; }
+        .green:hover { background: #1e7e34; }
+        .red { background: #dc3545; }
+        .red:hover { background: #c82333; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Preparar Dados de Teste para Admin</h1>
+        
+        <p>Esta página ajuda a criar dados de teste para verificar se o painel admin está funcionando corretamente.</p>
+        
+        <div class="actions">
+            <button onclick="createTestData()" class="green">🆕 Criar Dados de Teste</button>
+            <button onclick="viewCurrentData()">👁️ Ver Dados Atuais</button>
+            <button onclick="clearAllData()" class="red">🗑️ Limpar Todos os Dados</button>
+            <button onclick="openAdmin()">🔧 Abrir Página Admin</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info', data = null) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            
+            let content = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            results.appendChild(div);
+            
+            // Scroll para o final
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function createTestData() {
+            log('🆕 Criando dados de teste completos...', 'info');
+            
+            try {
+                // Criar 10 compras de exemplo com diferentes status
+                const testPurchases = [
+                    {
+                        id: 'purchase_' + Date.now() + '_001',
+                        name: 'Ana Silva',
+                        phone: '(11) 99999-1111',
+                        numbers: [1, 15, 33],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date(Date.now() - 86400000).toISOString() // ontem
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_002',
+                        name: 'João Santos',
+                        phone: '(11) 99999-2222',
+                        numbers: [5, 22, 77],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date(Date.now() - 72000000).toISOString() // 20h atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_003',
+                        name: 'Maria Costa',
+                        phone: '(11) 99999-3333',
+                        numbers: [10, 45, 99],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'confirmed',
+                        createdAt: new Date(Date.now() - 43200000).toISOString() // 12h atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_004',
+                        name: 'Pedro Oliveira',
+                        phone: '(11) 99999-4444',
+                        numbers: [7, 88, 144],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date(Date.now() - 21600000).toISOString() // 6h atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_005',
+                        name: 'Carla Ferreira',
+                        phone: '(11) 99999-5555',
+                        numbers: [12, 34, 56],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date(Date.now() - 7200000).toISOString() // 2h atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_006',
+                        name: 'Roberto Lima',
+                        phone: '(11) 99999-6666',
+                        numbers: [78, 89, 90],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'rejected',
+                        createdAt: new Date(Date.now() - 3600000).toISOString() // 1h atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_007',
+                        name: 'Fernanda Rocha',
+                        phone: '(11) 99999-7777',
+                        numbers: [111, 122, 133],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date(Date.now() - 1800000).toISOString() // 30min atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_008',
+                        name: 'Lucas Martins',
+                        phone: '(11) 99999-8888',
+                        numbers: [50, 75, 100],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date(Date.now() - 900000).toISOString() // 15min atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_009',
+                        name: 'Beatriz Alves',
+                        phone: '(11) 99999-9999',
+                        numbers: [25, 125, 150],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date(Date.now() - 300000).toISOString() // 5min atrás
+                    },
+                    {
+                        id: 'purchase_' + Date.now() + '_010',
+                        name: 'Gabriel Souza',
+                        phone: '(11) 99999-0000',
+                        numbers: [65, 85, 105],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date().toISOString() // agora
+                    }
+                ];
+                
+                // Salvar compras
+                localStorage.setItem('purchases', JSON.stringify(testPurchases));
+                
+                // Criar configuração realista
+                const rifaConfig = {
+                    totalNumbers: 150,
+                    ticketPrice: 40.00,
+                    drawDate: '2025-07-11T16:00:00.000Z',
+                    pixKey: 'contato@charifa.com',
+                    prizes: {
+                        first: 'R$ 100,00',
+                        second: 'R$ 200,00',
+                        third: 'Fraldas por faixa'
+                    },
+                    contactPhone: '(11) 99999-9999',
+                    babyName: 'Thomas',
+                    description: 'Chá de Bebê do Thomas',
+                    organizer: 'Família Silva',
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                localStorage.setItem('rifaConfig', JSON.stringify(rifaConfig));
+                
+                // Estatísticas dos dados criados
+                const stats = {
+                    totalPurchases: testPurchases.length,
+                    confirmed: testPurchases.filter(p => p.status === 'confirmed').length,
+                    pending: testPurchases.filter(p => p.status === 'pending_donation').length,
+                    rejected: testPurchases.filter(p => p.status === 'rejected').length,
+                    totalNumbers: testPurchases.reduce((acc, p) => acc + p.numbers.length, 0),
+                    totalRevenue: testPurchases.filter(p => p.status === 'confirmed').reduce((acc, p) => acc + p.totalAmount, 0)
+                };
+                
+                log('✅ Dados de teste criados com sucesso!', 'success');
+                log('📊 Estatísticas dos dados criados:', 'info', stats);
+                log('🎯 Pronto para testar o admin!', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados de teste: ${error.message}`, 'error');
+            }
+        }
+        
+        function viewCurrentData() {
+            log('👁️ Verificando dados atuais...', 'info');
+            
+            try {
+                const purchases = localStorage.getItem('purchases');
+                const config = localStorage.getItem('rifaConfig');
+                
+                if (purchases) {
+                    const parsedPurchases = JSON.parse(purchases);
+                    log(`📋 ${parsedPurchases.length} compras encontradas:`, 'success');
+                    
+                    // Agrupar por status
+                    const byStatus = parsedPurchases.reduce((acc, p) => {
+                        acc[p.status] = (acc[p.status] || 0) + 1;
+                        return acc;
+                    }, {});
+                    
+                    log('📊 Distribuição por status:', 'info', byStatus);
+                } else {
+                    log('⚠️ Nenhuma compra encontrada', 'warning');
+                }
+                
+                if (config) {
+                    const parsedConfig = JSON.parse(config);
+                    log('⚙️ Configuração encontrada:', 'success', parsedConfig);
+                } else {
+                    log('⚠️ Nenhuma configuração encontrada', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearAllData() {
+            if (!confirm('⚠️ Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+                return;
+            }
+            
+            try {
+                localStorage.clear();
+                log('✅ Todos os dados foram limpos', 'success');
+            } catch (error) {
+                log(`❌ Erro ao limpar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        function openAdmin() {
+            log('🔧 Abrindo página admin em nova aba...', 'info');
+            window.open('admin.html', '_blank');
+        }
+        
+        // Auto-verificar dados ao carregar
+        setTimeout(() => {
+            viewCurrentData();
+        }, 500);
+    </script>
+</body>
+</html>

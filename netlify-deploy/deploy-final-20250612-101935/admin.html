@@ -193,74 +193,15 @@
                 <div class="container">
                     <h2>Configurações da Rifa</h2>
                     
-                    <!-- Filtros para participantes -->
-                    <div class="filter-buttons">
-                        <button class="filter-btn active" onclick="filterParticipants('all')" id="filter-all">
-                            🔍 Todos
-                        </button>
-                        <button class="filter-btn" onclick="filterParticipants('pending_donation')" id="filter-pending_donation">
-                            🍼 Doações Pendentes
-                        </button>
-                        <button class="filter-btn" onclick="filterParticipants('confirmed')" id="filter-confirmed">
-                            ✅ Confirmados
-                        </button>
-                        <button class="filter-btn" onclick="filterParticipants('rejected')" id="filter-rejected">
-                            ❌ Rejeitados
-                        </button>
-                    </div>
-                    
                     <form id="config-form" class="config-form">
-                        <h3>📊 Configurações Básicas</h3>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="config-total-numbers">Total de Números:</label>
-                                <input type="number" id="config-total-numbers" min="100" max="10000" value="150" required>
+                                <input type="number" id="config-total-numbers" min="100" max="10000" value="150">
                             </div>
                             <div class="form-group">
                                 <label for="config-ticket-price">Preço do Bilhete (R$):</label>
-                                <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="config-draw-date">Data do Sorteio:</label>
-                                <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="config-contact-phone">Telefone de Contato:</label>
-                                <input type="tel" id="config-contact-phone" value="(11) 99999-9999" required>
-                            </div>
-                        </div>
-                        
-                        <h3>💰 Configurações de Pagamento</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="config-pix-key">Chave PIX:</label>
-                                <input type="text" id="config-pix-key" value="contato@charifa.com" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="config-baby-name">Nome do Bebê:</label>
-                                <input type="text" id="config-baby-name" value="Thomas" required>
-                            </div>
-                        </div>
-                        
-                        <h3>🏆 Prêmios</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="config-first-prize">1º Prêmio:</label>
-                                <input type="text" id="config-first-prize" value="R$ 100,00" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="config-second-prize">2º Prêmio:</label>
-                                <input type="text" id="config-second-prize" value="R$ 200,00" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="config-third-prize">3º Prêmio:</label>
-                                <input type="text" id="config-third-prize" value="Fraldas por faixa" required>
+                                <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00">
                             </div>
                         </div>
                         
@@ -268,22 +209,6 @@
                             <i class="fas fa-save"></i> Salvar Configurações
                         </button>
                     </form>
-                    
-                    <!-- Ações Administrativas -->
-                    <div class="admin-actions" style="margin-top: 2rem;">
-                        <h3>⚡ Ações Rápidas</h3>
-                        <div class="action-buttons">
-                            <button onclick="exportParticipants()" class="action-btn report">
-                                <i class="fas fa-download"></i> Exportar Participantes
-                            </button>
-                            <button onclick="resetAllNumbers()" class="action-btn" style="background: #e74c3c; color: white;">
-                                <i class="fas fa-refresh"></i> Resetar Números
-                            </button>
-                            <button onclick="performDraw()" class="action-btn draw">
-                                <i class="fas fa-trophy"></i> Realizar Sorteio
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </section>
         </main>
@@ -294,17 +219,37 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js"></script>
-    <script src="admin.js"></script>
     
     <script>
-        // Sistema simplificado que delega tudo para admin.js
-        console.log('🚀 Admin HTML carregado - aguardando admin.js...');
+        // Sistema de verificação simplificado e direto
+        let verificationStep = 0;
+        let verificationSteps = [
+            'Conectando ao Firebase...',
+            'Verificando autenticação...',
+            'Validando permissões de administrador...',
+            'Carregando painel administrativo...'
+        ];
         
-        // Variáveis globais para admin.js usar
-        window.adminHtmlLoaded = true;
+        // Função para atualizar status de verificação
+        function updateVerificationStatus(message, isError = false) {
+            const messageEl = document.getElementById('verification-message');
+            const detailsEl = document.getElementById('verification-details');
+            
+            if (messageEl) {
+                messageEl.textContent = message;
+                messageEl.style.color = isError ? '#dc3545' : '#007bff';
+            }
+            
+            if (detailsEl && verificationStep < verificationSteps.length) {
+                detailsEl.textContent = verificationSteps[verificationStep];
+                verificationStep++;
+            }
+            
+            console.log(`VERIFICAÇÃO: ${message}`);
+        }
         
-        // Função global para esconder overlay (usada pelo admin.js)
-        window.showMainContent = function(userEmail) {
+        // Função para esconder overlay e mostrar conteúdo
+        function showMainContent(userEmail) {
             const overlay = document.getElementById('verification-overlay');
             const mainContent = document.getElementById('main-content');
             
@@ -329,10 +274,10 @@
             document.body.style.paddingTop = '60px';
             
             console.log('✅ Painel administrativo carregado com sucesso');
-        };
+        }
         
-        // Função global para mostrar erro (usada pelo admin.js)
-        window.showErrorAndRedirect = function(errorMessage) {
+        // Função para mostrar erro e redirecionar
+        function showErrorAndRedirect(errorMessage) {
             const verificationContent = document.querySelector('.verification-content');
             if (verificationContent) {
                 verificationContent.innerHTML = `
@@ -347,51 +292,197 @@
                 `;
             }
             
-            // Redirecionar após 5 segundos
+            // Redirecionar após 3 segundos
             setTimeout(() => {
                 window.location.href = 'login.html';
-            }, 5000);
-        };
+            }, 3000);
+        }
         
-        // Função global para atualizar status (usada pelo admin.js)
-        window.updateVerificationStatus = function(message, isError = false) {
-            const messageEl = document.getElementById('verification-message');
-            const detailsEl = document.getElementById('verification-details');
-            
-            if (messageEl) {
-                messageEl.textContent = message;
-                messageEl.style.color = isError ? '#dc3545' : '#007bff';
+        // Função principal de verificação
+        async function verifyAdminAccess() {
+            try {
+                updateVerificationStatus('Iniciando verificação...');
+                
+                // Passo 1: Verificar se Firebase está disponível
+                if (typeof window.FirebaseDB === 'undefined') {
+                    console.log('⏳ Firebase não carregado ainda, aguardando...');
+                    return; // Será chamado novamente quando Firebase carregar
+                }
+                
+                updateVerificationStatus('Firebase conectado ✓');
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                // Passo 2: Verificar autenticação
+                updateVerificationStatus('Verificando autenticação...');
+                
+                // Aguardar estado de auth estabilizar
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const currentAdminResult = await window.FirebaseDB.getCurrentAdmin();
+                
+                console.log('📊 Resultado getCurrentAdmin:', currentAdminResult);
+                
+                if (!currentAdminResult.success) {
+                    throw new Error(currentAdminResult.error || 'Falha na verificação de autenticação');
+                }
+                
+                updateVerificationStatus('Autenticação verificada ✓');
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                // Passo 3: Verificar permissões de admin
+                updateVerificationStatus('Validando permissões...');
+                
+                if (!currentAdminResult.isAdmin) {
+                    throw new Error('Usuário não possui permissões de administrador');
+                }
+                
+                // Verificação dupla com isAdmin
+                const isAdminCheck = await window.FirebaseDB.isAdmin(currentAdminResult.user.uid);
+                if (!isAdminCheck) {
+                    throw new Error('Falha na verificação dupla de permissões');
+                }
+                
+                updateVerificationStatus('Permissões validadas ✓');
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                // Passo 4: Carregar painel
+                updateVerificationStatus('Carregando painel administrativo...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Sucesso! Mostrar painel
+                showMainContent(currentAdminResult.user.email);
+                
+                // Inicializar dados do painel
+                setTimeout(initializeAdminData, 500);
+                
+            } catch (error) {
+                console.error('❌ Erro na verificação de admin:', error);
+                showErrorAndRedirect(error.message);
             }
-            
-            if (detailsEl) {
-                detailsEl.textContent = message;
-            }
-            
-            console.log(`VERIFICAÇÃO: ${message}`);
-        };
+        }
         
-        // Função de logout global
-        window.performLogout = async function() {
+        // Função de logout
+        async function performLogout() {
             if (confirm('Tem certeza que deseja sair do painel administrativo?')) {
                 try {
-                    if (typeof window.FirebaseDB !== 'undefined') {
-                        const result = await window.FirebaseDB.adminLogout();
-                        if (result.success) {
-                            window.location.href = 'login.html';
-                        } else {
-                            alert('Erro no logout: ' + result.error);
-                        }
-                    } else {
+                    const result = await window.FirebaseDB.adminLogout();
+                    if (result.success) {
                         window.location.href = 'login.html';
+                    } else {
+                        alert('Erro no logout: ' + result.error);
                     }
                 } catch (error) {
                     console.error('Erro no logout:', error);
-                    window.location.href = 'login.html';
+                    alert('Erro inesperado no logout');
                 }
             }
-        };
+        }
         
-        console.log('✅ Funções globais para admin.js configuradas');
+        // Inicializar dados do painel (simplificado)
+        async function initializeAdminData() {
+            try {
+                console.log('📊 Carregando dados do painel...');
+                
+                // Carregar estatísticas
+                const stats = await window.FirebaseDB.getStats();
+                if (stats.success) {
+                    const data = stats.data;
+                    document.getElementById('total-sold').textContent = data.totalSold || 0;
+                    document.getElementById('total-revenue').textContent = `R$ ${(data.totalRevenue || 0).toFixed(2).replace('.', ',')}`;
+                    document.getElementById('total-participants').textContent = data.totalPurchases || 0;
+                    
+                    const percentage = ((data.totalSold || 0) / 150 * 100).toFixed(1);
+                    document.getElementById('percentage-sold').textContent = `${percentage}%`;
+                }
+                
+                // Carregar participantes
+                const purchases = await window.FirebaseDB.loadPurchases();
+                if (purchases.success) {
+                    updateParticipantsTable(purchases.data);
+                }
+                
+                console.log('✅ Dados do painel carregados');
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+            }
+        }
+        
+        // Atualizar tabela de participantes (simplificado)
+        function updateParticipantsTable(purchases) {
+            const tbody = document.getElementById('participants-tbody');
+            if (!tbody || !purchases) return;
+            
+            if (purchases.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                            📝 Nenhum participante encontrado
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = purchases.slice(0, 10).map(purchase => {
+                const status = purchase.status === 'confirmed' ? 'Confirmado' : 
+                              purchase.status === 'pending' ? 'Pendente' : 'Cancelado';
+                const statusClass = purchase.status === 'confirmed' ? 'success' : 
+                                   purchase.status === 'pending' ? 'warning' : 'danger';
+                
+                return `
+                    <tr>
+                        <td>${purchase.buyerName || 'N/A'}</td>
+                        <td>${purchase.buyerPhone || 'N/A'}</td>
+                        <td>${purchase.numbers ? purchase.numbers.slice(0,3).join(', ') + (purchase.numbers.length > 3 ? '...' : '') : 'N/A'}</td>
+                        <td>R$ ${(purchase.totalAmount || 0).toFixed(2).replace('.', ',')}</td>
+                        <td><span class="status-badge ${statusClass}">${status}</span></td>
+                        <td>${purchase.timestamp ? new Date(purchase.timestamp.seconds * 1000).toLocaleDateString('pt-BR') : 'N/A'}</td>
+                        <td>
+                            <button onclick="alert('Funcionalidade em desenvolvimento')" style="padding: 5px 10px; border: none; background: #007bff; color: white; border-radius: 3px; cursor: pointer;">
+                                Ver
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Funções do painel (simplificadas)
+        function refreshData() {
+            console.log('🔄 Atualizando dados...');
+            initializeAdminData();
+        }
+        
+        function exportData() {
+            alert('📊 Funcionalidade de exportação em desenvolvimento');
+        }
+        
+        function openDrawModal() {
+            alert('🏆 Funcionalidade de sorteio em desenvolvimento');
+        }
+        
+        // Event listeners
+        window.addEventListener('firebaseReady', () => {
+            console.log('🔥 Firebase carregado, iniciando verificação...');
+            setTimeout(verifyAdminAccess, 500);
+        });
+        
+        // Se Firebase já estiver carregado
+        if (typeof window.FirebaseDB !== 'undefined') {
+            console.log('🔥 Firebase já disponível');
+            setTimeout(verifyAdminAccess, 500);
+        }
+        
+        // Timeout de segurança
+        setTimeout(() => {
+            if (document.getElementById('verification-overlay').style.display !== 'none') {
+                console.log('⏰ Timeout na verificação');
+                showErrorAndRedirect('Timeout na verificação de permissões. Verifique sua conexão.');
+            }
+        }, 20000);
+        
+        console.log('🚀 Admin simplificado iniciado');
     </script>
 </body>
 </html>

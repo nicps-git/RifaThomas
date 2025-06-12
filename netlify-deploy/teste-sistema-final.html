@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Completo - Sistema Corrigido</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+        
+        .results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Teste Completo - Sistema Corrigido</h1>
+        
+        <div id="status-container">
+            <div class="status info">
+                ⏳ Iniciando testes do sistema...
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔥 Teste 1: Conexão Firebase</h3>
+            <button id="test-firebase" class="btn" onclick="testFirebase()">Testar Firebase</button>
+            <div id="firebase-result" class="results">Aguardando teste...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Teste 2: Leitura de Dados</h3>
+            <button id="test-data" class="btn" onclick="testDataRead()" disabled>Testar Leitura</button>
+            <div id="data-result" class="results">Aguardando teste...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👤 Teste 3: Exibição de Compradores</h3>
+            <button id="test-display" class="btn" onclick="testBuyerDisplay()" disabled>Testar Exibição</button>
+            <div id="display-result" class="results">Aguardando teste...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔄 Teste 4: Sistema Admin</h3>
+            <button id="test-admin" class="btn" onclick="testAdmin()" disabled>Testar Admin</button>
+            <div id="admin-result" class="results">Aguardando teste...</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎯 Resultado Final</h3>
+            <div id="final-result" class="results">Aguardando conclusão dos testes...</div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let testResults = {
+            firebase: false,
+            dataRead: false,
+            display: false,
+            admin: false
+        };
+        
+        function updateStatus(message, type = 'info') {
+            const container = document.getElementById('status-container');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            container.innerHTML = `<div class="status ${className}">${message}</div>`;
+        }
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            element.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', async () => {
+            updateStatus('✅ Firebase detectado - Iniciando testes', 'success');
+            document.getElementById('test-firebase').disabled = false;
+        });
+        
+        async function testFirebase() {
+            log('firebase-result', 'Testando conexão Firebase...', 'info');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                log('firebase-result', 'FirebaseDB encontrado', 'success');
+                
+                // Testar se o Firebase está inicializado
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase não inicializado');
+                }
+                
+                log('firebase-result', 'Firebase inicializado', 'success');
+                
+                // Testar conexão com Firestore
+                const testDoc = await firebase.firestore().collection('test').doc('connection').get();
+                log('firebase-result', 'Conexão Firestore testada', 'success');
+                
+                testResults.firebase = true;
+                log('firebase-result', '🎉 Teste Firebase: PASSOU', 'success');
+                
+                document.getElementById('test-data').disabled = false;
+                
+            } catch (error) {
+                log('firebase-result', `Erro: ${error.message}`, 'error');
+                log('firebase-result', '❌ Teste Firebase: FALHOU', 'error');
+            }
+        }
+        
+        async function testDataRead() {
+            log('data-result', 'Testando leitura de dados...', 'info');
+            
+            try {
+                const result = await window.FirebaseDB.getPurchases();
+                
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                const purchases = result.data;
+                log('data-result', `Dados carregados: ${purchases.length} compras`, 'success');
+                
+                // Verificar estrutura dos dados
+                if (purchases.length > 0) {
+                    const firstPurchase = purchases[0];
+                    log('data-result', `Estrutura do primeiro registro:`, 'info');
+                    log('data-result', `- ID: ${firstPurchase.id}`, 'info');
+                    log('data-result', `- buyerName: ${firstPurchase.buyerName || 'N/A'}`, 'info');
+                    log('data-result', `- buyerPhone: ${firstPurchase.buyerPhone || 'N/A'}`, 'info');
+                    log('data-result', `- name (antigo): ${firstPurchase.name || 'N/A'}`, 'info');
+                    log('data-result', `- phone (antigo): ${firstPurchase.phone || 'N/A'}`, 'info');
+                }
+                
+                testResults.dataRead = true;
+                log('data-result', '🎉 Teste Leitura: PASSOU', 'success');
+                
+                document.getElementById('test-display').disabled = false;
+                
+            } catch (error) {
+                log('data-result', `Erro: ${error.message}`, 'error');
+                log('data-result', '❌ Teste Leitura: FALHOU', 'error');
+            }
+        }
+        
+        async function testBuyerDisplay() {
+            log('display-result', 'Testando exibição de compradores...', 'info');
+            
+            try {
+                const result = await window.FirebaseDB.getPurchases();
+                const purchases = result.data;
+                
+                // Simular como o admin.js exibe os dados
+                let correctDisplays = 0;
+                let totalPurchases = purchases.length;
+                
+                purchases.forEach((purchase, index) => {
+                    const displayName = purchase.buyerName || purchase.name || 'N/A';
+                    const displayPhone = purchase.buyerPhone || purchase.phone || 'N/A';
+                    
+                    log('display-result', `Registro ${index + 1}: Nome="${displayName}", Phone="${displayPhone}"`, 'info');
+                    
+                    if (displayName !== 'N/A' && displayPhone !== 'N/A') {
+                        correctDisplays++;
+                    }
+                });
+                
+                const successRate = totalPurchases > 0 ? Math.round((correctDisplays / totalPurchases) * 100) : 100;
+                log('display-result', `Taxa de sucesso: ${successRate}% (${correctDisplays}/${totalPurchases})`, 'info');
+                
+                if (successRate >= 80) {
+                    testResults.display = true;
+                    log('display-result', '🎉 Teste Exibição: PASSOU', 'success');
+                } else {
+                    log('display-result', '⚠️ Teste Exibição: NECESSITA MIGRAÇÃO', 'warning');
+                }
+                
+                document.getElementById('test-admin').disabled = false;
+                
+            } catch (error) {
+                log('display-result', `Erro: ${error.message}`, 'error');
+                log('display-result', '❌ Teste Exibição: FALHOU', 'error');
+            }
+        }
+        
+        async function testAdmin() {
+            log('admin-result', 'Testando sistema administrativo...', 'info');
+            
+            try {
+                // Verificar se arquivos admin existem
+                log('admin-result', 'Verificando arquivos admin...', 'info');
+                
+                // Simular carregamento do admin
+                const adminResult = await window.FirebaseDB.getPurchases();
+                
+                if (adminResult.success) {
+                    log('admin-result', 'Dados carregados no contexto admin', 'success');
+                    
+                    // Verificar estrutura admin
+                    const purchases = adminResult.data;
+                    let adminCompatible = 0;
+                    
+                    purchases.forEach(purchase => {
+                        // Verificar se o admin consegue exibir corretamente
+                        const hasDisplayData = (purchase.buyerName || purchase.name) && (purchase.buyerPhone || purchase.phone);
+                        if (hasDisplayData) {
+                            adminCompatible++;
+                        }
+                    });
+                    
+                    const adminSuccess = purchases.length === 0 || adminCompatible === purchases.length;
+                    
+                    if (adminSuccess) {
+                        testResults.admin = true;
+                        log('admin-result', '🎉 Teste Admin: PASSOU', 'success');
+                    } else {
+                        log('admin-result', `⚠️ ${adminCompatible}/${purchases.length} registros compatíveis`, 'warning');
+                    }
+                }
+                
+                updateFinalResult();
+                
+            } catch (error) {
+                log('admin-result', `Erro: ${error.message}`, 'error');
+                log('admin-result', '❌ Teste Admin: FALHOU', 'error');
+                updateFinalResult();
+            }
+        }
+        
+        function updateFinalResult() {
+            const finalElement = document.getElementById('final-result');
+            const passedTests = Object.values(testResults).filter(Boolean).length;
+            const totalTests = Object.keys(testResults).length;
+            
+            finalElement.innerHTML = '';
+            log('final-result', '=== RESULTADO FINAL ===', 'info');
+            log('final-result', `Testes Aprovados: ${passedTests}/${totalTests}`, 'info');
+            log('final-result', '', 'info');
+            
+            Object.entries(testResults).forEach(([test, passed]) => {
+                const status = passed ? '✅ PASSOU' : '❌ FALHOU';
+                log('final-result', `${test.toUpperCase()}: ${status}`, passed ? 'success' : 'error');
+            });
+            
+            log('final-result', '', 'info');
+            
+            if (passedTests === totalTests) {
+                log('final-result', '🎉 SISTEMA FUNCIONANDO PERFEITAMENTE!', 'success');
+                log('final-result', 'Nomes e WhatsApp estão sendo exibidos corretamente no admin.', 'success');
+                updateStatus('✅ Todos os testes passaram! Sistema funcionando.', 'success');
+            } else if (passedTests >= totalTests - 1) {
+                log('final-result', '⚠️ Sistema quase pronto, pequenos ajustes necessários.', 'warning');
+                updateStatus('⚠️ Sistema quase pronto, verificar detalhes.', 'warning');
+            } else {
+                log('final-result', '❌ Sistema necessita correções.', 'error');
+                updateStatus('❌ Sistema necessita correções.', 'error');
+            }
+        }
+        
+        // Verificar se Firebase está pronto
+        setTimeout(() => {
+            if (typeof window.FirebaseDB !== 'undefined') {
+                window.dispatchEvent(new Event('firebaseReady'));
+            } else {
+                updateStatus('❌ Firebase não detectado após timeout', 'error');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

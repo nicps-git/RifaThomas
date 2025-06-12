@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Migração de Dados - RifaThomas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 4px solid; }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .log-area { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; font-family: monospace; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.success { background: #28a745; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔧 Migração de Dados do Sistema RifaThomas</h1>
+            <p>Esta ferramenta vai corrigir os dados dos compradores, convertendo <code>name/phone</code> para <code>buyerName/buyerPhone</code></p>
+        </div>
+        
+        <div class="grid">
+            <!-- Status da Conexão -->
+            <div class="card">
+                <h3>🔥 Status Firebase</h3>
+                <div id="firebase-status" class="status info">⏳ Verificando...</div>
+                <button onclick="checkFirebase()">Verificar Conexão</button>
+            </div>
+            
+            <!-- Análise dos Dados -->
+            <div class="card">
+                <h3>📊 Análise dos Dados</h3>
+                <div id="analysis-result" class="status info">Aguardando...</div>
+                <button onclick="analyzeData()" id="analyze-btn" disabled>Analisar Dados</button>
+            </div>
+            
+            <!-- Migração -->
+            <div class="card">
+                <h3>🔄 Migração</h3>
+                <div id="migration-result" class="status info">Aguardando análise...</div>
+                <button onclick="migrateData()" id="migrate-btn" class="danger" disabled>🔧 Migrar Dados</button>
+            </div>
+            
+            <!-- Verificação Final -->
+            <div class="card">
+                <h3>✅ Verificação</h3>
+                <div id="verification-result" class="status info">Aguardando migração...</div>
+                <button onclick="verifyData()" id="verify-btn" disabled>Verificar Resultado</button>
+            </div>
+        </div>
+        
+        <!-- Logs -->
+        <div class="card">
+            <h3>📋 Logs da Migração</h3>
+            <div id="migration-logs" class="log-area">Aguardando início da migração...\n</div>
+            <button onclick="clearLogs()">Limpar Logs</button>
+            <button onclick="exportLogs()">Exportar Logs</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let purchases = [];
+        let needsMigration = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logArea = document.getElementById('migration-logs');
+            logArea.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `status ${type}`;
+            }
+            log(`${elementId}: ${message}`, type);
+        }
+        
+        // Verificar Firebase
+        function checkFirebase() {
+            log('Verificando conexão com Firebase...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    updateStatus('firebase-status', '❌ FirebaseDB não disponível', 'error');
+                    return false;
+                }
+                
+                updateStatus('firebase-status', '✅ Firebase conectado', 'success');
+                document.getElementById('analyze-btn').disabled = false;
+                log('Firebase conectado com sucesso');
+                return true;
+                
+            } catch (error) {
+                updateStatus('firebase-status', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro na conexão: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Analisar dados existentes
+        async function analyzeData() {
+            log('Iniciando análise dos dados...');
+            updateStatus('analysis-result', '⏳ Analisando dados...', 'info');
+            
+            try {
+                if (!checkFirebase()) {
+                    throw new Error('Firebase não está conectado');
+                }
+                
+                // Carregar todas as compras
+                const result = await window.FirebaseDB.loadPurchases();
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                purchases = result.data;
+                log(`Encontradas ${purchases.length} compras no banco`);
+                
+                // Analisar quais precisam de migração
+                needsMigration = purchases.filter(purchase => {
+                    const hasOldFormat = purchase.name && purchase.phone;
+                    const hasNewFormat = purchase.buyerName && purchase.buyerPhone;
+                    
+                    if (hasOldFormat && !hasNewFormat) {
+                        log(`Migração necessária para ID ${purchase.id}: name="${purchase.name}", phone="${purchase.phone}"`);
+                        return true;
+                    }
+                    return false;
+                });
+                
+                log(`${needsMigration.length} registros precisam de migração`);
+                
+                if (needsMigration.length === 0) {
+                    updateStatus('analysis-result', '✅ Todos os dados já estão corretos', 'success');
+                    document.getElementById('verify-btn').disabled = false;
+                } else {
+                    updateStatus('analysis-result', `⚠️ ${needsMigration.length} registros precisam migração`, 'warning');
+                    document.getElementById('migrate-btn').disabled = false;
+                }
+                
+                // Mostrar exemplos
+                purchases.slice(0, 3).forEach((purchase, index) => {
+                    log(`Exemplo ${index + 1}: ID=${purchase.id}, buyerName="${purchase.buyerName || 'N/A'}", buyerPhone="${purchase.buyerPhone || 'N/A'}", name="${purchase.name || 'N/A'}", phone="${purchase.phone || 'N/A'}"`);
+                });
+                
+            } catch (error) {
+                updateStatus('analysis-result', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro na análise: ${error.message}`, 'error');
+            }
+        }
+        
+        // Migrar dados
+        async function migrateData() {
+            if (!confirm(`Migrar ${needsMigration.length} registros? Esta operação irá atualizar os dados no Firebase.`)) {
+                return;
+            }
+            
+            log('Iniciando migração de dados...');
+            updateStatus('migration-result', '⏳ Migrando dados...', 'info');
+            
+            try {
+                let migrated = 0;
+                let errors = 0;
+                
+                for (const purchase of needsMigration) {
+                    try {
+                        // Criar dados migrados
+                        const migratedData = {
+                            ...purchase,
+                            buyerName: purchase.name,
+                            buyerPhone: purchase.phone
+                        };
+                        
+                        // Remover campos antigos
+                        delete migratedData.name;
+                        delete migratedData.phone;
+                        
+                        // Atualizar no Firebase
+                        await firebase.firestore().collection('purchases').doc(purchase.id).update({
+                            buyerName: migratedData.buyerName,
+                            buyerPhone: migratedData.buyerPhone,
+                            name: firebase.firestore.FieldValue.delete(),
+                            phone: firebase.firestore.FieldValue.delete()
+                        });
+                        
+                        migrated++;
+                        log(`✅ Migrado: ${purchase.id} - ${migratedData.buyerName}`);
+                        
+                    } catch (error) {
+                        errors++;
+                        log(`❌ Erro ao migrar ${purchase.id}: ${error.message}`, 'error');
+                    }
+                }
+                
+                if (errors === 0) {
+                    updateStatus('migration-result', `✅ ${migrated} registros migrados com sucesso`, 'success');
+                    document.getElementById('verify-btn').disabled = false;
+                } else {
+                    updateStatus('migration-result', `⚠️ ${migrated} migrados, ${errors} erros`, 'warning');
+                }
+                
+                log(`Migração concluída: ${migrated} sucessos, ${errors} erros`);
+                
+            } catch (error) {
+                updateStatus('migration-result', `❌ Erro na migração: ${error.message}`, 'error');
+                log(`Erro na migração: ${error.message}`, 'error');
+            }
+        }
+        
+        // Verificar resultado
+        async function verifyData() {
+            log('Verificando resultado da migração...');
+            updateStatus('verification-result', '⏳ Verificando...', 'info');
+            
+            try {
+                // Recarregar dados
+                const result = await window.FirebaseDB.loadPurchases();
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                const updatedPurchases = result.data;
+                
+                // Verificar se ainda há dados no formato antigo
+                const stillNeedsMigration = updatedPurchases.filter(purchase => 
+                    purchase.name && purchase.phone && (!purchase.buyerName || !purchase.buyerPhone)
+                );
+                
+                // Contar dados corretos
+                const correctFormat = updatedPurchases.filter(purchase => 
+                    purchase.buyerName && purchase.buyerPhone
+                );
+                
+                log(`Verificação: ${correctFormat.length} registros com formato correto, ${stillNeedsMigration.length} ainda precisam migração`);
+                
+                if (stillNeedsMigration.length === 0) {
+                    updateStatus('verification-result', '✅ Todos os dados migrados com sucesso!', 'success');
+                    log('🎉 Migração concluída com sucesso! Todos os dados estão no formato correto.');
+                } else {
+                    updateStatus('verification-result', `⚠️ ${stillNeedsMigration.length} registros ainda precisam migração`, 'warning');
+                }
+                
+                // Mostrar exemplos dos dados migrados
+                correctFormat.slice(0, 3).forEach((purchase, index) => {
+                    log(`Verificado ${index + 1}: ID=${purchase.id}, buyerName="${purchase.buyerName}", buyerPhone="${purchase.buyerPhone}"`);
+                });
+                
+            } catch (error) {
+                updateStatus('verification-result', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro na verificação: ${error.message}`, 'error');
+            }
+        }
+        
+        // Utilitários
+        function clearLogs() {
+            document.getElementById('migration-logs').textContent = 'Logs limpos.\n';
+        }
+        
+        function exportLogs() {
+            const logs = document.getElementById('migration-logs').textContent;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `migration-logs-${new Date().toISOString().slice(0, 19)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Auto-inicialização
+        window.addEventListener('firebaseReady', () => {
+            log('Firebase carregado automaticamente');
+            checkFirebase();
+        });
+        
+        if (typeof window.FirebaseDB !== 'undefined') {
+            log('Firebase já disponível');
+            checkFirebase();
+        }
+        
+        log('Sistema de migração iniciado');
+    </script>
+</body>
+</html>

@@ -821,23 +821,14 @@ window.resetAllNumbers = resetAllNumbers;
 window.performDraw = performDraw;
 
 // ==========================================
-// 🚀 AUTO-INICIALIZAÇÃO MODIFICADA
+// 🚀 AUTO-INICIALIZAÇÃO
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 DOM carregado, bypassando verificação e indo direto ao painel...');
-    
-    // Bypass da verificação - mostrar painel diretamente
+    console.log('📄 DOM carregado, inicializando admin em 1 segundo...');
     setTimeout(() => {
-        // Simular usuário admin
-        if (typeof window.showAdminPanel === 'function') {
-            console.log('✅ Bypassando verificação - mostrando painel admin diretamente');
-            window.showAdminPanel('admin@test.com');
-        }
-        
-        // Inicializar sistema
         initializeAdmin();
-    }, 500);
+    }, 1000);
 });
 
-console.log('🔧 Admin.js CORRIGIDO carregado - Event Delegation implementado! BYPASS ATIVO');
+console.log('🔧 Admin.js CORRIGIDO carregado - Event Delegation implementado!');

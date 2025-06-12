@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 ADMIN TESTE - Event Delegation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Estilos específicos para os botões de confirmação */
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 2px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-confirm {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-confirm:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-reject:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+        
+        .btn-edit {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-edit:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .participants-table th,
+        .participants-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .participants-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .participants-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .filter-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 15px;
+            border: 2px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .debug-panel {
+            background: #f8f9fa;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .debug-panel h3 {
+            color: #28a745;
+            margin-top: 0;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        
+        .test-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .test-btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .test-btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header style="text-align: center; margin-bottom: 30px;">
+            <h1>🔧 TESTE: Admin com Event Delegation</h1>
+            <p style="color: #666;">Sistema de confirmação corrigido - Botões funcionais</p>
+        </header>
+
+        <!-- Debug Panel -->
+        <div class="debug-panel">
+            <h3>🔬 Painel de Debug</h3>
+            <p><strong>Status:</strong> Sistema carregado e Event Delegation ativo</p>
+            <p><strong>Funcionalidade:</strong> Clique nos botões "Confirmar" e "Rejeitar" abaixo</p>
+            
+            <div class="test-buttons">
+                <button class="test-btn test-btn-primary" onclick="loadParticipants()">
+                    <i class="fas fa-sync"></i> Recarregar Dados
+                </button>
+                <button class="test-btn test-btn-success" onclick="createSampleData()">
+                    <i class="fas fa-plus"></i> Criar Dados de Teste
+                </button>
+                <button class="test-btn test-btn-warning" onclick="exportParticipants()">
+                    <i class="fas fa-download"></i> Exportar CSV
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterParticipants('all')" id="filter-all">
+                🔍 Todos
+            </button>
+            <button class="filter-btn" onclick="filterParticipants('pending_donation')" id="filter-pending_donation">
+                🍼 Doações Pendentes
+            </button>
+            <button class="filter-btn" onclick="filterParticipants('confirmed')" id="filter-confirmed">
+                ✅ Confirmados
+            </button>
+            <button class="filter-btn" onclick="filterParticipants('rejected')" id="filter-rejected">
+                ❌ Rejeitados
+            </button>
+        </div>
+
+        <!-- Tabela de Participantes -->
+        <div class="participants-table-container">
+            <table class="participants-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Números</th>
+                        <th>Valor</th>
+                        <th>Método</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="participants-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            📊 Carregando dados dos participantes...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Dashboard Estatísticas -->
+        <div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;">👥 Participantes</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #007bff;" id="total-participants">0</p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;">💰 Receita</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #28a745;" id="total-revenue">R$ 0,00</p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;">🎯 Números Vendidos</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #17a2b8;" id="sold-numbers">0</p>
+            </div>
+            
+            <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <h4 style="margin: 0 0 10px 0; color: #666;">📊 Progresso</h4>
+                <p style="font-size: 24px; font-weight: bold; margin: 0; color: #ffc107;" id="completion-rate">0%</p>
+            </div>
+        </div>
+
+        <!-- Log de Debug -->
+        <div style="margin-top: 30px; background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #007bff;">
+            <h4 style="margin: 0 0 15px 0; color: #007bff;">📋 Log de Eventos</h4>
+            <div id="debug-log" style="font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; background: white; padding: 10px; border-radius: 5px;">
+                <div style="color: #28a745;">✅ Sistema inicializado com Event Delegation</div>
+                <div style="color: #007bff;">ℹ️ Aguardando interações do usuário...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script CORRIGIDO -->
+    <script src="admin-confirmacao-corrigida.js"></script>
+    
+    <script>
+        // Função para adicionar logs no debug
+        function addDebugLog(message, type = 'info') {
+            const logContainer = document.getElementById('debug-log');
+            if (logContainer) {
+                const timestamp = new Date().toLocaleTimeString();
+                const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+                const color = type === 'success' ? '#28a745' : type === 'error' ? '#dc3545' : type === 'warning' ? '#ffc107' : '#007bff';
+                
+                const logEntry = document.createElement('div');
+                logEntry.style.color = color;
+                logEntry.innerHTML = `[${timestamp}] ${icon} ${message}`;
+                
+                logContainer.appendChild(logEntry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                
+                // Manter apenas últimas 20 entradas
+                while (logContainer.children.length > 20) {
+                    logContainer.removeChild(logContainer.firstChild);
+                }
+            }
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        // Override das funções para adicionar logs
+        const originalConfirm = window.handleConfirmDonation;
+        const originalReject = window.handleRejectDonation;
+        
+        // Interceptar cliques para logging
+        document.addEventListener('click', function(event) {
+            const button = event.target.closest('button');
+            if (button && button.hasAttribute('data-action')) {
+                const action = button.getAttribute('data-action');
+                const purchaseId = button.getAttribute('data-purchase-id');
+                addDebugLog(`Botão clicado: ${action} (ID: ${purchaseId})`, 'info');
+            }
+        });
+        
+        // Log de inicialização
+        window.addEventListener('load', function() {
+            addDebugLog('Página totalmente carregada', 'success');
+            setTimeout(() => {
+                addDebugLog('Event Delegation ativo - Botões prontos para uso', 'success');
+            }, 1500);
+        });
+        
+        // Função para criar dados de teste manualmente
+        window.createSampleData = function() {
+            if (typeof window.adminData !== 'undefined') {
+                window.adminData.purchases = [
+                    {
+                        id: 'test-pending-1',
+                        buyerName: 'Ana Clara Silva',
+                        buyerPhone: '(11) 98765-4321',
+                        numbers: [5, 15, 25],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        date: new Date().toISOString()
+                    },
+                    {
+                        id: 'test-pending-2',
+                        buyerName: 'Carlos Eduardo Santos',
+                        buyerPhone: '(11) 91234-5678',
+                        numbers: [50, 75, 100],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        date: new Date(Date.now() - 1000 * 60 * 60).toISOString()
+                    },
+                    {
+                        id: 'test-confirmed-1',
+                        buyerName: 'Marina Oliveira',
+                        buyerPhone: '(11) 99999-8888',
+                        numbers: [10, 20, 30],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
+                    }
+                ];
+                
+                localStorage.setItem('purchases', JSON.stringify(window.adminData.purchases));
+                
+                if (typeof window.loadParticipants === 'function') {
+                    window.loadParticipants();
+                }
+                if (typeof window.updateDashboard === 'function') {
+                    window.updateDashboard();
+                }
+                
+                addDebugLog('Dados de teste criados com sucesso!', 'success');
+                alert('✅ Dados de teste criados!\n\n- 2 doações pendentes\n- 1 confirmado\n\nTeste os botões de confirmação agora!');
+            } else {
+                addDebugLog('Erro: adminData não encontrado', 'error');
+                alert('❌ Erro: Sistema não inicializado');
+            }
+        };
+        
+        console.log('🔧 Página de teste carregada - Event Delegation ativo!');
+    </script>
+</body>
+</html>

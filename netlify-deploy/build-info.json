@@ -1,0 +1,18 @@
+{
+    "buildDate": "2025-06-12T14:23:27Z",
+    "version": "2.0.0-admin-complete",
+    "description": "Sistema admin completo da Rifa Thomas",
+    "features": [
+        "Painel administrativo completo",
+        "Confirmação de doações",
+        "Gestão de participantes", 
+        "Sistema de configurações",
+        "Exportação de dados",
+        "Sistema de sorteio"
+    ],
+    "credentials": {
+        "admin_email": "admin@rifathomas.com",
+        "admin_password": "casaVERDE123"
+    },
+    "status": "PRODUCTION_READY"
+}

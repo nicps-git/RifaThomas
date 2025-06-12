@@ -145,13 +145,12 @@ waitForFirebase().then(() => {
     },
 
     // Atualizar status da compra
-    async updatePurchaseStatus(purchaseId, status, additionalData = {}) {
+    async updatePurchaseStatus(purchaseId, status) {
       try {
         console.log(`🔄 Atualizando compra ${purchaseId} para ${status}...`);
         const docRef = firebase.firestore().collection('purchases').doc(purchaseId);
         await docRef.update({ 
           status: status,
-          ...additionalData,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         console.log('✅ Status atualizado');

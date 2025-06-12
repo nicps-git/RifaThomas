@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 Debug Confirmação de Pendentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        .green { background: #28a745; }
+        .green:hover { background: #1e7e34; }
+        .red { background: #dc3545; }
+        .red:hover { background: #c82333; }
+        .debug-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .debug-section h3 { margin-top: 0; color: #007bff; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; max-height: 300px; }
+        .step { background: #e9ecef; padding: 10px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #007bff; }
+        .function-test { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Debug Completo - Confirmação de Pendentes</h1>
+        
+        <div class="debug-section">
+            <h3>📋 Preparação de Dados de Teste</h3>
+            <button onclick="setupTestData()" class="green">🆕 Criar Dados de Teste</button>
+            <button onclick="checkCurrentData()">📊 Verificar Dados Atuais</button>
+            <button onclick="clearData()" class="red">🗑️ Limpar Dados</button>
+        </div>
+        
+        <div class="debug-section">
+            <h3>🔍 Verificação das Funções Admin</h3>
+            <button onclick="testAdminFunctions()">🔬 Testar Funções Existem</button>
+            <button onclick="testConfirmationStep()">✅ Testar Confirmação Manual</button>
+            <button onclick="testFilterStep()">🔍 Testar Filtros</button>
+        </div>
+        
+        <div class="debug-section">
+            <h3>🌐 Teste Real no Admin</h3>
+            <button onclick="openAdminTest()">🔗 Abrir Admin para Teste</button>
+            <button onclick="simulateConfirmClick()">🎯 Simular Clique Confirmar</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info', data = null) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            
+            let content = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function setupTestData() {
+            log('🆕 Criando dados de teste específicos para confirmação...', 'info');
+            
+            try {
+                const testPurchases = [
+                    {
+                        id: 'test_pending_001',
+                        name: 'Maria Silva TESTE',
+                        buyerName: 'Maria Silva TESTE',
+                        phone: '(11) 99999-1111',
+                        buyerPhone: '(11) 99999-1111',
+                        numbers: [1, 2, 3],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date().toISOString(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        id: 'test_pending_002',
+                        name: 'João Santos TESTE',
+                        buyerName: 'João Santos TESTE',
+                        phone: '(11) 99999-2222',
+                        buyerPhone: '(11) 99999-2222',
+                        numbers: [4, 5, 6],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date().toISOString(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        id: 'test_confirmed_001',
+                        name: 'Ana Costa CONFIRMADO',
+                        buyerName: 'Ana Costa CONFIRMADO',
+                        phone: '(11) 99999-3333',
+                        buyerPhone: '(11) 99999-3333',
+                        numbers: [7, 8, 9],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date().toISOString(),
+                        date: new Date().toISOString()
+                    }
+                ];
+                
+                localStorage.setItem('purchases', JSON.stringify(testPurchases));
+                
+                log('✅ Dados de teste criados com sucesso!', 'success');
+                log('📊 Resumo:', 'info', {
+                    total: testPurchases.length,
+                    pending: 2,
+                    confirmed: 1
+                });
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        function checkCurrentData() {
+            log('📊 Verificando dados atuais no localStorage...', 'info');
+            
+            try {
+                const purchases = localStorage.getItem('purchases');
+                
+                if (!purchases) {
+                    log('⚠️ Nenhum dado encontrado no localStorage', 'warning');
+                    return;
+                }
+                
+                const parsedPurchases = JSON.parse(purchases);
+                
+                const analysis = {
+                    total: parsedPurchases.length,
+                    statusDistribution: {},
+                    samples: parsedPurchases.slice(0, 3).map(p => ({
+                        id: p.id,
+                        name: p.name || p.buyerName,
+                        status: p.status,
+                        numbers: p.numbers?.length || 0
+                    }))
+                };
+                
+                // Contar por status
+                parsedPurchases.forEach(p => {
+                    const status = p.status || 'unknown';
+                    analysis.statusDistribution[status] = (analysis.statusDistribution[status] || 0) + 1;
+                });
+                
+                log('📋 Análise dos dados:', 'success', analysis);
+                
+                // Verificar se há pendentes
+                const pendingCount = analysis.statusDistribution['pending_donation'] || 0;
+                if (pendingCount > 0) {
+                    log(`✅ ${pendingCount} doações pendentes encontradas - prontas para teste!`, 'success');
+                } else {
+                    log('⚠️ Nenhuma doação pendente encontrada - crie dados de teste primeiro', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearData() {
+            if (!confirm('Limpar todos os dados?')) return;
+            
+            try {
+                localStorage.clear();
+                log('✅ Dados limpos', 'success');
+            } catch (error) {
+                log(`❌ Erro ao limpar: ${error.message}`, 'error');
+            }
+        }
+        
+        function testAdminFunctions() {
+            log('🔬 Testando se as funções admin estão disponíveis...', 'info');
+            
+            // Abrir uma nova janela/aba para testar
+            const testWindow = window.open('admin.html', 'adminTest', 'width=1200,height=800');
+            
+            // Dar tempo para carregar
+            setTimeout(() => {
+                try {
+                    // Verificar se as funções existem
+                    const functionsToCheck = [
+                        'confirmDonation',
+                        'rejectDonation',
+                        'filterParticipants',
+                        'loadParticipants',
+                        'updateDashboard',
+                        'showNotification'
+                    ];
+                    
+                    const results = {};
+                    
+                    functionsToCheck.forEach(funcName => {
+                        try {
+                            const exists = typeof testWindow[funcName] === 'function';
+                            results[funcName] = exists ? '✅ Existe' : '❌ Não existe';
+                        } catch (e) {
+                            results[funcName] = `❌ Erro: ${e.message}`;
+                        }
+                    });
+                    
+                    log('🔍 Resultado do teste de funções:', 'info', results);
+                    
+                    // Fechar janela de teste
+                    testWindow.close();
+                    
+                } catch (error) {
+                    log(`❌ Erro ao testar funções: ${error.message}`, 'error');
+                    if (testWindow) testWindow.close();
+                }
+            }, 3000);
+            
+            log('⏳ Aguardando carregamento do admin para teste...', 'info');
+        }
+        
+        function testConfirmationStep() {
+            log('✅ Testando processo de confirmação manual...', 'info');
+            
+            try {
+                const purchases = localStorage.getItem('purchases');
+                if (!purchases) {
+                    log('❌ Nenhum dado encontrado - crie dados de teste primeiro', 'error');
+                    return;
+                }
+                
+                const parsedPurchases = JSON.parse(purchases);
+                const pending = parsedPurchases.find(p => p.status === 'pending_donation');
+                
+                if (!pending) {
+                    log('❌ Nenhuma doação pendente encontrada', 'error');
+                    return;
+                }
+                
+                log(`🎯 Testando confirmação da doação: ${pending.name}`, 'info');
+                
+                // Simular processo de confirmação
+                const originalStatus = pending.status;
+                pending.status = 'confirmed';
+                pending.confirmedAt = new Date().toISOString();
+                pending.confirmedBy = 'debug_test';
+                
+                // Salvar de volta
+                localStorage.setItem('purchases', JSON.stringify(parsedPurchases));
+                
+                log('✅ Confirmação simulada com sucesso!', 'success');
+                log('📋 Dados atualizados:', 'info', {
+                    id: pending.id,
+                    name: pending.name,
+                    statusAnterior: originalStatus,
+                    statusAtual: pending.status,
+                    confirmedAt: pending.confirmedAt
+                });
+                
+                // Verificar se foi salvo
+                const updatedData = JSON.parse(localStorage.getItem('purchases'));
+                const confirmedItem = updatedData.find(p => p.id === pending.id);
+                
+                if (confirmedItem && confirmedItem.status === 'confirmed') {
+                    log('✅ Confirmação persistida com sucesso no localStorage!', 'success');
+                } else {
+                    log('❌ Falha ao persistir confirmação', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste de confirmação: ${error.message}`, 'error');
+            }
+        }
+        
+        function testFilterStep() {
+            log('🔍 Testando lógica de filtros...', 'info');
+            
+            try {
+                const purchases = localStorage.getItem('purchases');
+                if (!purchases) {
+                    log('❌ Nenhum dado encontrado', 'error');
+                    return;
+                }
+                
+                const parsedPurchases = JSON.parse(purchases);
+                
+                // Testar filtros
+                const filters = {
+                    all: parsedPurchases,
+                    pending_donation: parsedPurchases.filter(p => p.status === 'pending_donation'),
+                    confirmed: parsedPurchases.filter(p => p.status === 'confirmed'),
+                    rejected: parsedPurchases.filter(p => p.status === 'rejected')
+                };
+                
+                const filterResults = {};
+                Object.keys(filters).forEach(filter => {
+                    filterResults[filter] = {
+                        count: filters[filter].length,
+                        items: filters[filter].map(p => `${p.name} (${p.status})`)
+                    };
+                });
+                
+                log('🔍 Resultado dos filtros:', 'success', filterResults);
+                
+            } catch (error) {
+                log(`❌ Erro no teste de filtros: ${error.message}`, 'error');
+            }
+        }
+        
+        function openAdminTest() {
+            log('🔗 Abrindo admin em nova aba para teste manual...', 'info');
+            window.open('admin.html', '_blank');
+            
+            log('📝 Instruções para teste manual:', 'info');
+            log('1. Aguarde o admin carregar completamente', 'info');
+            log('2. Clique no filtro "🍼 Doações Pendentes"', 'info');
+            log('3. Encontre uma doação pendente na lista', 'info');
+            log('4. Clique no botão "✅ Confirmar"', 'info');
+            log('5. Confirme no popup que aparecer', 'info');
+            log('6. Verifique se a doação sai da lista de pendentes', 'info');
+        }
+        
+        function simulateConfirmClick() {
+            log('🎯 Simulando clique de confirmação...', 'info');
+            
+            // Esta função tentará simular o processo que acontece quando clica em confirmar
+            try {
+                const purchases = localStorage.getItem('purchases');
+                if (!purchases) {
+                    log('❌ Nenhum dado encontrado', 'error');
+                    return;
+                }
+                
+                const parsedPurchases = JSON.parse(purchases);
+                const pending = parsedPurchases.find(p => p.status === 'pending_donation');
+                
+                if (!pending) {
+                    log('❌ Nenhuma doação pendente para simular', 'error');
+                    return;
+                }
+                
+                log(`🎯 Simulando confirmação de: ${pending.name}`, 'info');
+                
+                // Simular o que a função confirmDonation deveria fazer
+                const steps = [
+                    '1. Encontrar compra no array de dados',
+                    '2. Atualizar status para "confirmed"',
+                    '3. Adicionar timestamp de confirmação',
+                    '4. Salvar no localStorage',
+                    '5. Tentar salvar no Firebase (se disponível)',
+                    '6. Recarregar interface',
+                    '7. Mostrar notificação de sucesso'
+                ];
+                
+                steps.forEach((step, index) => {
+                    setTimeout(() => {
+                        log(`⏳ ${step}`, 'info');
+                        
+                        if (index === steps.length - 1) {
+                            // Executar a confirmação real
+                            pending.status = 'confirmed';
+                            pending.confirmedAt = new Date().toISOString();
+                            pending.confirmedBy = 'simulation';
+                            
+                            localStorage.setItem('purchases', JSON.stringify(parsedPurchases));
+                            
+                            log(`✅ SIMULAÇÃO COMPLETA! Doação de ${pending.name} confirmada`, 'success');
+                            log('🔄 Agora teste no admin real para ver se funciona', 'info');
+                        }
+                    }, index * 500);
+                });
+                
+            } catch (error) {
+                log(`❌ Erro na simulação: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-verificar ao carregar
+        setTimeout(() => {
+            checkCurrentData();
+        }, 500);
+    </script>
+</body>
+</html>

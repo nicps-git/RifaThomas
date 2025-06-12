@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Admin - Sem Recarregamentos</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .test-result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .test-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .test-button:hover { background: #0056b3; }
+        iframe { width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Teste de Funcionamento - Admin Page</h1>
+        
+        <div class="test-result info">
+            <h3>📊 Status do Teste</h3>
+            <p id="status">Iniciando testes...</p>
+        </div>
+        
+        <div>
+            <button class="test-button" onclick="testAdminLoad()">🔄 Testar Carregamento Admin</button>
+            <button class="test-button" onclick="testNoReload()">🚫 Verificar Anti-Reload</button>
+            <button class="test-button" onclick="showAdminFrame()">👁️ Visualizar Admin</button>
+        </div>
+        
+        <div id="test-results"></div>
+        <div id="admin-frame-container"></div>
+    </div>
+
+    <script>
+        let testCount = 0;
+        let reloadCount = 0;
+        
+        function logTest(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>Teste ${++testCount}:</strong> ${message}`;
+            results.appendChild(div);
+            
+            document.getElementById('status').textContent = `Últimos teste: ${message}`;
+        }
+        
+        function testAdminLoad() {
+            logTest('Testando carregamento da página admin...', 'info');
+            
+            fetch('/admin.html')
+                .then(response => {
+                    if (response.ok) {
+                        logTest('✅ Admin.html carregou com sucesso (status: ' + response.status + ')', 'success');
+                        return response.text();
+                    } else {
+                        throw new Error('Erro HTTP: ' + response.status);
+                    }
+                })
+                .then(html => {
+                    if (html.includes('ADMIN CORRIGIDO')) {
+                        logTest('✅ Versão corrigida confirmada no HTML', 'success');
+                    } else {
+                        logTest('⚠️ Não foi possível confirmar versão corrigida', 'error');
+                    }
+                })
+                .catch(error => {
+                    logTest('❌ Erro ao carregar admin.html: ' + error.message, 'error');
+                });
+        }
+        
+        function testNoReload() {
+            logTest('Verificando mecanismos anti-reload...', 'info');
+            
+            fetch('/admin.js')
+                .then(response => response.text())
+                .then(js => {
+                    const hasInitFlag = js.includes('initializationInProgress');
+                    const hasSystemFlag = js.includes('systemInitialized');
+                    const hasStartFunction = js.includes('startAdminSystem');
+                    
+                    if (hasInitFlag && hasSystemFlag && hasStartFunction) {
+                        logTest('✅ Todos os mecanismos anti-reload estão presentes', 'success');
+                    } else {
+                        logTest('⚠️ Alguns mecanismos anti-reload podem estar ausentes', 'error');
+                    }
+                    
+                    // Verificar se não há syntax errors
+                    try {
+                        // Simular verificação básica
+                        const braceCount = (js.match(/\{/g) || []).length;
+                        const closeBraceCount = (js.match(/\}/g) || []).length;
+                        
+                        if (Math.abs(braceCount - closeBraceCount) <= 1) {
+                            logTest('✅ Estrutura de chaves balanceada no JavaScript', 'success');
+                        } else {
+                            logTest('⚠️ Possível problema na estrutura de chaves', 'error');
+                        }
+                    } catch (e) {
+                        logTest('❌ Erro na verificação de sintaxe: ' + e.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    logTest('❌ Erro ao verificar admin.js: ' + error.message, 'error');
+                });
+        }
+        
+        function showAdminFrame() {
+            const container = document.getElementById('admin-frame-container');
+            container.innerHTML = `
+                <h3>📺 Visualização da Página Admin</h3>
+                <iframe src="/admin.html" onload="frameLoaded()"></iframe>
+                <p><small>Se a página aparecer normalmente acima, o problema de recarregamento foi resolvido!</small></p>
+            `;
+            
+            logTest('Carregando admin page em iframe para visualização...', 'info');
+        }
+        
+        function frameLoaded() {
+            logTest('✅ Iframe carregou a página admin sem problemas', 'success');
+        }
+        
+        // Auto-iniciar alguns testes
+        setTimeout(() => {
+            testAdminLoad();
+            setTimeout(() => {
+                testNoReload();
+            }, 1000);
+        }, 500);
+    </script>
+</body>
+</html>

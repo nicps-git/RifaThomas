@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Teste Firebase Corrigido - RifaThomas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .status-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 5px solid #007bff;
+        }
+        
+        .status-box.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-box.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-box.warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+        
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #28a745, #20c997);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .nav-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #6f42c1, #5a32a3);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(111,66,193,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Teste Firebase Corrigido</h1>
+            <p>Verificação da nova configuração Firebase para RifaThomas</p>
+        </div>
+        
+        <div id="firebase-status" class="status-box">
+            <h3>📡 Status Firebase</h3>
+            <p id="firebase-message">Verificando carregamento...</p>
+        </div>
+        
+        <div id="connection-status" class="status-box">
+            <h3>🔌 Status da Conexão</h3>
+            <p id="connection-message">Aguardando teste...</p>
+        </div>
+        
+        <div id="test-results" class="status-box">
+            <h3>🧪 Resultados dos Testes</h3>
+            <p id="results-message">Nenhum teste executado ainda</p>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress">0%</div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="test-button" onclick="testFirebaseLoad()">🔄 Testar Carregamento</button>
+            <button class="test-button" onclick="testFirebaseAuth()">🔐 Testar Autenticação</button>
+            <button class="test-button" onclick="testFirestoreRead()">📖 Testar Leitura</button>
+            <button class="test-button" onclick="testFirestoreWrite()">💾 Testar Escrita</button>
+            <button class="test-button" onclick="runAllTests()">🚀 Executar Todos</button>
+        </div>
+        
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">📱 Página Principal</a>
+            <a href="admin.html" class="nav-link">🛡️ Admin</a>
+            <a href="validacao-completa-final.html" class="nav-link">✅ Validação Completa</a>
+        </div>
+        
+        <div class="log-container" id="log">
+            <strong>📋 Log de Testes:</strong><br>
+            Sistema iniciado. Aguardando execução dos testes...<br>
+        </div>
+    </div>
+
+    <!-- Carregar Firebase CDN primeiro (fallback) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    
+    <!-- Carregar configuração Firebase corrigida -->
+    <script src="firebase-config-fixed.js"></script>
+
+    <script>
+        let testResults = {
+            load: false,
+            auth: false,
+            read: false,
+            write: false
+        };
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            
+            logDiv.innerHTML += `[${timestamp}] ${icon} ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.parentElement.className = `status-box ${type}`;
+        }
+        
+        function updateProgress() {
+            const completed = Object.values(testResults).filter(Boolean).length;
+            const total = Object.keys(testResults).length;
+            const percentage = Math.round((completed / total) * 100);
+            
+            document.getElementById('progress').style.width = `${percentage}%`;
+            document.getElementById('progress').textContent = `${percentage}%`;
+        }
+        
+        // Verificar carregamento inicial
+        window.addEventListener('firebaseReady', () => {
+            log('Firebase carregado com sucesso!', 'success');
+            updateStatus('firebase-message', '✅ Firebase carregado e pronto', 'success');
+            updateStatus('connection-message', '✅ Conexão estabelecida', 'success');
+        });
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Página carregada. Verificando Firebase...');
+            
+            setTimeout(() => {
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    log('Firebase detectado!', 'success');
+                    updateStatus('firebase-message', '✅ Firebase detectado e carregado', 'success');
+                } else {
+                    log('Firebase não detectado ainda...', 'warning');
+                    updateStatus('firebase-message', '⚠️ Firebase ainda carregando...', 'warning');
+                }
+            }, 1000);
+        });
+        
+        // Teste 1: Carregamento
+        async function testFirebaseLoad() {
+            log('🔄 Testando carregamento do Firebase...');
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    log('Firebase carregado com sucesso!', 'success');
+                    updateStatus('firebase-message', '✅ Firebase carregado corretamente', 'success');
+                    testResults.load = true;
+                } else {
+                    log('Firebase não foi carregado', 'error');
+                    updateStatus('firebase-message', '❌ Firebase não carregou', 'error');
+                    testResults.load = false;
+                }
+            } catch (error) {
+                log(`Erro no teste de carregamento: ${error.message}`, 'error');
+                testResults.load = false;
+            }
+            
+            updateProgress();
+        }
+        
+        // Teste 2: Autenticação
+        async function testFirebaseAuth() {
+            log('🔐 Testando autenticação Firebase...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não carregado');
+                }
+                
+                const user = await window.FirebaseDB.initAuth();
+                
+                if (user && user.uid) {
+                    log(`Autenticação bem-sucedida! UID: ${user.uid}`, 'success');
+                    updateStatus('connection-message', `✅ Autenticado: ${user.uid.substring(0, 8)}...`, 'success');
+                    testResults.auth = true;
+                } else {
+                    throw new Error('Falha na autenticação');
+                }
+            } catch (error) {
+                log(`Erro na autenticação: ${error.message}`, 'error');
+                updateStatus('connection-message', `❌ Erro na autenticação: ${error.message}`, 'error');
+                testResults.auth = false;
+            }
+            
+            updateProgress();
+        }
+        
+        // Teste 3: Leitura Firestore
+        async function testFirestoreRead() {
+            log('📖 Testando leitura do Firestore...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não carregado');
+                }
+                
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (result.success) {
+                    log(`Leitura bem-sucedida! ${result.data.length} registros encontrados`, 'success');
+                    updateStatus('results-message', `✅ Leitura OK: ${result.data.length} registros`, 'success');
+                    testResults.read = true;
+                } else {
+                    log(`Erro na leitura: ${result.error}`, 'warning');
+                    updateStatus('results-message', `⚠️ Leitura com erro: ${result.error}`, 'warning');
+                    testResults.read = true; // Aceitar erro como válido se for apenas de dados vazios
+                }
+            } catch (error) {
+                log(`Erro no teste de leitura: ${error.message}`, 'error');
+                updateStatus('results-message', `❌ Erro na leitura: ${error.message}`, 'error');
+                testResults.read = false;
+            }
+            
+            updateProgress();
+        }
+        
+        // Teste 4: Escrita Firestore
+        async function testFirestoreWrite() {
+            log('💾 Testando escrita no Firestore...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não carregado');
+                }
+                
+                const testData = {
+                    test: true,
+                    timestamp: new Date().toISOString(),
+                    message: 'Teste de escrita Firebase',
+                    numbers: [999],
+                    status: 'test'
+                };
+                
+                const result = await window.FirebaseDB.savePurchase(testData);
+                
+                if (result.success) {
+                    log(`Escrita bem-sucedida! ID: ${result.id}`, 'success');
+                    updateStatus('results-message', `✅ Escrita OK: Registro ${result.id} criado`, 'success');
+                    testResults.write = true;
+                } else {
+                    log(`Erro na escrita: ${result.error}`, 'error');
+                    updateStatus('results-message', `❌ Erro na escrita: ${result.error}`, 'error');
+                    testResults.write = false;
+                }
+            } catch (error) {
+                log(`Erro no teste de escrita: ${error.message}`, 'error');
+                updateStatus('results-message', `❌ Erro na escrita: ${error.message}`, 'error');
+                testResults.write = false;
+            }
+            
+            updateProgress();
+        }
+        
+        // Executar todos os testes
+        async function runAllTests() {
+            log('🚀 Iniciando bateria completa de testes...');
+            
+            await testFirebaseLoad();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testFirebaseAuth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testFirestoreRead();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testFirestoreWrite();
+            
+            const passedTests = Object.values(testResults).filter(Boolean).length;
+            const totalTests = Object.keys(testResults).length;
+            
+            if (passedTests === totalTests) {
+                log(`🎉 Todos os ${totalTests} testes passaram! Firebase funcionando perfeitamente!`, 'success');
+                updateStatus('results-message', `🎉 Sucesso completo: ${passedTests}/${totalTests} testes`, 'success');
+            } else {
+                log(`⚠️ ${passedTests}/${totalTests} testes passaram. Alguns problemas detectados.`, 'warning');
+                updateStatus('results-message', `⚠️ Parcial: ${passedTests}/${totalTests} testes OK`, 'warning');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - Sincronização de Dados</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .error { border-left-color: #dc3545; }
+        .success { border-left-color: #28a745; }
+        .warning { border-left-color: #ffc107; }
+        
+        .data-box {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .button-group {
+            margin: 15px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        
+        button:hover { background: #0056b3; }
+        
+        .refresh { background: #28a745; }
+        .clear { background: #dc3545; }
+        .test { background: #ffc107; color: black; }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background: #f8f9fa;
+        }
+        
+        .sold { background: #ffcccc; }
+        .confirmed { background: #ccffcc; }
+        .pending { background: #ffffcc; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico - Sincronização de Dados</h1>
+    <p>Esta página diagnostica problemas entre página principal e painel admin</p>
+
+    <div class="button-group">
+        <button onclick="runFullDiagnostic()" class="refresh">🔄 Executar Diagnóstico Completo</button>
+        <button onclick="testSyncData()" class="test">🧪 Testar Sincronização</button>
+        <button onclick="forceSync()" class="warning">⚠️ Forçar Sincronização</button>
+        <button onclick="clearAllData()" class="clear">🗑️ Limpar Dados</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <!-- 1. Dados do localStorage -->
+    <div class="section">
+        <h2>📦 1. Dados do localStorage</h2>
+        <div class="button-group">
+            <button onclick="loadLocalStorageData()">Carregar Dados</button>
+        </div>
+        
+        <h3>📋 Compras (purchases):</h3>
+        <div id="purchases-data" class="data-box">Clique em "Carregar Dados" para ver</div>
+        
+        <h3>🔢 Dados da Rifa (rifaData):</h3>
+        <div id="rifa-data" class="data-box">Clique em "Carregar Dados" para ver</div>
+        
+        <h3>⚙️ Configuração (config):</h3>
+        <div id="config-data" class="data-box">Clique em "Carregar Dados" para ver</div>
+    </div>
+
+    <!-- 2. Estado da Página Principal -->
+    <div class="section">
+        <h2>🏠 2. Estado da Página Principal</h2>
+        <div class="button-group">
+            <button onclick="analyzeMainPageState()">Analisar Estado</button>
+        </div>
+        <div id="main-state" class="data-box">Análise pendente</div>
+    </div>
+
+    <!-- 3. Números Confirmados vs Exibidos -->
+    <div class="section">
+        <h2>🔢 3. Comparação: Confirmados vs Exibidos</h2>
+        <div class="button-group">
+            <button onclick="compareNumbers()">Comparar Números</button>
+        </div>
+        
+        <h3>Números Confirmados no Admin:</h3>
+        <div id="confirmed-numbers" class="data-box">Análise pendente</div>
+        
+        <h3>Números Exibidos como Vendidos na Página:</h3>
+        <div id="displayed-numbers" class="data-box">Análise pendente</div>
+        
+        <h3>Diferenças Encontradas:</h3>
+        <div id="differences" class="data-box">Análise pendente</div>
+    </div>
+
+    <!-- 4. Simulação de Dados -->
+    <div class="section">
+        <h2>🧪 4. Teste de Sincronização</h2>
+        <div class="button-group">
+            <button onclick="createTestPurchase()">Criar Compra de Teste</button>
+            <button onclick="confirmTestPurchase()">Confirmar Compra de Teste</button>
+            <button onclick="checkIfSynced()">Verificar Sincronização</button>
+        </div>
+        <div id="test-results" class="data-box">Testes pendentes</div>
+    </div>
+
+    <!-- 5. Ações de Correção -->
+    <div class="section warning">
+        <h2>🔧 5. Ações de Correção</h2>
+        <div class="button-group">
+            <button onclick="fixSyncIssue()">Corrigir Sincronização</button>
+            <button onclick="rebuildMainPageNumbers()">Reconstruir Números da Página</button>
+            <button onclick="forceRefreshMainPage()">Forçar Atualização da Página</button>
+        </div>
+        <div id="fix-results" class="data-box">Ações pendentes</div>
+    </div>
+
+    <script>
+        let diagnosticData = {
+            purchases: [],
+            rifaData: {},
+            config: {},
+            mainPageState: {},
+            testPurchaseId: null
+        };
+
+        function log(message, type = 'info') {
+            const status = document.getElementById('status');
+            const timestamp = new Date().toLocaleTimeString();
+            status.className = `status ${type}`;
+            status.innerHTML = `[${timestamp}] ${message}`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function runFullDiagnostic() {
+            log('🔄 Iniciando diagnóstico completo...', 'info');
+            
+            loadLocalStorageData();
+            setTimeout(() => {
+                analyzeMainPageState();
+                setTimeout(() => {
+                    compareNumbers();
+                    log('✅ Diagnóstico completo finalizado!', 'success');
+                }, 500);
+            }, 500);
+        }
+
+        function loadLocalStorageData() {
+            log('📦 Carregando dados do localStorage...', 'info');
+            
+            // Carregar purchases
+            const purchasesRaw = localStorage.getItem('purchases');
+            diagnosticData.purchases = purchasesRaw ? JSON.parse(purchasesRaw) : [];
+            document.getElementById('purchases-data').textContent = JSON.stringify(diagnosticData.purchases, null, 2);
+            
+            // Carregar rifaData
+            const rifaDataRaw = localStorage.getItem('rifaData');
+            diagnosticData.rifaData = rifaDataRaw ? JSON.parse(rifaDataRaw) : {};
+            document.getElementById('rifa-data').textContent = JSON.stringify(diagnosticData.rifaData, null, 2);
+            
+            // Carregar config
+            const configRaw = localStorage.getItem('config');
+            diagnosticData.config = configRaw ? JSON.parse(configRaw) : {};
+            document.getElementById('config-data').textContent = JSON.stringify(diagnosticData.config, null, 2);
+            
+            log(`📊 Dados carregados: ${diagnosticData.purchases.length} compras encontradas`, 'success');
+        }
+
+        function analyzeMainPageState() {
+            log('🏠 Analisando estado da página principal...', 'info');
+            
+            // Simular estado da página principal
+            const mainState = {
+                soldNumbers: new Set(),
+                reservedNumbers: new Set(),
+                selectedNumbers: new Set(),
+                firebaseReady: false
+            };
+            
+            // Processar números vendidos confirmados
+            diagnosticData.purchases.forEach(purchase => {
+                if (purchase.status === 'confirmed' && purchase.numbers) {
+                    purchase.numbers.forEach(number => mainState.soldNumbers.add(number));
+                }
+            });
+            
+            // Adicionar números do rifaData
+            if (diagnosticData.rifaData.soldNumbers) {
+                diagnosticData.rifaData.soldNumbers.forEach(number => mainState.soldNumbers.add(number));
+            }
+            
+            if (diagnosticData.rifaData.reservedNumbers) {
+                diagnosticData.rifaData.reservedNumbers.forEach(number => mainState.reservedNumbers.add(number));
+            }
+            
+            diagnosticData.mainPageState = {
+                soldNumbers: Array.from(mainState.soldNumbers),
+                reservedNumbers: Array.from(mainState.reservedNumbers),
+                selectedNumbers: Array.from(mainState.selectedNumbers),
+                totalSold: mainState.soldNumbers.size,
+                totalReserved: mainState.reservedNumbers.size
+            };
+            
+            document.getElementById('main-state').textContent = JSON.stringify(diagnosticData.mainPageState, null, 2);
+            
+            log(`🔢 Estado analisado: ${diagnosticData.mainPageState.totalSold} vendidos, ${diagnosticData.mainPageState.totalReserved} reservados`, 'success');
+        }
+
+        function compareNumbers() {
+            log('🔢 Comparando números confirmados vs exibidos...', 'info');
+            
+            // Números confirmados no admin
+            const confirmedNumbers = new Set();
+            diagnosticData.purchases.forEach(purchase => {
+                if (purchase.status === 'confirmed' && purchase.numbers) {
+                    purchase.numbers.forEach(number => confirmedNumbers.add(number));
+                }
+            });
+            
+            // Números que deveriam estar exibidos como vendidos
+            const shouldBeDisplayed = new Set([...confirmedNumbers]);
+            if (diagnosticData.rifaData.soldNumbers) {
+                diagnosticData.rifaData.soldNumbers.forEach(number => shouldBeDisplayed.add(number));
+            }
+            
+            // Números atualmente exibidos (do estado da página)
+            const currentlyDisplayed = new Set(diagnosticData.mainPageState.soldNumbers || []);
+            
+            // Encontrar diferenças
+            const missingFromDisplay = [...shouldBeDisplayed].filter(num => !currentlyDisplayed.has(num));
+            const extraInDisplay = [...currentlyDisplayed].filter(num => !shouldBeDisplayed.has(num));
+            
+            document.getElementById('confirmed-numbers').textContent = 
+                `Confirmados (${confirmedNumbers.size}): [${Array.from(confirmedNumbers).sort((a,b) => a-b).join(', ')}]`;
+            
+            document.getElementById('displayed-numbers').textContent = 
+                `Exibidos (${currentlyDisplayed.size}): [${Array.from(currentlyDisplayed).sort((a,b) => a-b).join(', ')}]`;
+            
+            const differences = {
+                missing: missingFromDisplay,
+                extra: extraInDisplay,
+                hasDifferences: missingFromDisplay.length > 0 || extraInDisplay.length > 0
+            };
+            
+            document.getElementById('differences').textContent = JSON.stringify(differences, null, 2);
+            
+            if (differences.hasDifferences) {
+                log(`⚠️ Diferenças encontradas! ${missingFromDisplay.length} faltando, ${extraInDisplay.length} sobrando`, 'warning');
+            } else {
+                log('✅ Números sincronizados corretamente!', 'success');
+            }
+            
+            return differences;
+        }
+
+        function testSyncData() {
+            log('🧪 Iniciando teste de sincronização...', 'info');
+            loadLocalStorageData();
+            analyzeMainPageState();
+            const differences = compareNumbers();
+            
+            if (differences.hasDifferences) {
+                log('❌ Problema de sincronização detectado!', 'error');
+                return false;
+            } else {
+                log('✅ Sincronização funcionando corretamente!', 'success');
+                return true;
+            }
+        }
+
+        function createTestPurchase() {
+            log('🧪 Criando compra de teste...', 'info');
+            
+            const testNumber = Math.floor(Math.random() * 150) + 1;
+            const testPurchase = {
+                id: `test-${Date.now()}`,
+                buyerName: 'Teste Usuário',
+                buyerPhone: '(11) 99999-9999',
+                numbers: [testNumber],
+                totalAmount: 40.00,
+                paymentMethod: 'doacao',
+                status: 'pending_donation',
+                timestamp: new Date().toISOString()
+            };
+            
+            // Adicionar ao localStorage
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            purchases.push(testPurchase);
+            localStorage.setItem('purchases', JSON.stringify(purchases));
+            
+            diagnosticData.testPurchaseId = testPurchase.id;
+            
+            document.getElementById('test-results').textContent = 
+                `Compra de teste criada:\nID: ${testPurchase.id}\nNúmero: ${testNumber}\nStatus: pending_donation`;
+            
+            log(`✅ Compra de teste criada - Número ${testNumber}`, 'success');
+        }
+
+        function confirmTestPurchase() {
+            if (!diagnosticData.testPurchaseId) {
+                log('❌ Nenhuma compra de teste encontrada. Crie uma primeiro!', 'error');
+                return;
+            }
+            
+            log('✅ Confirmando compra de teste...', 'info');
+            
+            // Buscar e confirmar a compra
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const testPurchase = purchases.find(p => p.id === diagnosticData.testPurchaseId);
+            
+            if (testPurchase) {
+                testPurchase.status = 'confirmed';
+                localStorage.setItem('purchases', JSON.stringify(purchases));
+                
+                document.getElementById('test-results').textContent += 
+                    `\n\nCompra confirmada!\nID: ${testPurchase.id}\nNúmero: ${testPurchase.numbers[0]}\nStatus: confirmed`;
+                
+                log(`✅ Compra de teste confirmada - Número ${testPurchase.numbers[0]}`, 'success');
+            } else {
+                log('❌ Compra de teste não encontrada!', 'error');
+            }
+        }
+
+        function checkIfSynced() {
+            log('🔍 Verificando se a sincronização funcionou...', 'info');
+            
+            if (!diagnosticData.testPurchaseId) {
+                log('❌ Nenhuma compra de teste para verificar!', 'error');
+                return;
+            }
+            
+            // Recarregar dados e comparar
+            loadLocalStorageData();
+            analyzeMainPageState();
+            
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const testPurchase = purchases.find(p => p.id === diagnosticData.testPurchaseId);
+            
+            if (testPurchase && testPurchase.status === 'confirmed') {
+                const testNumber = testPurchase.numbers[0];
+                const isDisplayedAsSold = diagnosticData.mainPageState.soldNumbers.includes(testNumber);
+                
+                document.getElementById('test-results').textContent += 
+                    `\n\nVerificação:\nNúmero ${testNumber} confirmado: ✅\nExibido como vendido: ${isDisplayedAsSold ? '✅' : '❌'}`;
+                
+                if (isDisplayedAsSold) {
+                    log('✅ Sincronização funcionando! Número aparece como vendido.', 'success');
+                } else {
+                    log('❌ Problema de sincronização! Número confirmado não aparece como vendido.', 'error');
+                }
+            }
+        }
+
+        function forceSync() {
+            log('⚡ Forçando sincronização...', 'warning');
+            
+            // Reprocessar todas as compras confirmadas
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const soldNumbers = [];
+            
+            purchases.forEach(purchase => {
+                if (purchase.status === 'confirmed' && purchase.numbers) {
+                    soldNumbers.push(...purchase.numbers);
+                }
+            });
+            
+            // Atualizar rifaData
+            const rifaData = {
+                soldNumbers: [...new Set(soldNumbers)],
+                reservedNumbers: [],
+                lastUpdate: new Date().toISOString()
+            };
+            
+            localStorage.setItem('rifaData', JSON.stringify(rifaData));
+            
+            log(`✅ Sincronização forçada! ${rifaData.soldNumbers.length} números marcados como vendidos.`, 'success');
+            
+            // Recarregar dados
+            setTimeout(runFullDiagnostic, 500);
+        }
+
+        function fixSyncIssue() {
+            log('🔧 Corrigindo problemas de sincronização...', 'warning');
+            
+            // 1. Reprocessar todas as compras
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const confirmedSoldNumbers = [];
+            
+            purchases.forEach(purchase => {
+                if (purchase.status === 'confirmed' && purchase.numbers) {
+                    confirmedSoldNumbers.push(...purchase.numbers);
+                }
+            });
+            
+            // 2. Limpar duplicatas
+            const uniqueSoldNumbers = [...new Set(confirmedSoldNumbers)];
+            
+            // 3. Atualizar rifaData com dados limpos
+            const rifaData = {
+                soldNumbers: uniqueSoldNumbers,
+                reservedNumbers: [],
+                lastUpdate: new Date().toISOString()
+            };
+            
+            localStorage.setItem('rifaData', JSON.stringify(rifaData));
+            
+            document.getElementById('fix-results').textContent = 
+                `Correção aplicada:\n- ${purchases.length} compras processadas\n- ${uniqueSoldNumbers.length} números únicos vendidos\n- rifaData atualizado`;
+            
+            log(`✅ Correção aplicada! ${uniqueSoldNumbers.length} números sincronizados.`, 'success');
+        }
+
+        function rebuildMainPageNumbers() {
+            log('🔨 Reconstruindo números da página principal...', 'warning');
+            
+            // Simular a lógica da página principal
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const soldNumbers = new Set();
+            
+            // Processar compras confirmadas
+            purchases.forEach(purchase => {
+                if (purchase.status === 'confirmed' && purchase.numbers) {
+                    purchase.numbers.forEach(number => soldNumbers.add(number));
+                }
+            });
+            
+            // Reconstruir rifaData
+            const rifaData = {
+                soldNumbers: Array.from(soldNumbers),
+                reservedNumbers: [],
+                lastUpdate: new Date().toISOString()
+            };
+            
+            localStorage.setItem('rifaData', JSON.stringify(rifaData));
+            
+            document.getElementById('fix-results').textContent = 
+                `Reconstrução concluída:\n- ${soldNumbers.size} números marcados como vendidos\n- rifaData reconstruído\n- Ready para página principal`;
+            
+            log(`✅ Reconstrução concluída! ${soldNumbers.size} números processados.`, 'success');
+        }
+
+        function forceRefreshMainPage() {
+            log('🔄 Forçando atualização da página principal...', 'info');
+            
+            // Abrir página principal em nova aba
+            const mainPageUrl = '/home/nicps/Documents/Projetos/RifaThomas/index.html';
+            window.open(mainPageUrl, '_blank');
+            
+            log('✅ Página principal aberta em nova aba. Verifique se os números estão corretos.', 'success');
+        }
+
+        function clearAllData() {
+            if (!confirm('⚠️ ATENÇÃO: Isso vai limpar TODOS os dados! Continuar?')) return;
+            
+            log('🗑️ Limpando todos os dados...', 'warning');
+            
+            localStorage.removeItem('purchases');
+            localStorage.removeItem('rifaData');
+            localStorage.removeItem('config');
+            
+            // Limpar interface
+            document.getElementById('purchases-data').textContent = 'Dados limpos';
+            document.getElementById('rifa-data').textContent = 'Dados limpos';
+            document.getElementById('config-data').textContent = 'Dados limpos';
+            document.getElementById('main-state').textContent = 'Dados limpos';
+            document.getElementById('confirmed-numbers').textContent = 'Dados limpos';
+            document.getElementById('displayed-numbers').textContent = 'Dados limpos';
+            document.getElementById('differences').textContent = 'Dados limpos';
+            document.getElementById('test-results').textContent = 'Dados limpos';
+            document.getElementById('fix-results').textContent = 'Dados limpos';
+            
+            diagnosticData = {
+                purchases: [],
+                rifaData: {},
+                config: {},
+                mainPageState: {},
+                testPurchaseId: null
+            };
+            
+            log('✅ Todos os dados foram limpos!', 'success');
+        }
+
+        // Executar diagnóstico inicial
+        window.addEventListener('load', () => {
+            log('🔍 Página de diagnóstico carregada. Execute um diagnóstico completo.', 'info');
+        });
+    </script>
+</body>
+</html>

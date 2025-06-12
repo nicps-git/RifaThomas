@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Dados de Teste - RifaThomas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            width: 100%;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Criar Dados de Teste</h1>
+        
+        <div id="status-container">
+            <div class="status info">
+                ⏳ Aguardando Firebase...
+            </div>
+        </div>
+        
+        <button id="create-btn" class="btn" onclick="createTestData()" disabled>
+            🧪 Criar Compra de Teste (Formato Antigo)
+        </button>
+        
+        <button id="create-new-btn" class="btn" onclick="createNewFormatData()" disabled>
+            ✅ Criar Compra de Teste (Formato Novo)
+        </button>
+        
+        <button id="clear-btn" class="btn" onclick="clearAllData()" disabled>
+            🗑️ Limpar Todos os Dados de Teste
+        </button>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const container = document.getElementById('status-container');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            container.innerHTML = `<div class="status ${className}">${message}</div>`;
+        }
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', async () => {
+            updateStatus('✅ Firebase conectado - Pronto para criar dados de teste', 'success');
+            document.getElementById('create-btn').disabled = false;
+            document.getElementById('create-new-btn').disabled = false;
+            document.getElementById('clear-btn').disabled = false;
+        });
+        
+        async function createTestData() {
+            updateStatus('⏳ Criando dados de teste (formato antigo)...', 'info');
+            
+            try {
+                // Criar compra com formato antigo
+                const testPurchase = {
+                    name: 'João Silva',
+                    phone: '(11) 99999-1234',
+                    numbers: [1, 2, 3],
+                    totalAmount: 120.00,
+                    paymentMethod: 'pix',
+                    status: 'confirmed',
+                    date: new Date().toISOString(),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                const docRef = await firebase.firestore().collection('purchases').add(testPurchase);
+                
+                updateStatus(`✅ Dados de teste criados com sucesso! ID: ${docRef.id}`, 'success');
+                
+            } catch (error) {
+                updateStatus(`❌ Erro ao criar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createNewFormatData() {
+            updateStatus('⏳ Criando dados de teste (formato novo)...', 'info');
+            
+            try {
+                // Criar compra com formato novo
+                const testPurchase = {
+                    buyerName: 'Maria Santos',
+                    buyerPhone: '(11) 88888-5678',
+                    numbers: [10, 11, 12],
+                    totalAmount: 120.00,
+                    paymentMethod: 'pix',
+                    status: 'confirmed',
+                    date: new Date().toISOString(),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                const docRef = await firebase.firestore().collection('purchases').add(testPurchase);
+                
+                updateStatus(`✅ Dados de teste (novo formato) criados! ID: ${docRef.id}`, 'success');
+                
+            } catch (error) {
+                updateStatus(`❌ Erro ao criar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        async function clearAllData() {
+            if (!confirm('⚠️ Isso irá apagar TODOS os dados de compras. Confirmar?')) {
+                return;
+            }
+            
+            updateStatus('⏳ Removendo todos os dados...', 'info');
+            
+            try {
+                const snapshot = await firebase.firestore().collection('purchases').get();
+                const batch = firebase.firestore().batch();
+                
+                snapshot.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                
+                updateStatus(`✅ ${snapshot.size} registros removidos com sucesso!`, 'success');
+                
+            } catch (error) {
+                updateStatus(`❌ Erro ao remover dados: ${error.message}`, 'error');
+            }
+        }
+        
+        // Verificar se Firebase está pronto
+        setTimeout(() => {
+            if (typeof window.FirebaseDB !== 'undefined') {
+                window.dispatchEvent(new Event('firebaseReady'));
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

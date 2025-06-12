@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Confirmação e Filtros - Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        .green { background: #28a745; }
+        .green:hover { background: #1e7e34; }
+        .red { background: #dc3545; }
+        .red:hover { background: #c82333; }
+        .orange { background: #fd7e14; }
+        .orange:hover { background: #e8650e; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+        .test-section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .test-section h3 { margin-top: 0; color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Funcionalidades Admin - Confirmação e Filtros</h1>
+        
+        <p>Esta página testa especificamente as funcionalidades de confirmação/rejeição de doações e filtros de status.</p>
+        
+        <div class="test-section">
+            <h3>🎯 Preparação de Dados</h3>
+            <div class="actions">
+                <button onclick="createTestDataWithPending()" class="green">🆕 Criar Dados com Pendentes</button>
+                <button onclick="viewCurrentData()">👁️ Ver Dados Atuais</button>
+                <button onclick="clearAllData()" class="red">🗑️ Limpar Dados</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔧 Testes de Admin</h3>
+            <div class="actions">
+                <button onclick="testAdminFunctions()" class="orange">🔬 Testar Funções Admin</button>
+                <button onclick="testFilterFunctions()">🔍 Testar Filtros</button>
+                <button onclick="openAdminInFrame()" class="green">📺 Abrir Admin em Frame</button>
+                <button onclick="openAdminInNewTab()">🔗 Abrir Admin em Nova Aba</button>
+            </div>
+        </div>
+        
+        <div id="admin-frame-container"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info', data = null) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            
+            let content = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function createTestDataWithPending() {
+            log('🆕 Criando dados de teste com doações pendentes...', 'info');
+            
+            try {
+                const testPurchases = [
+                    // Doações pendentes
+                    {
+                        id: 'purchase_pending_001',
+                        name: 'Ana Silva - PENDENTE',
+                        buyerName: 'Ana Silva',
+                        phone: '(11) 99999-1111',
+                        buyerPhone: '(11) 99999-1111',
+                        numbers: [1, 15, 33],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date(Date.now() - 3600000).toISOString(),
+                        date: new Date(Date.now() - 3600000).toISOString()
+                    },
+                    {
+                        id: 'purchase_pending_002',
+                        name: 'Carlos Lima - PENDENTE',
+                        buyerName: 'Carlos Lima',
+                        phone: '(11) 99999-2222',
+                        buyerPhone: '(11) 99999-2222',
+                        numbers: [45, 67, 89],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date(Date.now() - 1800000).toISOString(),
+                        date: new Date(Date.now() - 1800000).toISOString()
+                    },
+                    {
+                        id: 'purchase_pending_003',
+                        name: 'Maria Santos - PENDENTE',
+                        buyerName: 'Maria Santos',
+                        phone: '(11) 99999-3333',
+                        buyerPhone: '(11) 99999-3333',
+                        numbers: [100, 125, 150],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date(Date.now() - 900000).toISOString(),
+                        date: new Date(Date.now() - 900000).toISOString()
+                    },
+                    // Confirmados
+                    {
+                        id: 'purchase_confirmed_001',
+                        name: 'João Pedro - CONFIRMADO',
+                        buyerName: 'João Pedro',
+                        phone: '(11) 99999-4444',
+                        buyerPhone: '(11) 99999-4444',
+                        numbers: [5, 25, 55],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date(Date.now() - 7200000).toISOString(),
+                        date: new Date(Date.now() - 7200000).toISOString()
+                    },
+                    {
+                        id: 'purchase_confirmed_002',
+                        name: 'Fernanda Costa - CONFIRMADO',
+                        buyerName: 'Fernanda Costa',
+                        phone: '(11) 99999-5555',
+                        buyerPhone: '(11) 99999-5555',
+                        numbers: [10, 30, 50],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'confirmed',
+                        createdAt: new Date(Date.now() - 5400000).toISOString(),
+                        date: new Date(Date.now() - 5400000).toISOString()
+                    },
+                    // Rejeitados
+                    {
+                        id: 'purchase_rejected_001',
+                        name: 'Roberto Silva - REJEITADO',
+                        buyerName: 'Roberto Silva',
+                        phone: '(11) 99999-6666',
+                        buyerPhone: '(11) 99999-6666',
+                        numbers: [77, 88, 99],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'rejected',
+                        createdAt: new Date(Date.now() - 10800000).toISOString(),
+                        date: new Date(Date.now() - 10800000).toISOString(),
+                        rejectedAt: new Date(Date.now() - 9000000).toISOString(),
+                        rejectionReason: 'Teste de rejeição'
+                    }
+                ];
+                
+                localStorage.setItem('purchases', JSON.stringify(testPurchases));
+                
+                const stats = {
+                    total: testPurchases.length,
+                    pending: testPurchases.filter(p => p.status === 'pending_donation').length,
+                    confirmed: testPurchases.filter(p => p.status === 'confirmed').length,
+                    rejected: testPurchases.filter(p => p.status === 'rejected').length
+                };
+                
+                log('✅ Dados de teste criados!', 'success', stats);
+                log('🎯 Pronto para testar confirmações e filtros!', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        function viewCurrentData() {
+            log('👁️ Verificando dados atuais...', 'info');
+            
+            try {
+                const purchases = localStorage.getItem('purchases');
+                
+                if (purchases) {
+                    const parsedPurchases = JSON.parse(purchases);
+                    
+                    const stats = {
+                        total: parsedPurchases.length,
+                        pending_donation: parsedPurchases.filter(p => p.status === 'pending_donation').length,
+                        confirmed: parsedPurchases.filter(p => p.status === 'confirmed').length,
+                        rejected: parsedPurchases.filter(p => p.status === 'rejected').length
+                    };
+                    
+                    log(`📊 Estatísticas dos dados:`, 'success', stats);
+                    
+                    // Mostrar algumas amostras
+                    const samples = parsedPurchases.slice(0, 3).map(p => ({
+                        id: p.id,
+                        name: p.name || p.buyerName,
+                        status: p.status,
+                        numbers: p.numbers
+                    }));
+                    
+                    log('📋 Amostras dos dados:', 'info', samples);
+                    
+                } else {
+                    log('⚠️ Nenhum dado encontrado no localStorage', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearAllData() {
+            if (!confirm('⚠️ Limpar todos os dados?')) return;
+            
+            try {
+                localStorage.clear();
+                log('✅ Dados limpos', 'success');
+            } catch (error) {
+                log(`❌ Erro ao limpar: ${error.message}`, 'error');
+            }
+        }
+        
+        function testAdminFunctions() {
+            log('🔬 Testando funções do admin...', 'info');
+            
+            // Verificar se as funções existem
+            const functionsToTest = [
+                'confirmDonation',
+                'rejectDonation', 
+                'filterParticipants',
+                'loadParticipants',
+                'updateDashboard',
+                'showNotification'
+            ];
+            
+            log('🔍 Verificando disponibilidade das funções admin...', 'info');
+            log('ℹ️ (Essa verificação é feita via console - abra DevTools F12)', 'warning');
+        }
+        
+        function testFilterFunctions() {
+            log('🔍 Testando funções de filtro...', 'info');
+            log('ℹ️ Os filtros devem ser testados na página admin real', 'warning');
+            log('📝 Verifique se os botões "Doações Pendentes", "Confirmados", etc. funcionam', 'info');
+        }
+        
+        function openAdminInFrame() {
+            log('📺 Abrindo admin em frame...', 'info');
+            
+            const container = document.getElementById('admin-frame-container');
+            container.innerHTML = `
+                <div class="test-section">
+                    <h3>📺 Admin Page Preview</h3>
+                    <iframe src="admin.html" width="100%" height="600" style="border: 1px solid #ddd; border-radius: 8px;"></iframe>
+                    <p><small>Use o frame acima para testar as funcionalidades de confirmação e filtros.</small></p>
+                </div>
+            `;
+        }
+        
+        function openAdminInNewTab() {
+            log('🔗 Abrindo admin em nova aba...', 'info');
+            window.open('admin.html', '_blank');
+        }
+        
+        // Auto-carregar dados ao iniciar
+        setTimeout(() => {
+            viewCurrentData();
+        }, 500);
+    </script>
+</body>
+</html>

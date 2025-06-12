@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Verificar Dados Existentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; }
+        .result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificação de Dados do Sistema</h1>
+        
+        <div>
+            <button onclick="checkLocalStorage()">📱 Verificar LocalStorage</button>
+            <button onclick="createSampleData()">🆕 Criar Dados de Teste</button>
+            <button onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info', data = null) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            
+            let content = message;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            results.appendChild(div);
+        }
+        
+        function checkLocalStorage() {
+            log('🔍 Verificando dados no LocalStorage...', 'info');
+            
+            try {
+                // Verificar compras
+                const purchases = localStorage.getItem('purchases');
+                if (purchases) {
+                    const parsedPurchases = JSON.parse(purchases);
+                    log(`✅ Encontradas ${parsedPurchases.length} compras no LocalStorage`, 'success', parsedPurchases);
+                } else {
+                    log('⚠️ Nenhuma compra encontrada no LocalStorage', 'warning');
+                }
+                
+                // Verificar configurações
+                const config = localStorage.getItem('rifaConfig');
+                if (config) {
+                    const parsedConfig = JSON.parse(config);
+                    log('✅ Configurações encontradas no LocalStorage', 'success', parsedConfig);
+                } else {
+                    log('⚠️ Nenhuma configuração encontrada no LocalStorage', 'warning');
+                }
+                
+                // Verificar outros dados
+                const allKeys = Object.keys(localStorage);
+                log(`📊 Total de chaves no LocalStorage: ${allKeys.length}`, 'info', allKeys);
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar LocalStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        function createSampleData() {
+            log('🆕 Criando dados de teste...', 'info');
+            
+            try {
+                // Criar compras de exemplo
+                const samplePurchases = [
+                    {
+                        id: 'purchase_test_001',
+                        name: 'João Silva',
+                        phone: '(11) 99999-1111',
+                        numbers: [1, 15, 33],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'purchase_test_002',
+                        name: 'Maria Santos',
+                        phone: '(11) 99999-2222',
+                        numbers: [5, 22, 77],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'purchase_test_003',
+                        name: 'Pedro Costa',
+                        phone: '(11) 99999-3333',
+                        numbers: [10, 45, 99],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                // Salvar no localStorage
+                localStorage.setItem('purchases', JSON.stringify(samplePurchases));
+                
+                // Criar configuração de exemplo
+                const sampleConfig = {
+                    totalNumbers: 150,
+                    ticketPrice: 40.00,
+                    drawDate: '2025-07-11T16:00:00',
+                    pixKey: 'contato@charifa.com',
+                    prizes: {
+                        first: 'R$ 100,00',
+                        second: 'R$ 200,00',
+                        third: 'Fraldas por faixa'
+                    },
+                    contactPhone: '(11) 99999-9999',
+                    babyName: 'Thomas'
+                };
+                
+                localStorage.setItem('rifaConfig', JSON.stringify(sampleConfig));
+                
+                log('✅ Dados de teste criados com sucesso!', 'success');
+                log('📊 Criadas 3 compras de exemplo', 'info');
+                log('⚙️ Configuração padrão salva', 'info');
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados de teste: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearAllData() {
+            if (!confirm('⚠️ Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) {
+                return;
+            }
+            
+            try {
+                localStorage.clear();
+                log('✅ Todos os dados foram limpos', 'success');
+            } catch (error) {
+                log(`❌ Erro ao limpar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-verificar ao carregar
+        setTimeout(() => {
+            checkLocalStorage();
+        }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Admin - Funções de Confirmação</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #cce7ff; color: #004085; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-test { background: #007bff; color: white; }
+        .btn-confirm { background: #28a745; color: white; }
+        .btn-reject { background: #dc3545; color: white; }
+        .btn-clear { background: #ffc107; color: black; }
+        .debug-output {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .purchase-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .purchase-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .purchase-details {
+            margin: 5px 0;
+            color: #666;
+        }
+        .purchase-actions {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Admin - Funções de Confirmação</h1>
+    
+    <div class="debug-section">
+        <h2>🔍 Status do Sistema</h2>
+        <div id="system-status"></div>
+        <button class="btn-test" onclick="checkSystemStatus()">Verificar Status</button>
+        <button class="btn-clear" onclick="clearOutput()">Limpar Output</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>📊 Dados do Firebase</h2>
+        <div id="firebase-status"></div>
+        <button class="btn-test" onclick="loadFirebaseData()">Carregar Dados</button>
+        <button class="btn-test" onclick="createTestData()">Criar Dados de Teste</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>🛒 Compras Pendentes</h2>
+        <div id="purchases-list"></div>
+        <button class="btn-test" onclick="loadPurchases()">Carregar Compras</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔧 Testar Funções</h2>
+        <button class="btn-test" onclick="testConfirmFunction()">Testar Confirmação</button>
+        <button class="btn-test" onclick="testRejectFunction()">Testar Rejeição</button>
+        <button class="btn-test" onclick="testUpdateStatus()">Testar Update Status</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>📝 Log de Debug</h2>
+        <div id="debug-output" class="debug-output"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let debugData = {
+            purchases: [],
+            currentUser: null,
+            firebaseReady: false
+        };
+
+        // Log function
+        function log(message, type = 'info') {
+            const output = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            output.textContent += logEntry;
+            output.scrollTop = output.scrollHeight;
+            
+            console.log(`[DEBUG ${type.toUpperCase()}]`, message);
+        }
+
+        // Clear output
+        function clearOutput() {
+            document.getElementById('debug-output').textContent = '';
+        }
+
+        // Update status display
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // Check system status
+        async function checkSystemStatus() {
+            log('🔍 Verificando status do sistema...');
+            
+            // Check Firebase
+            if (typeof window.FirebaseDB !== 'undefined') {
+                updateStatus('system-status', '✅ Firebase carregado', 'success');
+                log('✅ Firebase disponível');
+                
+                try {
+                    const user = await window.FirebaseDB.getCurrentAdmin();
+                    if (user.success) {
+                        debugData.currentUser = user.user;
+                        debugData.firebaseReady = true;
+                        log(`✅ Usuário admin autenticado: ${user.user.email}`);
+                        updateStatus('system-status', `✅ Sistema pronto - Admin: ${user.user.email}`, 'success');
+                    } else {
+                        log('❌ Usuário não é admin ou não autenticado');
+                        updateStatus('system-status', '❌ Usuário não é admin', 'error');
+                    }
+                } catch (error) {
+                    log(`❌ Erro ao verificar usuário: ${error.message}`);
+                    updateStatus('system-status', `❌ Erro: ${error.message}`, 'error');
+                }
+            } else {
+                updateStatus('system-status', '❌ Firebase não carregado', 'error');
+                log('❌ Firebase não disponível');
+            }
+        }
+
+        // Load Firebase data
+        async function loadFirebaseData() {
+            if (!debugData.firebaseReady) {
+                log('❌ Firebase não está pronto');
+                return;
+            }
+
+            try {
+                log('📊 Carregando dados do Firebase...');
+                const result = await window.FirebaseDB.getPurchases();
+                
+                if (result.success) {
+                    debugData.purchases = result.data;
+                    log(`✅ ${result.data.length} compras carregadas`);
+                    updateStatus('firebase-status', `✅ ${result.data.length} compras carregadas`, 'success');
+                } else {
+                    log(`❌ Erro ao carregar: ${result.error}`);
+                    updateStatus('firebase-status', `❌ Erro: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+                updateStatus('firebase-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        // Create test data
+        async function createTestData() {
+            if (!debugData.firebaseReady) {
+                log('❌ Firebase não está pronto');
+                return;
+            }
+
+            try {
+                log('🧪 Criando dados de teste...');
+                
+                const testPurchase = {
+                    buyerName: 'Teste Debug',
+                    buyerPhone: '(11) 99999-9999',
+                    numbers: [101, 102, 103],
+                    totalAmount: 120.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                };
+
+                const result = await window.FirebaseDB.savePurchase(testPurchase);
+                
+                if (result.success) {
+                    log(`✅ Dados de teste criados com ID: ${result.id}`);
+                    loadFirebaseData(); // Recarregar dados
+                } else {
+                    log(`❌ Erro ao criar dados: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+            }
+        }
+
+        // Load purchases
+        function loadPurchases() {
+            log('🛒 Carregando lista de compras...');
+            
+            const container = document.getElementById('purchases-list');
+            container.innerHTML = '';
+            
+            if (debugData.purchases.length === 0) {
+                container.innerHTML = '<p>Nenhuma compra encontrada. Use "Carregar Dados" primeiro.</p>';
+                return;
+            }
+
+            debugData.purchases.forEach(purchase => {
+                const card = document.createElement('div');
+                card.className = 'purchase-card';
+                
+                const statusText = purchase.status || 'pending';
+                const statusClass = statusText === 'confirmed' ? 'success' : 
+                                   statusText === 'rejected' ? 'error' : 'warning';
+                
+                card.innerHTML = `
+                    <div class="purchase-header">
+                        ID: ${purchase.id} - ${purchase.buyerName || purchase.name || 'N/A'}
+                        <span class="status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="purchase-details">
+                        📱 ${purchase.buyerPhone || purchase.phone || 'N/A'}<br>
+                        🎯 Números: ${purchase.numbers ? purchase.numbers.join(', ') : 'N/A'}<br>
+                        💰 Total: R$ ${purchase.totalAmount || 0}<br>
+                        💳 Pagamento: ${purchase.paymentMethod || 'N/A'}<br>
+                        📅 Data: ${new Date(purchase.date).toLocaleString()}
+                    </div>
+                    <div class="purchase-actions">
+                        <button class="btn-confirm" onclick="testConfirmPurchase('${purchase.id}')">
+                            ✅ Confirmar
+                        </button>
+                        <button class="btn-reject" onclick="testRejectPurchase('${purchase.id}')">
+                            ❌ Rejeitar
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            log(`✅ ${debugData.purchases.length} compras exibidas`);
+        }
+
+        // Test confirm purchase
+        async function testConfirmPurchase(purchaseId) {
+            log(`🔧 Testando confirmação da compra ${purchaseId}...`);
+            
+            try {
+                if (!debugData.firebaseReady) {
+                    throw new Error('Firebase não está pronto');
+                }
+
+                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed');
+                
+                if (result.success) {
+                    log(`✅ Compra ${purchaseId} confirmada com sucesso`);
+                    loadFirebaseData(); // Recarregar dados
+                    loadPurchases(); // Atualizar lista
+                } else {
+                    log(`❌ Erro ao confirmar: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Erro na confirmação: ${error.message}`);
+            }
+        }
+
+        // Test reject purchase
+        async function testRejectPurchase(purchaseId) {
+            log(`🔧 Testando rejeição da compra ${purchaseId}...`);
+            
+            try {
+                if (!debugData.firebaseReady) {
+                    throw new Error('Firebase não está pronto');
+                }
+
+                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected');
+                
+                if (result.success) {
+                    log(`✅ Compra ${purchaseId} rejeitada com sucesso`);
+                    loadFirebaseData(); // Recarregar dados
+                    loadPurchases(); // Atualizar lista
+                } else {
+                    log(`❌ Erro ao rejeitar: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Erro na rejeição: ${error.message}`);
+            }
+        }
+
+        // Test functions
+        function testConfirmFunction() {
+            log('🔧 Testando função confirmDonation...');
+            
+            if (debugData.purchases.length === 0) {
+                log('❌ Nenhuma compra disponível para teste');
+                return;
+            }
+            
+            const testPurchase = debugData.purchases.find(p => p.status === 'pending_donation');
+            if (testPurchase) {
+                log(`📋 Testando com compra: ${testPurchase.id}`);
+                testConfirmPurchase(testPurchase.id);
+            } else {
+                log('⚠️ Nenhuma compra pendente encontrada');
+            }
+        }
+
+        function testRejectFunction() {
+            log('🔧 Testando função rejectDonation...');
+            
+            if (debugData.purchases.length === 0) {
+                log('❌ Nenhuma compra disponível para teste');
+                return;
+            }
+            
+            const testPurchase = debugData.purchases.find(p => p.status === 'pending_donation');
+            if (testPurchase) {
+                log(`📋 Testando com compra: ${testPurchase.id}`);
+                testRejectPurchase(testPurchase.id);
+            } else {
+                log('⚠️ Nenhuma compra pendente encontrada');
+            }
+        }
+
+        async function testUpdateStatus() {
+            log('🔧 Testando função updatePurchaseStatus...');
+            
+            if (!debugData.firebaseReady) {
+                log('❌ Firebase não está pronto');
+                return;
+            }
+
+            if (debugData.purchases.length === 0) {
+                log('❌ Nenhuma compra disponível para teste');
+                return;
+            }
+
+            const testPurchase = debugData.purchases[0];
+            const newStatus = testPurchase.status === 'confirmed' ? 'pending_donation' : 'confirmed';
+            
+            try {
+                log(`📋 Testando mudança de status: ${testPurchase.status} → ${newStatus}`);
+                const result = await window.FirebaseDB.updatePurchaseStatus(testPurchase.id, newStatus);
+                
+                if (result.success) {
+                    log(`✅ Status atualizado com sucesso`);
+                } else {
+                    log(`❌ Erro: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+            }
+        }
+
+        // Auto-initialize
+        window.addEventListener('load', () => {
+            log('🚀 Debug carregado, aguardando Firebase...');
+            
+            // Wait for Firebase
+            setTimeout(() => {
+                checkSystemStatus();
+            }, 2000);
+        });
+
+        // Listen for Firebase ready
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 Firebase pronto detectado');
+            checkSystemStatus();
+        });
+    </script>
+</body>
+</html>

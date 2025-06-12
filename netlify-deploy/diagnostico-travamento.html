@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Diagnóstico - Problema de Travamento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .diagnostic-box {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .status-ok { border-left-color: #28a745; }
+        .status-error { border-left-color: #dc3545; }
+        .status-warning { border-left-color: #ffc107; }
+        .log-container {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Diagnóstico do Problema de Travamento</h1>
+    
+    <div class="diagnostic-box" id="dom-status">
+        <h3>📄 Status do DOM</h3>
+        <p id="dom-info">Verificando...</p>
+    </div>
+    
+    <div class="diagnostic-box" id="firebase-status">
+        <h3>🔥 Status do Firebase</h3>
+        <p id="firebase-info">Verificando...</p>
+    </div>
+    
+    <div class="diagnostic-box" id="admin-status">
+        <h3>🛡️ Status do Sistema Admin</h3>
+        <p id="admin-info">Verificando...</p>
+    </div>
+    
+    <div class="diagnostic-box" id="scripts-status">
+        <h3>📜 Status dos Scripts</h3>
+        <p id="scripts-info">Verificando...</p>
+    </div>
+    
+    <div class="diagnostic-box">
+        <h3>⚡ Ações de Teste</h3>
+        <button onclick="testShowAdminPanel()">Testar showAdminPanel()</button>
+        <button onclick="testInitializeAdmin()">Testar initializeAdmin()</button>
+        <button onclick="bypassVerification()">Bypass Verificação</button>
+        <button onclick="clearAll()">Limpar Tudo</button>
+    </div>
+    
+    <div class="diagnostic-box">
+        <h3>📋 Log de Diagnóstico</h3>
+        <div class="log-container" id="diagnostic-log"></div>
+    </div>
+
+    <script>
+        let logContainer;
+        
+        function log(message, type = 'info') {
+            if (!logContainer) {
+                logContainer = document.getElementById('diagnostic-log');
+            }
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#007bff',
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.style.color = colors[type] || colors.info;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function updateStatus(elementId, status, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const box = element.closest('.diagnostic-box');
+            
+            element.textContent = message;
+            
+            box.className = 'diagnostic-box';
+            if (type === 'success') box.classList.add('status-ok');
+            else if (type === 'error') box.classList.add('status-error');
+            else if (type === 'warning') box.classList.add('status-warning');
+        }
+        
+        function runDiagnostics() {
+            log('🚀 Iniciando diagnóstico completo...', 'info');
+            
+            // 1. Verificar DOM
+            try {
+                const loader = document.getElementById('admin-loader');
+                const main = document.getElementById('admin-main');
+                
+                if (loader && main) {
+                    updateStatus('dom-info', 'ok', '✅ Elementos admin-loader e admin-main encontrados', 'success');
+                    log('✅ DOM: Elementos principais encontrados', 'success');
+                } else {
+                    updateStatus('dom-info', 'error', '❌ Elementos admin-loader ou admin-main não encontrados', 'error');
+                    log('❌ DOM: Elementos principais não encontrados', 'error');
+                }
+            } catch (error) {
+                updateStatus('dom-info', 'error', `❌ Erro ao verificar DOM: ${error.message}`, 'error');
+                log(`❌ DOM: Erro - ${error.message}`, 'error');
+            }
+            
+            // 2. Verificar Firebase
+            try {
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    updateStatus('firebase-info', 'ok', '✅ FirebaseDB disponível', 'success');
+                    log('✅ Firebase: FirebaseDB encontrado', 'success');
+                } else {
+                    updateStatus('firebase-info', 'warning', '⚠️ FirebaseDB não disponível', 'warning');
+                    log('⚠️ Firebase: FirebaseDB não encontrado', 'warning');
+                }
+            } catch (error) {
+                updateStatus('firebase-info', 'error', `❌ Erro ao verificar Firebase: ${error.message}`, 'error');
+                log(`❌ Firebase: Erro - ${error.message}`, 'error');
+            }
+            
+            // 3. Verificar funções admin
+            try {
+                const functions = ['showAdminPanel', 'initializeAdmin', 'updateAdminStatus'];
+                const available = functions.filter(fn => typeof window[fn] === 'function');
+                
+                if (available.length === functions.length) {
+                    updateStatus('admin-info', 'ok', `✅ Todas as funções admin disponíveis (${available.length}/${functions.length})`, 'success');
+                    log(`✅ Admin: Todas as funções encontradas - ${available.join(', ')}`, 'success');
+                } else {
+                    const missing = functions.filter(fn => typeof window[fn] !== 'function');
+                    updateStatus('admin-info', 'warning', `⚠️ Algumas funções não encontradas: ${missing.join(', ')}`, 'warning');
+                    log(`⚠️ Admin: Funções faltando - ${missing.join(', ')}`, 'warning');
+                }
+            } catch (error) {
+                updateStatus('admin-info', 'error', `❌ Erro ao verificar funções admin: ${error.message}`, 'error');
+                log(`❌ Admin: Erro - ${error.message}`, 'error');
+            }
+            
+            // 4. Verificar scripts carregados
+            try {
+                const scripts = Array.from(document.querySelectorAll('script[src]'));
+                const scriptSrcs = scripts.map(s => s.src.split('/').pop()).filter(Boolean);
+                
+                updateStatus('scripts-info', 'ok', `✅ Scripts carregados: ${scriptSrcs.join(', ')}`, 'success');
+                log(`✅ Scripts: ${scriptSrcs.length} scripts encontrados - ${scriptSrcs.join(', ')}`, 'success');
+            } catch (error) {
+                updateStatus('scripts-info', 'error', `❌ Erro ao verificar scripts: ${error.message}`, 'error');
+                log(`❌ Scripts: Erro - ${error.message}`, 'error');
+            }
+            
+            log('📊 Diagnóstico concluído', 'info');
+        }
+        
+        function testShowAdminPanel() {
+            log('🧪 Testando showAdminPanel()...', 'info');
+            try {
+                if (typeof window.showAdminPanel === 'function') {
+                    window.showAdminPanel('test@admin.com');
+                    log('✅ showAdminPanel() executado com sucesso', 'success');
+                } else {
+                    log('❌ showAdminPanel() não encontrado', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro ao executar showAdminPanel(): ${error.message}`, 'error');
+            }
+        }
+        
+        function testInitializeAdmin() {
+            log('🧪 Testando initializeAdmin()...', 'info');
+            try {
+                if (typeof window.initializeAdmin === 'function') {
+                    window.initializeAdmin();
+                    log('✅ initializeAdmin() executado com sucesso', 'success');
+                } else {
+                    log('❌ initializeAdmin() não encontrado', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro ao executar initializeAdmin(): ${error.message}`, 'error');
+            }
+        }
+        
+        function bypassVerification() {
+            log('🔓 Executando bypass da verificação...', 'info');
+            try {
+                // Forçar exibição do painel
+                const loader = document.getElementById('admin-loader');
+                const main = document.getElementById('admin-main');
+                
+                if (loader) {
+                    loader.style.display = 'none';
+                    log('✅ Loader ocultado', 'success');
+                }
+                
+                if (main) {
+                    main.style.display = 'block';
+                    main.classList.add('show');
+                    log('✅ Painel principal exibido', 'success');
+                }
+                
+                // Simular usuário logado
+                if (typeof window.showAdminPanel === 'function') {
+                    window.showAdminPanel('bypass@admin.com');
+                }
+                
+                log('🔓 Bypass executado com sucesso', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro no bypass: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearAll() {
+            log('🗑️ Limpando localStorage...', 'info');
+            try {
+                localStorage.clear();
+                log('✅ localStorage limpo', 'success');
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } catch (error) {
+                log(`❌ Erro ao limpar: ${error.message}`, 'error');
+            }
+        }
+        
+        // Executar diagnóstico quando a página carrega
+        document.addEventListener('DOMContentLoaded', function() {
+            log('📄 DOM carregado - Executando diagnóstico...', 'info');
+            setTimeout(runDiagnostics, 500);
+        });
+        
+        // Monitorar carregamento de scripts
+        window.addEventListener('load', function() {
+            log('🔄 Página totalmente carregada - Re-executando diagnóstico...', 'info');
+            setTimeout(runDiagnostics, 500);
+        });
+        
+        log('🔧 Ferramenta de diagnóstico inicializada', 'info');
+    </script>
+    
+    <!-- Carregar scripts da página admin para teste -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <!-- Simular elementos da página admin -->
+    <div id="admin-loader" style="display: block;">Loader</div>
+    <div id="admin-main" style="display: none;">Main</div>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste de Dados - Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .test-result { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .test-button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .test-button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; max-height: 300px; }
+        .data-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .data-table th, .data-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .data-table th { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Teste de Carregamento de Dados - Admin</h1>
+        
+        <div class="test-result info">
+            <h3>📊 Status do Firebase</h3>
+            <p id="firebase-status">Verificando Firebase...</p>
+        </div>
+        
+        <div>
+            <button class="test-button" onclick="testFirebaseConnection()">🔥 Testar Conexão Firebase</button>
+            <button class="test-button" onclick="testLoadPurchases()">📋 Carregar Compras</button>
+            <button class="test-button" onclick="testLoadConfig()">⚙️ Carregar Configurações</button>
+            <button class="test-button" onclick="testAdminAuth()">🔐 Verificar Autenticação Admin</button>
+        </div>
+        
+        <div id="test-results"></div>
+        <div id="data-display"></div>
+    </div>
+
+    <!-- Carregar Firebase -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let testCount = 0;
+        
+        function logTest(message, type = 'info', data = null) {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            
+            let content = `<strong>Teste ${++testCount}:</strong> ${message}`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            
+            div.innerHTML = content;
+            results.appendChild(div);
+        }
+        
+        function updateFirebaseStatus(status) {
+            document.getElementById('firebase-status').textContent = status;
+        }
+        
+        function testFirebaseConnection() {
+            logTest('Verificando conexão com Firebase...', 'info');
+            
+            if (typeof window.FirebaseDB === 'undefined') {
+                logTest('❌ FirebaseDB não está disponível!', 'error');
+                updateFirebaseStatus('❌ Firebase não conectado');
+                return;
+            }
+            
+            logTest('✅ FirebaseDB está disponível', 'success');
+            updateFirebaseStatus('✅ Firebase conectado');
+            
+            // Verificar funções disponíveis
+            const availableFunctions = Object.keys(window.FirebaseDB);
+            logTest('Funções disponíveis no FirebaseDB:', 'info', availableFunctions);
+        }
+        
+        async function testLoadPurchases() {
+            logTest('Testando carregamento de compras...', 'info');
+            
+            if (typeof window.FirebaseDB === 'undefined') {
+                logTest('❌ Firebase não disponível', 'error');
+                return;
+            }
+            
+            try {
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (result.success) {
+                    logTest(`✅ Compras carregadas com sucesso: ${result.data.length} registros`, 'success');
+                    
+                    if (result.data.length > 0) {
+                        // Mostrar tabela de compras
+                        displayPurchasesTable(result.data);
+                    } else {
+                        logTest('ℹ️ Nenhuma compra encontrada no banco de dados', 'warning');
+                    }
+                } else {
+                    logTest(`❌ Erro ao carregar compras: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                logTest(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testLoadConfig() {
+            logTest('Testando carregamento de configurações...', 'info');
+            
+            if (typeof window.FirebaseDB === 'undefined') {
+                logTest('❌ Firebase não disponível', 'error');
+                return;
+            }
+            
+            try {
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success) {
+                    logTest('✅ Configurações carregadas com sucesso', 'success', result.data);
+                } else {
+                    logTest(`❌ Erro ao carregar configurações: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                logTest(`❌ Erro inesperado: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testAdminAuth() {
+            logTest('Testando autenticação de administrador...', 'info');
+            
+            if (typeof window.FirebaseDB === 'undefined') {
+                logTest('❌ Firebase não disponível', 'error');
+                return;
+            }
+            
+            try {
+                // Verificar se há função getCurrentAdmin
+                if (typeof window.FirebaseDB.getCurrentAdmin === 'function') {
+                    const result = await window.FirebaseDB.getCurrentAdmin();
+                    logTest('Resultado getCurrentAdmin:', 'info', result);
+                } else {
+                    logTest('⚠️ Função getCurrentAdmin não disponível', 'warning');
+                }
+                
+                // Verificar se há função isAdmin
+                if (typeof window.FirebaseDB.isAdmin === 'function') {
+                    const isAdminResult = await window.FirebaseDB.isAdmin('test-uid');
+                    logTest('Resultado isAdmin:', 'info', isAdminResult);
+                } else {
+                    logTest('⚠️ Função isAdmin não disponível', 'warning');
+                }
+                
+            } catch (error) {
+                logTest(`❌ Erro na autenticação: ${error.message}`, 'error');
+            }
+        }
+        
+        function displayPurchasesTable(purchases) {
+            const dataDisplay = document.getElementById('data-display');
+            
+            let html = '<h3>📋 Dados de Compras Encontrados:</h3>';
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>ID</th><th>Nome</th><th>Telefone</th><th>Números</th><th>Valor</th><th>Status</th><th>Data</th></tr></thead>';
+            html += '<tbody>';
+            
+            purchases.slice(0, 10).forEach(purchase => {  // Mostrar apenas os primeiros 10
+                html += '<tr>';
+                html += `<td>${purchase.id || 'N/A'}</td>`;
+                html += `<td>${purchase.name || purchase.buyerName || 'N/A'}</td>`;
+                html += `<td>${purchase.phone || purchase.buyerPhone || 'N/A'}</td>`;
+                html += `<td>${purchase.numbers ? purchase.numbers.join(', ') : 'N/A'}</td>`;
+                html += `<td>R$ ${(purchase.totalAmount || 0).toFixed(2)}</td>`;
+                html += `<td>${purchase.status || 'N/A'}</td>`;
+                html += `<td>${purchase.createdAt || purchase.date || 'N/A'}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            
+            if (purchases.length > 10) {
+                html += `<p><em>Mostrando 10 de ${purchases.length} registros</em></p>`;
+            }
+            
+            dataDisplay.innerHTML = html;
+        }
+        
+        // Auto-iniciar teste de conexão
+        setTimeout(() => {
+            testFirebaseConnection();
+        }, 1000);
+        
+        // Aguardar Firebase carregar
+        window.addEventListener('firebaseReady', () => {
+            updateFirebaseStatus('✅ Firebase carregado via evento');
+            testFirebaseConnection();
+        });
+    </script>
+</body>
+</html>

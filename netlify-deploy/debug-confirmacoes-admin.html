@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Confirmações Admin - RifaThomas</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .debug-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .debug-section.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .debug-section.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .debug-section.warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-info { background: #17a2b8; color: white; }
+        .log-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .test-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .test-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-ok { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-loading { background: #6c757d; animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Debug Confirmações Admin</h1>
+            <p>Diagnóstico das funcionalidades de confirmação/rejeição</p>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔍 Status dos Sistemas</h3>
+            <div id="system-status">
+                <p><span class="status-indicator status-loading"></span>Verificando sistemas...</p>
+            </div>
+            <button class="btn btn-primary" onclick="checkSystems()">Verificar Novamente</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>🏗️ Estrutura do Admin</h3>
+            <div id="structure-status">
+                <p><span class="status-indicator status-loading"></span>Verificando estrutura...</p>
+            </div>
+            <button class="btn btn-info" onclick="checkStructure()">Verificar Estrutura</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔥 Firebase Status</h3>
+            <div id="firebase-status">
+                <p><span class="status-indicator status-loading"></span>Verificando Firebase...</p>
+            </div>
+            <button class="btn btn-success" onclick="testFirebase()">Testar Firebase</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>📊 Dados de Teste</h3>
+            <div id="test-data-status">
+                <p><span class="status-indicator status-loading"></span>Verificando dados...</p>
+            </div>
+            <button class="btn btn-warning" onclick="createTestData()">Criar Dados</button>
+            <button class="btn btn-info" onclick="loadTestData()">Carregar Dados</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>⚡ Teste de Funções</h3>
+            <div id="functions-test">
+                <button class="btn btn-success" onclick="testConfirmFunction()">Testar confirmDonation()</button>
+                <button class="btn btn-danger" onclick="testRejectFunction()">Testar rejectDonation()</button>
+                <button class="btn btn-info" onclick="testTableFunctions()">Testar Tabela</button>
+            </div>
+        </div>
+
+        <div class="log-container">
+            <div id="debug-log">
+                <div>🚀 Sistema de debug carregado</div>
+                <div>📋 Iniciando verificações...</div>
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔧 Ações de Correção</h3>
+            <button class="btn btn-primary" onclick="openAdmin()">Abrir Admin Panel</button>
+            <button class="btn btn-info" onclick="openLogin()">Fazer Login</button>
+            <button class="btn btn-warning" onclick="fixStructure()">Corrigir Estrutura</button>
+            <button class="btn btn-success" onclick="runFullTest()">Teste Completo</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let debugState = {
+            firebaseReady: false,
+            adminReady: false,
+            structureOk: false,
+            hasTestData: false
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#63b3ed',
+                success: '#68d391', 
+                error: '#fc8181',
+                warning: '#f6e05e'
+            };
+            
+            const entry = document.createElement('div');
+            entry.style.color = colors[type] || colors.info;
+            entry.style.marginBottom = '5px';
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(`[DEBUG ${type.toUpperCase()}]`, message);
+        }
+
+        function updateStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            const statusClass = status === 'ok' ? 'status-ok' : 
+                               status === 'error' ? 'status-error' : 
+                               status === 'warning' ? 'status-warning' : 'status-loading';
+            
+            element.innerHTML = `<p><span class="status-indicator ${statusClass}"></span>${message}</p>`;
+        }
+
+        async function checkSystems() {
+            log('🔍 Verificando sistemas...', 'info');
+            
+            // Check Firebase
+            if (typeof window.FirebaseDB !== 'undefined') {
+                try {
+                    const user = await window.FirebaseDB.getCurrentAdmin();
+                    if (user.success) {
+                        debugState.firebaseReady = true;
+                        updateStatus('system-status', 'ok', `Firebase OK - Admin: ${user.user.email}`);
+                        log(`✅ Firebase conectado - Admin: ${user.user.email}`, 'success');
+                    } else {
+                        updateStatus('system-status', 'warning', 'Firebase OK mas usuário não é admin');
+                        log('⚠️ Firebase OK mas usuário não é admin', 'warning');
+                    }
+                } catch (error) {
+                    updateStatus('system-status', 'error', `Erro Firebase: ${error.message}`);
+                    log(`❌ Erro Firebase: ${error.message}`, 'error');
+                }
+            } else {
+                updateStatus('system-status', 'error', 'Firebase não carregado');
+                log('❌ Firebase não carregado', 'error');
+            }
+        }
+
+        function checkStructure() {
+            log('🏗️ Verificando estrutura do admin...', 'info');
+            
+            const requiredElements = [
+                'participants-tbody',
+                'total-participants', 
+                'total-revenue',
+                'total-sold'
+            ];
+            
+            const missingElements = [];
+            requiredElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (!element) {
+                    missingElements.push(id);
+                }
+            });
+            
+            if (missingElements.length === 0) {
+                debugState.structureOk = true;
+                updateStatus('structure-status', 'ok', 'Estrutura HTML completa');
+                log('✅ Todos os elementos HTML necessários encontrados', 'success');
+            } else {
+                updateStatus('structure-status', 'error', `Elementos faltando: ${missingElements.join(', ')}`);
+                log(`❌ Elementos faltando: ${missingElements.join(', ')}`, 'error');
+            }
+        }
+
+        async function testFirebase() {
+            log('🔥 Testando Firebase...', 'info');
+            
+            if (!debugState.firebaseReady) {
+                log('❌ Firebase não está pronto', 'error');
+                return;
+            }
+            
+            try {
+                // Test get purchases
+                const result = await window.FirebaseDB.getPurchases();
+                if (result.success) {
+                    debugState.hasTestData = result.data.length > 0;
+                    updateStatus('firebase-status', 'ok', `Firebase OK - ${result.data.length} compras`);
+                    log(`✅ Firebase funcionando - ${result.data.length} compras carregadas`, 'success');
+                } else {
+                    updateStatus('firebase-status', 'error', `Erro ao carregar: ${result.error}`);
+                    log(`❌ Erro ao carregar dados: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('firebase-status', 'error', `Erro: ${error.message}`);
+                log(`❌ Erro no teste Firebase: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestData() {
+            log('🧪 Criando dados de teste...', 'info');
+            
+            if (!debugState.firebaseReady) {
+                log('❌ Firebase não está pronto', 'error');
+                return;
+            }
+            
+            try {
+                const testData = {
+                    buyerName: 'Teste Confirmação',
+                    buyerPhone: '(11) 99999-9999',
+                    numbers: [101, 102, 103],
+                    totalAmount: 120.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                };
+                
+                const result = await window.FirebaseDB.savePurchase(testData);
+                if (result.success) {
+                    debugState.hasTestData = true;
+                    updateStatus('test-data-status', 'ok', `Dados criados: ID ${result.id}`);
+                    log(`✅ Dados de teste criados: ${result.id}`, 'success');
+                } else {
+                    updateStatus('test-data-status', 'error', `Erro: ${result.error}`);
+                    log(`❌ Erro ao criar dados: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('test-data-status', 'error', `Erro: ${error.message}`);
+                log(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadTestData() {
+            log('📊 Carregando dados de teste...', 'info');
+            await testFirebase();
+        }
+
+        async function testConfirmFunction() {
+            log('✅ Testando função confirmDonation()...', 'info');
+            
+            if (!debugState.hasTestData) {
+                log('❌ Nenhum dado de teste disponível', 'error');
+                return;
+            }
+            
+            try {
+                const result = await window.FirebaseDB.getPurchases();
+                const testPurchase = result.data.find(p => p.status === 'pending_donation');
+                
+                if (testPurchase) {
+                    log(`📋 Testando confirmação para: ${testPurchase.id}`, 'info');
+                    
+                    // Simular confirmação
+                    if (typeof confirmDonation === 'function') {
+                        log('✅ Função confirmDonation() encontrada', 'success');
+                        log('⚠️ Teste simulado (não executando para evitar mudanças)', 'warning');
+                    } else {
+                        log('❌ Função confirmDonation() não encontrada', 'error');
+                    }
+                } else {
+                    log('⚠️ Nenhuma doação pendente para testar', 'warning');
+                }
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRejectFunction() {
+            log('❌ Testando função rejectDonation()...', 'info');
+            
+            if (typeof rejectDonation === 'function') {
+                log('✅ Função rejectDonation() encontrada', 'success');
+            } else {
+                log('❌ Função rejectDonation() não encontrada', 'error');
+            }
+        }
+
+        function testTableFunctions() {
+            log('📋 Testando funções da tabela...', 'info');
+            
+            const functions = [
+                'loadParticipants',
+                'createParticipantRow',
+                'updateDashboard'
+            ];
+            
+            functions.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    log(`✅ ${funcName}() encontrada`, 'success');
+                } else {
+                    log(`❌ ${funcName}() não encontrada`, 'error');
+                }
+            });
+        }
+
+        function openAdmin() {
+            log('🔧 Abrindo painel admin...', 'info');
+            window.open('admin.html', '_blank');
+        }
+
+        function openLogin() {
+            log('🔑 Abrindo página de login...', 'info');
+            window.open('login.html', '_blank');
+        }
+
+        function fixStructure() {
+            log('🔧 Verificando correções de estrutura...', 'info');
+            
+            if (!document.getElementById('participants-tbody')) {
+                log('❌ Tabela de participantes não encontrada', 'error');
+                log('💡 Sugestão: Verificar admin.html', 'warning');
+            } else {
+                log('✅ Estrutura da tabela OK', 'success');
+            }
+        }
+
+        async function runFullTest() {
+            log('🚀 Executando teste completo...', 'info');
+            
+            await checkSystems();
+            checkStructure();
+            await testFirebase();
+            testTableFunctions();
+            
+            log('📊 Teste completo finalizado', 'info');
+        }
+
+        // Auto-start
+        window.addEventListener('load', () => {
+            setTimeout(checkSystems, 1000);
+            setTimeout(checkStructure, 1500);
+        });
+
+        // Listen for Firebase ready
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 Firebase ready event detectado', 'success');
+            checkSystems();
+        });
+    </script>
+</body>
+</html>

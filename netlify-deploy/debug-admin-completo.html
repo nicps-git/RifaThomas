@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Admin - Dados e Funções</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        
+        .debug-section {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn:disabled { background: #6c757d; cursor: not-allowed; }
+        
+        .results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .purchase-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Admin - Dados e Funções</h1>
+        
+        <div id="status-container">
+            <div class="status info">
+                ⏳ Carregando sistema...
+            </div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>🔥 Teste 1: Conexão Firebase</h3>
+            <button id="test-firebase" class="btn" onclick="testFirebaseConnection()">Testar Firebase</button>
+            <div id="firebase-result" class="results">Aguardando teste...</div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>📊 Teste 2: Carregar Dados</h3>
+            <button id="test-data" class="btn" onclick="loadAdminData()" disabled>Carregar Dados Admin</button>
+            <div id="data-result" class="results">Aguardando carregamento...</div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>👥 Teste 3: Exibir Compradores</h3>
+            <button id="test-display" class="btn" onclick="testDataDisplay()" disabled>Testar Exibição</button>
+            <div id="display-result" class="results">Aguardando teste...</div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>⚙️ Teste 4: Funções de Admin</h3>
+            <button id="test-functions" class="btn" onclick="testAdminFunctions()" disabled>Testar Funções</button>
+            <div id="functions-result" class="results">Aguardando teste...</div>
+        </div>
+        
+        <div class="debug-section">
+            <h3>📋 Dados Atuais</h3>
+            <div id="current-data" class="results">Nenhum dado carregado ainda...</div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // Simular dados do admin
+        let adminData = {
+            purchases: [],
+            firebaseReady: false,
+            currentUser: null
+        };
+        
+        function updateStatus(message, type = 'info') {
+            const container = document.getElementById('status-container');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            container.innerHTML = `<div class="status ${className}">${message}</div>`;
+        }
+        
+        function log(elementId, message) {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.textContent += `[${timestamp}] ${message}\n`;
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', async () => {
+            updateStatus('✅ Firebase conectado - Iniciando debug', 'success');
+            document.getElementById('test-firebase').disabled = false;
+            testFirebaseConnection();
+        });
+        
+        async function testFirebaseConnection() {
+            log('firebase-result', 'Testando conexão Firebase...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                log('firebase-result', '✅ FirebaseDB encontrado');
+                adminData.firebaseReady = true;
+                
+                document.getElementById('test-data').disabled = false;
+                log('firebase-result', '🎉 Firebase pronto para usar');
+                
+            } catch (error) {
+                log('firebase-result', `❌ Erro: ${error.message}`);
+            }
+        }
+        
+        async function loadAdminData() {
+            log('data-result', 'Carregando dados administrativos...');
+            
+            try {
+                const result = await window.FirebaseDB.getPurchases();
+                
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                adminData.purchases = result.data;
+                log('data-result', `✅ ${adminData.purchases.length} compras carregadas`);
+                
+                // Mostrar estrutura dos dados
+                if (adminData.purchases.length > 0) {
+                    const firstPurchase = adminData.purchases[0];
+                    log('data-result', 'Estrutura do primeiro registro:');
+                    log('data-result', `- ID: ${firstPurchase.id}`);
+                    log('data-result', `- buyerName: ${firstPurchase.buyerName || 'N/A'}`);
+                    log('data-result', `- buyerPhone: ${firstPurchase.buyerPhone || 'N/A'}`);
+                    log('data-result', `- name (antigo): ${firstPurchase.name || 'N/A'}`);
+                    log('data-result', `- phone (antigo): ${firstPurchase.phone || 'N/A'}`);
+                    log('data-result', `- status: ${firstPurchase.status || 'N/A'}`);
+                    log('data-result', `- numbers: ${firstPurchase.numbers ? firstPurchase.numbers.join(', ') : 'N/A'}`);
+                }
+                
+                document.getElementById('test-display').disabled = false;
+                document.getElementById('test-functions').disabled = false;
+                updateCurrentData();
+                
+            } catch (error) {
+                log('data-result', `❌ Erro: ${error.message}`);
+            }
+        }
+        
+        function testDataDisplay() {
+            log('display-result', 'Testando exibição de compradores...');
+            
+            try {
+                if (adminData.purchases.length === 0) {
+                    log('display-result', '⚠️ Nenhum dado para exibir');
+                    return;
+                }
+                
+                adminData.purchases.forEach((purchase, index) => {
+                    const displayName = purchase.buyerName || purchase.name || 'N/A';
+                    const displayPhone = purchase.buyerPhone || purchase.phone || 'N/A';
+                    const status = purchase.status || 'confirmed';
+                    
+                    log('display-result', `Compra ${index + 1}:`);
+                    log('display-result', `  Nome: "${displayName}"`);
+                    log('display-result', `  Phone: "${displayPhone}"`);
+                    log('display-result', `  Status: "${status}"`);
+                    log('display-result', `  Números: ${purchase.numbers ? purchase.numbers.join(', ') : 'N/A'}`);
+                    log('display-result', '---');
+                });
+                
+                log('display-result', '✅ Teste de exibição concluído');
+                
+            } catch (error) {
+                log('display-result', `❌ Erro: ${error.message}`);
+            }
+        }
+        
+        function testAdminFunctions() {
+            log('functions-result', 'Testando funções administrativas...');
+            
+            try {
+                // Testar se funções existem
+                const functions = ['confirmDonation', 'rejectDonation', 'confirmPurchase'];
+                
+                functions.forEach(funcName => {
+                    if (typeof window[funcName] === 'function') {
+                        log('functions-result', `✅ Função ${funcName} disponível`);
+                    } else {
+                        log('functions-result', `❌ Função ${funcName} NÃO encontrada`);
+                    }
+                });
+                
+                // Testar se existe Firebase UpdatePurchaseStatus
+                if (window.FirebaseDB && typeof window.FirebaseDB.updatePurchaseStatus === 'function') {
+                    log('functions-result', '✅ Firebase updatePurchaseStatus disponível');
+                } else {
+                    log('functions-result', '❌ Firebase updatePurchaseStatus NÃO disponível');
+                }
+                
+                log('functions-result', '🎉 Teste de funções concluído');
+                
+            } catch (error) {
+                log('functions-result', `❌ Erro: ${error.message}`);
+            }
+        }
+        
+        function updateCurrentData() {
+            const container = document.getElementById('current-data');
+            
+            if (adminData.purchases.length === 0) {
+                container.textContent = 'Nenhuma compra encontrada.';
+                return;
+            }
+            
+            let html = `Total de compras: ${adminData.purchases.length}\n\n`;
+            
+            adminData.purchases.forEach((purchase, index) => {
+                html += `--- COMPRA ${index + 1} ---\n`;
+                html += `ID: ${purchase.id}\n`;
+                html += `Nome: ${purchase.buyerName || purchase.name || 'N/A'}\n`;
+                html += `WhatsApp: ${purchase.buyerPhone || purchase.phone || 'N/A'}\n`;
+                html += `Status: ${purchase.status || 'confirmed'}\n`;
+                html += `Números: ${purchase.numbers ? purchase.numbers.join(', ') : 'N/A'}\n`;
+                html += `Valor: R$ ${(purchase.totalAmount || 0).toFixed(2)}\n\n`;
+            });
+            
+            container.textContent = html;
+        }
+        
+        // Verificar se Firebase está pronto
+        setTimeout(() => {
+            if (typeof window.FirebaseDB !== 'undefined') {
+                window.dispatchEvent(new Event('firebaseReady'));
+            } else {
+                updateStatus('❌ Firebase não detectado após timeout', 'error');
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

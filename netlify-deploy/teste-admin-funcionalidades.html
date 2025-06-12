@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Admin Funcionalidades</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button { margin: 5px; padding: 8px 15px; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste das Funcionalidades Admin - RifaThomas</h1>
+    
+    <div class="test-section info">
+        <h3>📊 Status do Sistema</h3>
+        <div id="system-status">Verificando...</div>
+        <button onclick="checkSystemStatus()">🔄 Verificar Status</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔐 Teste de Autenticação</h3>
+        <button onclick="testAuthentication()">🔑 Testar Login Admin</button>
+        <div id="auth-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>📋 Teste de Dados</h3>
+        <button onclick="createTestData()">➕ Criar Dados de Teste</button>
+        <button onclick="loadTestData()">📥 Carregar Dados</button>
+        <div id="data-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>✅ Teste de Confirmações</h3>
+        <button onclick="testConfirmFunctions()">🧪 Testar Funções de Confirmação</button>
+        <div id="confirm-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>⚙️ Teste de Configurações</h3>
+        <button onclick="testConfigFunctions()">🔧 Testar Configurações</button>
+        <div id="config-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Log de Execução</h3>
+        <button onclick="clearLog()">🗑️ Limpar Log</button>
+        <div id="execution-log" class="log"></div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let testLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testLog.push(logEntry);
+            
+            console.log(logEntry);
+            
+            const logDiv = document.getElementById('execution-log');
+            logDiv.textContent = testLog.join('\n');
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            testLog = [];
+            document.getElementById('execution-log').textContent = '';
+        }
+        
+        function updateResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${isError ? 'error' : 'success'}" style="margin-top: 10px; padding: 10px; border-radius: 4px;">${message}</div>`;
+        }
+        
+        function checkSystemStatus() {
+            log('🔍 Verificando status do sistema...');
+            
+            const status = {
+                firebase: typeof window.FirebaseDB !== 'undefined',
+                auth: typeof firebase !== 'undefined',
+                currentUser: null,
+                environment: window.location.hostname
+            };
+            
+            if (window.FirebaseDB) {
+                window.FirebaseDB.getCurrentAdmin().then(result => {
+                    status.currentUser = result.success ? result.user.email : null;
+                    displaySystemStatus(status);
+                }).catch(error => {
+                    log(`❌ Erro ao verificar usuário atual: ${error.message}`, 'error');
+                    displaySystemStatus(status);
+                });
+            } else {
+                displaySystemStatus(status);
+            }
+        }
+        
+        function displaySystemStatus(status) {
+            const statusHtml = `
+                <div class="log">
+Firebase DB: ${status.firebase ? '✅ Carregado' : '❌ Não encontrado'}
+Auth: ${status.auth ? '✅ Carregado' : '❌ Não encontrado'}
+Usuário Atual: ${status.currentUser || '❌ Não logado'}
+Ambiente: ${status.environment}
+Timestamp: ${new Date().toLocaleString()}
+                </div>
+            `;
+            
+            document.getElementById('system-status').innerHTML = statusHtml;
+            log(`📊 Status verificado - Firebase: ${status.firebase}, Auth: ${status.auth}`);
+        }
+        
+        async function testAuthentication() {
+            log('🔐 Testando autenticação admin...');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Tentar fazer login como admin
+                const result = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                
+                if (result.success) {
+                    updateResult('auth-result', `✅ Login admin bem-sucedido!<br>Email: ${result.user.email}<br>UID: ${result.user.uid}`);
+                    log(`✅ Login admin bem-sucedido: ${result.user.email}`);
+                } else {
+                    throw new Error(result.error || 'Falha no login');
+                }
+                
+            } catch (error) {
+                updateResult('auth-result', `❌ Erro na autenticação: ${error.message}`, true);
+                log(`❌ Erro na autenticação: ${error.message}`, 'error');
+            }
+        }
+        
+        async function createTestData() {
+            log('➕ Criando dados de teste...');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                const testPurchase = {
+                    buyerName: 'Usuário Teste ' + Date.now(),
+                    buyerPhone: '(11) 99999-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
+                    numbers: [Math.floor(Math.random() * 150) + 1, Math.floor(Math.random() * 150) + 1],
+                    totalAmount: 80.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                };
+                
+                const result = await window.FirebaseDB.savePurchase(testPurchase);
+                
+                if (result.success) {
+                    updateResult('data-result', `✅ Dados de teste criados!<br>ID: ${result.id}<br>Nome: ${testPurchase.buyerName}<br>Números: ${testPurchase.numbers.join(', ')}`);
+                    log(`✅ Dados de teste criados com ID: ${result.id}`);
+                } else {
+                    throw new Error(result.error || 'Falha ao criar dados');
+                }
+                
+            } catch (error) {
+                updateResult('data-result', `❌ Erro ao criar dados: ${error.message}`, true);
+                log(`❌ Erro ao criar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadTestData() {
+            log('📥 Carregando dados de teste...');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                const result = await window.FirebaseDB.getPurchases();
+                
+                if (result.success) {
+                    const total = result.data.length;
+                    const pending = result.data.filter(p => p.status === 'pending_donation').length;
+                    const confirmed = result.data.filter(p => p.status === 'confirmed').length;
+                    
+                    updateResult('data-result', `✅ Dados carregados!<br>Total: ${total}<br>Pendentes: ${pending}<br>Confirmados: ${confirmed}`);
+                    log(`✅ Dados carregados - Total: ${total}, Pendentes: ${pending}, Confirmados: ${confirmed}`);
+                } else {
+                    throw new Error(result.error || 'Falha ao carregar dados');
+                }
+                
+            } catch (error) {
+                updateResult('data-result', `❌ Erro ao carregar dados: ${error.message}`, true);
+                log(`❌ Erro ao carregar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testConfirmFunctions() {
+            log('🧪 Testando funções de confirmação...');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Buscar uma compra pendente para testar
+                const purchasesResult = await window.FirebaseDB.getPurchases();
+                if (!purchasesResult.success) {
+                    throw new Error('Falha ao buscar compras');
+                }
+                
+                const pendingPurchase = purchasesResult.data.find(p => p.status === 'pending_donation');
+                
+                if (!pendingPurchase) {
+                    updateResult('confirm-result', '⚠️ Nenhuma compra pendente encontrada para teste. Crie dados de teste primeiro.', true);
+                    return;
+                }
+                
+                // Testar função de confirmação
+                const confirmResult = await window.FirebaseDB.updatePurchaseStatus(
+                    pendingPurchase.id, 
+                    'confirmed',
+                    {
+                        confirmedAt: new Date().toISOString(),
+                        confirmedBy: 'test-system'
+                    }
+                );
+                
+                if (confirmResult.success) {
+                    updateResult('confirm-result', `✅ Função de confirmação testada!<br>ID: ${pendingPurchase.id}<br>Status alterado para: confirmed`);
+                    log(`✅ Compra ${pendingPurchase.id} confirmada com sucesso`);
+                } else {
+                    throw new Error(confirmResult.error || 'Falha na confirmação');
+                }
+                
+            } catch (error) {
+                updateResult('confirm-result', `❌ Erro no teste de confirmação: ${error.message}`, true);
+                log(`❌ Erro no teste de confirmação: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testConfigFunctions() {
+            log('🔧 Testando funções de configuração...');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                const testConfig = {
+                    totalNumbers: 150,
+                    ticketPrice: 40.00,
+                    drawDate: new Date('2025-07-11T16:00:00'),
+                    pixKey: 'contato@charifa.com',
+                    prizes: {
+                        first: 'R$ 100,00',
+                        second: 'R$ 200,00',
+                        third: 'Fraldas por faixa'
+                    },
+                    contactPhone: '(11) 99999-9999',
+                    babyName: 'Thomas',
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                const saveResult = await window.FirebaseDB.saveConfig(testConfig);
+                
+                if (saveResult.success) {
+                    // Tentar carregar as configurações
+                    const loadResult = await window.FirebaseDB.getConfig();
+                    
+                    if (loadResult.success) {
+                        updateResult('config-result', `✅ Configurações testadas!<br>Salvas e carregadas com sucesso<br>Baby: ${loadResult.data.babyName}<br>PIX: ${loadResult.data.pixKey}`);
+                        log(`✅ Configurações salvas e carregadas com sucesso`);
+                    } else {
+                        throw new Error('Falha ao carregar configurações salvas');
+                    }
+                } else {
+                    throw new Error(saveResult.error || 'Falha ao salvar configurações');
+                }
+                
+            } catch (error) {
+                updateResult('config-result', `❌ Erro no teste de configuração: ${error.message}`, true);
+                log(`❌ Erro no teste de configuração: ${error.message}`, 'error');
+            }
+        }
+        
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de teste carregada');
+            
+            // Aguardar Firebase estar pronto
+            if (typeof window.FirebaseDB !== 'undefined') {
+                log('🔥 Firebase já disponível');
+                checkSystemStatus();
+            } else {
+                log('⏰ Aguardando Firebase...');
+                window.addEventListener('firebaseReady', () => {
+                    log('🔥 Firebase pronto!');
+                    checkSystemStatus();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

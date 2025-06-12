@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Administrativo - Rifa Thomas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a237e, #3949ab);
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-header {
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            color: #1a237e;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        
+        .login-header p {
+            color: #666;
+            margin: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            border-color: #3949ab;
+            outline: none;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #3949ab, #1a237e);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message {
+            background: #ffe6e6;
+            color: #d32f2f;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #666;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link:hover {
+            color: #3949ab;
+        }
+        
+        .create-admin-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #eee;
+        }
+        
+        .create-admin-section h3 {
+            color: #1a237e;
+            margin-bottom: 15px;
+        }
+        
+        .create-admin-section p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1><i class="fas fa-rocket"></i> Admin Rifa Thomas</h1>
+                <p>Painel Administrativo</p>
+            </div>
+            
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" required>
+                </div>
+                
+                <button type="submit" class="login-btn" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+            </form>
+            
+            <div class="create-admin-section">
+                <h3>Primeiro acesso?</h3>
+                <p>Se você é o responsável pela rifa e esta é a primeira vez que acessa o sistema, crie sua conta de administrador:</p>
+                
+                <button type="button" class="login-btn" id="create-admin-btn" style="background: linear-gradient(135deg, #ff6b35, #ff8a65);">
+                    <i class="fas fa-user-plus"></i> Criar Conta Admin
+                </button>
+            </div>
+            
+            <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Voltar ao site da rifa
+            </a>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let isCreateMode = false;
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', async () => {
+            console.log('🔥 Firebase pronto no login!');
+            await checkExistingAuth();
+        });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Se Firebase já estiver carregado
+            if (typeof window.FirebaseDB !== 'undefined') {
+                checkExistingAuth();
+            }
+            
+            // Configurar formulário
+            setupLoginForm();
+        });
+        
+        async function checkExistingAuth() {
+            try {
+                console.log('🔍 Verificando autenticação existente...');
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (result.success && result.isAdmin) {
+                    console.log('✅ Admin já autenticado, redirecionando...');
+                    window.location.href = 'admin.html';
+                    return;
+                }
+            } catch (error) {
+                console.log('⚠️ Nenhuma autenticação existente:', error.message);
+            }
+        }
+        
+        function setupLoginForm() {
+            const form = document.getElementById('login-form');
+            const createBtn = document.getElementById('create-admin-btn');
+            const loginBtn = document.getElementById('login-btn');
+            
+            form.addEventListener('submit', handleSubmit);
+            createBtn.addEventListener('click', toggleCreateMode);
+        }
+        
+        function toggleCreateMode() {
+            isCreateMode = !isCreateMode;
+            const createBtn = document.getElementById('create-admin-btn');
+            const loginBtn = document.getElementById('login-btn');
+            const title = document.querySelector('.login-header h1');
+            
+            if (isCreateMode) {
+                createBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Voltar ao Login';
+                createBtn.style.background = 'linear-gradient(135deg, #666, #888)';
+                loginBtn.innerHTML = '<i class="fas fa-user-plus"></i> Criar Conta Admin';
+                title.innerHTML = '<i class="fas fa-user-plus"></i> Criar Admin';
+                hideMessage();
+            } else {
+                createBtn.innerHTML = '<i class="fas fa-user-plus"></i> Criar Conta Admin';
+                createBtn.style.background = 'linear-gradient(135deg, #ff6b35, #ff8a65)';
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+                title.innerHTML = '<i class="fas fa-rocket"></i> Admin Rifa Thomas';
+                hideMessage();
+            }
+        }
+        
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('login-btn');
+            
+            // Validar campos
+            if (!email || !password) {
+                showError('Por favor, preencha todos os campos.');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('A senha deve ter pelo menos 6 caracteres.');
+                return;
+            }
+            
+            // Mostrar loading
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loading"></span> Processando...';
+            hideMessage();
+            
+            try {
+                let result;
+                
+                if (isCreateMode) {
+                    result = await window.FirebaseDB.createAdmin(email, password);
+                    if (result.success) {
+                        showSuccess('Conta de administrador criada com sucesso! Redirecionando...');
+                        setTimeout(() => {
+                            window.location.href = 'admin.html';
+                        }, 2000);
+                    } else {
+                        showError('Erro ao criar conta: ' + result.error);
+                    }
+                } else {
+                    result = await window.FirebaseDB.adminLogin(email, password);
+                    if (result.success) {
+                        // adminLogin já verifica se é admin, então se chegou aqui é porque é admin válido
+                        showSuccess('Login realizado com sucesso! Aguarde...');
+                        
+                        // Aguardar o Firebase Auth sincronizar
+                        console.log('🔄 Aguardando sincronização do Firebase Auth...');
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Verificar se o getCurrentAdmin funciona antes de redirecionar
+                        const adminCheck = await window.FirebaseDB.getCurrentAdmin();
+                        if (adminCheck.success && adminCheck.isAdmin) {
+                            console.log('✅ Admin confirmado, redirecionando...');
+                            window.location.href = 'admin.html';
+                        } else {
+                            console.log('⚠️ Admin não confirmado ainda, aguardando mais...');
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            // Redirecionar mesmo assim, pois adminLogin foi bem-sucedido
+                            window.location.href = 'admin.html';
+                        }
+                    } else {
+                        showError('Erro no login: ' + result.error);
+                    }
+                }
+            } catch (error) {
+                showError('Erro inesperado: ' + error.message);
+            } finally {
+                // Restaurar botão
+                loginBtn.disabled = false;
+                if (isCreateMode) {
+                    loginBtn.innerHTML = '<i class="fas fa-user-plus"></i> Criar Conta Admin';
+                } else {
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+                }
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            successDiv.style.display = 'none';
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function showSuccess(message) {
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            errorDiv.style.display = 'none';
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+        
+        function hideMessage() {
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('success-message').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
