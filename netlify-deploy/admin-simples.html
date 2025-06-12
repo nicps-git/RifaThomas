@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Simples - Rifa Thomas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-container">
+                <h1 class="logo"><i class="fas fa-rocket"></i> Admin - Chá Rifa Thomas</h1>
+                <ul class="nav-menu">
+                    <li><a href="index.html">← Voltar ao Site</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#participantes">Participantes</a></li>
+                    <li><a href="#configuracoes">Configurações</a></li>
+                    <li><button onclick="adminLogout()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Sair</button></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Verificação de Acesso Simples -->
+    <div id="auth-check" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; color: white; padding: 50px; text-align: center;">
+        <div style="background: white; color: black; padding: 40px; border-radius: 10px; max-width: 400px; margin: 0 auto;">
+            <h2>🔐 Acesso Administrativo</h2>
+            <p>Digite a senha de administrador:</p>
+            <input type="password" id="admin-password" placeholder="Senha" style="width: 100%; padding: 10px; margin: 20px 0; border: 1px solid #ddd; border-radius: 5px;">
+            <button onclick="checkAdminPassword()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Entrar</button>
+            <p style="margin-top: 20px; font-size: 12px; color: #666;">Senha: casaVERDE123</p>
+        </div>
+    </div>
+
+    <main class="admin-main">
+        <!-- Dashboard -->
+        <section id="dashboard" class="admin-section">
+            <div class="container">
+                <h2>Dashboard - Chá Rifa Thomas 🚀</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-ticket-alt"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-sold">0</h3>
+                            <p>Números Vendidos</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-revenue">R$ 0,00</h3>
+                            <p>Faturamento</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-participants">0</h3>
+                            <p>Participantes</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="completion-rate">0%</h3>
+                            <p>Completude</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-actions">
+                    <h3>Ações Rápidas</h3>
+                    <div class="action-buttons">
+                        <button onclick="markNumberAsSold()" class="action-btn sold">
+                            <i class="fas fa-check"></i> Marcar como Vendido
+                        </button>
+                        <button onclick="markNumberAsReserved()" class="action-btn reserved">
+                            <i class="fas fa-clock"></i> Marcar como Reservado
+                        </button>
+                        <button onclick="freeNumber()" class="action-btn free">
+                            <i class="fas fa-unlock"></i> Liberar Número
+                        </button>
+                        <button onclick="generateReport()" class="action-btn report">
+                            <i class="fas fa-file-download"></i> Gerar Relatório
+                        </button>
+                        <button onclick="performDraw()" class="action-btn draw">
+                            <i class="fas fa-trophy"></i> Realizar Sorteio
+                        </button>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <h3>Progresso da Venda</h3>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="admin-progress-bar"></div>
+                    </div>
+                    <p class="progress-text">
+                        <span id="progress-sold">0</span> de <span id="progress-total">150</span> números vendidos
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lista de Participantes -->
+        <section id="participantes" class="admin-section">
+            <div class="container">
+                <h2>Participantes</h2>
+                
+                <div class="table-controls">
+                    <div class="search-container">
+                        <input type="text" id="participant-search" placeholder="Buscar participante...">
+                        <button onclick="searchParticipant()"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="filter-buttons">
+                        <button onclick="filterByStatus('all')" class="filter-btn active" id="filter-all">Todos</button>
+                        <button onclick="filterByStatus('pending')" class="filter-btn" id="filter-pending">🍼 Pendentes</button>
+                        <button onclick="filterByStatus('confirmed')" class="filter-btn" id="filter-confirmed">✅ Confirmados</button>
+                    </div>
+                    <button onclick="exportParticipants()" class="export-btn">
+                        <i class="fas fa-download"></i> Exportar CSV
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table id="participants-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>WhatsApp</th>
+                                <th>Números</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participants-tbody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                                    <i class="fas fa-users" style="font-size: 2em; margin-bottom: 10px; display: block;"></i>
+                                    Carregando participantes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configurações -->
+        <section id="configuracoes" class="admin-section">
+            <div class="container">
+                <h2>Configurações da Rifa</h2>
+                
+                <form id="config-form" class="config-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="config-total-numbers">Total de Números:</label>
+                            <input type="number" id="config-total-numbers" min="100" max="10000" value="150">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-ticket-price">Preço do Bilhete (R$):</label>
+                            <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="config-draw-date">Data do Sorteio:</label>
+                            <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-pix-key">Chave PIX:</label>
+                            <input type="text" id="config-pix-key" value="contato@charifa.com">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="config-first-prize">1º Prêmio:</label>
+                            <input type="text" id="config-first-prize" value="R$ 100,00">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-second-prize">2º Prêmio:</label>
+                            <input type="text" id="config-second-prize" value="R$ 200,00">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="config-third-prize">3º Prêmio:</label>
+                            <input type="text" id="config-third-prize" value="Fraldas por faixa">
+                        </div>
+                        <div class="form-group">
+                            <label for="config-contact-phone">WhatsApp de Contato:</label>
+                            <input type="tel" id="config-contact-phone" value="(11) 99999-9999">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="save-config-btn">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // Sistema de autenticação simplificado
+        const ADMIN_PASSWORD = 'casaVERDE123';
+        let adminAuthenticated = false;
+        let adminData = {
+            purchases: [],
+            config: {
+                totalNumbers: 150,
+                ticketPrice: 40.00,
+                drawDate: new Date('2025-07-11T16:00:00'),
+                pixKey: 'contato@charifa.com',
+                prizes: {
+                    first: 'R$ 100,00',
+                    second: 'R$ 200,00',
+                    third: 'Fraldas por faixa'
+                },
+                contactPhone: '(11) 99999-9999',
+                babyName: 'Thomas'
+            }
+        };
+
+        // Verificar autenticação ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔐 Admin Simples carregado');
+            
+            // Verificar se já está autenticado
+            const stored = localStorage.getItem('adminAuth');
+            if (stored === 'authenticated') {
+                adminAuthenticated = true;
+                console.log('✅ Admin já autenticado via localStorage');
+                initializeAdmin();
+            } else {
+                console.log('❌ Admin não autenticado, mostrando tela de login');
+                showAuthCheck();
+            }
+        });
+
+        function showAuthCheck() {
+            document.getElementById('auth-check').style.display = 'block';
+            document.getElementById('admin-password').focus();
+            
+            // Enter no campo de senha
+            document.getElementById('admin-password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkAdminPassword();
+                }
+            });
+        }
+
+        function checkAdminPassword() {
+            const password = document.getElementById('admin-password').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                console.log('✅ Senha correta');
+                adminAuthenticated = true;
+                localStorage.setItem('adminAuth', 'authenticated');
+                document.getElementById('auth-check').style.display = 'none';
+                initializeAdmin();
+            } else {
+                console.log('❌ Senha incorreta');
+                alert('Senha incorreta! Tente novamente.');
+                document.getElementById('admin-password').value = '';
+                document.getElementById('admin-password').focus();
+            }
+        }
+
+        function initializeAdmin() {
+            console.log('🚀 Inicializando painel admin...');
+            
+            // Aguardar Firebase estar pronto
+            if (typeof window.FirebaseDB !== 'undefined') {
+                loadDataFromFirebase();
+            } else {
+                window.addEventListener('firebaseReady', () => {
+                    loadDataFromFirebase();
+                });
+            }
+            
+            updateDashboard();
+            loadParticipants();
+            setupEventListeners();
+        }
+
+        async function loadDataFromFirebase() {
+            try {
+                console.log('📊 Carregando dados do Firebase...');
+                
+                // Carregar compras
+                const purchasesResult = await window.FirebaseDB.loadPurchases();
+                if (purchasesResult.success) {
+                    adminData.purchases = purchasesResult.data;
+                    console.log(`✅ ${adminData.purchases.length} compras carregadas`);
+                } else {
+                    console.log('⚠️ Erro ao carregar compras:', purchasesResult.error);
+                }
+                
+                // Carregar configurações
+                const configResult = await window.FirebaseDB.loadConfig();
+                if (configResult.success) {
+                    adminData.config = { ...adminData.config, ...configResult.data };
+                    console.log('✅ Configurações carregadas');
+                }
+                
+                updateDashboard();
+                loadParticipants();
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+            }
+        }
+
+        function updateDashboard() {
+            try {
+                const totalSold = adminData.purchases.filter(p => p.status === 'confirmed').reduce((sum, p) => sum + (p.numbers ? p.numbers.length : 0), 0);
+                const totalRevenue = adminData.purchases.filter(p => p.status === 'confirmed').reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+                const totalParticipants = adminData.purchases.length;
+                const completionRate = Math.round((totalSold / adminData.config.totalNumbers) * 100);
+
+                document.getElementById('total-sold').textContent = totalSold;
+                document.getElementById('total-revenue').textContent = `R$ ${totalRevenue.toFixed(2)}`;
+                document.getElementById('total-participants').textContent = totalParticipants;
+                document.getElementById('completion-rate').textContent = `${completionRate}%`;
+                document.getElementById('progress-sold').textContent = totalSold;
+                document.getElementById('progress-total').textContent = adminData.config.totalNumbers;
+                
+                // Atualizar barra de progresso
+                const progressBar = document.getElementById('admin-progress-bar');
+                if (progressBar) {
+                    progressBar.style.width = `${completionRate}%`;
+                }
+                
+                console.log(`📊 Dashboard atualizado: ${totalSold}/${adminData.config.totalNumbers} vendidos`);
+            } catch (error) {
+                console.error('❌ Erro ao atualizar dashboard:', error);
+            }
+        }
+
+        function loadParticipants() {
+            const tbody = document.getElementById('participants-tbody');
+            
+            if (adminData.purchases.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-inbox" style="font-size: 2em; margin-bottom: 10px; display: block;"></i>
+                            Nenhum participante ainda
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = adminData.purchases.map(purchase => `
+                <tr>
+                    <td>${purchase.name || 'N/A'}</td>
+                    <td>${purchase.whatsapp || 'N/A'}</td>
+                    <td>${purchase.numbers ? purchase.numbers.join(', ') : 'N/A'}</td>
+                    <td>R$ ${(purchase.totalAmount || 0).toFixed(2)}</td>
+                    <td>
+                        <span class="status-badge ${purchase.status}">
+                            ${purchase.status === 'confirmed' ? '✅ Confirmado' : 
+                              purchase.status === 'pending' ? '⏳ Pendente' : 
+                              '❌ Cancelado'}
+                        </span>
+                    </td>
+                    <td>${purchase.timestamp ? new Date(purchase.timestamp.seconds * 1000).toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <button onclick="editParticipant('${purchase.id}')" class="btn-small">Editar</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            console.log(`👥 ${adminData.purchases.length} participantes carregados`);
+        }
+
+        function setupEventListeners() {
+            // Form de configurações
+            document.getElementById('config-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveConfiguration();
+            });
+        }
+
+        async function saveConfiguration() {
+            try {
+                const config = {
+                    totalNumbers: parseInt(document.getElementById('config-total-numbers').value),
+                    ticketPrice: parseFloat(document.getElementById('config-ticket-price').value),
+                    drawDate: document.getElementById('config-draw-date').value,
+                    pixKey: document.getElementById('config-pix-key').value,
+                    prizes: {
+                        first: document.getElementById('config-first-prize').value,
+                        second: document.getElementById('config-second-prize').value,
+                        third: document.getElementById('config-third-prize').value
+                    },
+                    contactPhone: document.getElementById('config-contact-phone').value
+                };
+
+                if (window.FirebaseDB) {
+                    const result = await window.FirebaseDB.saveConfig(config);
+                    if (result.success) {
+                        alert('Configurações salvas com sucesso!');
+                        adminData.config = { ...adminData.config, ...config };
+                        updateDashboard();
+                    } else {
+                        alert('Erro ao salvar: ' + result.error);
+                    }
+                } else {
+                    alert('Firebase não disponível');
+                }
+            } catch (error) {
+                console.error('Erro ao salvar configurações:', error);
+                alert('Erro ao salvar configurações: ' + error.message);
+            }
+        }
+
+        function adminLogout() {
+            if (confirm('Deseja realmente sair do painel admin?')) {
+                localStorage.removeItem('adminAuth');
+                adminAuthenticated = false;
+                window.location.reload();
+            }
+        }
+
+        // Funções placeholder para os botões
+        function markNumberAsSold() { alert('Função em desenvolvimento'); }
+        function markNumberAsReserved() { alert('Função em desenvolvimento'); }
+        function freeNumber() { alert('Função em desenvolvimento'); }
+        function generateReport() { alert('Função em desenvolvimento'); }
+        function performDraw() { alert('Função em desenvolvimento'); }
+        function searchParticipant() { alert('Função em desenvolvimento'); }
+        function filterByStatus(status) { alert('Função em desenvolvimento'); }
+        function exportParticipants() { alert('Função em desenvolvimento'); }
+        function editParticipant(id) { alert('Editando participante: ' + id); }
+
+        console.log('🎯 Admin Simples carregado - Senha: casaVERDE123');
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Login - Verificação de Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .debug-panel { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 4px solid; }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .log-area { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; font-family: monospace; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.success { background: #28a745; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ced4da; border-radius: 5px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="debug-panel">
+            <h1>🔍 Debug Login - Verificação de Admin</h1>
+            <p>Vamos descobrir por que o isAdmin() está retornando false no login</p>
+        </div>
+        
+        <div class="grid">
+            <!-- Login Test -->
+            <div class="debug-panel">
+                <h3>🔐 Teste de Login</h3>
+                <input type="email" id="test-email" placeholder="Email" value="admin@rifathomas.com">
+                <input type="password" id="test-password" placeholder="Senha" value="casaVERDE123">
+                <button onclick="testFullLogin()" class="success">🚀 Testar Login Completo</button>
+                <div id="login-result" class="status info">Pronto para testar</div>
+            </div>
+            
+            <!-- Admin Check -->
+            <div class="debug-panel">
+                <h3>🛡️ Verificação de Admin</h3>
+                <div id="admin-check-result" class="status info">Execute o login primeiro</div>
+                <button onclick="checkAdminStatus()" id="admin-check-btn" disabled>Verificar Admin Status</button>
+            </div>
+            
+            <!-- Database Check -->
+            <div class="debug-panel">
+                <h3>💾 Verificação do Banco</h3>
+                <div id="database-result" class="status info">Aguardando...</div>
+                <button onclick="checkDatabase()">Verificar Registros Admin</button>
+            </div>
+            
+            <!-- Fix Admin -->
+            <div class="debug-panel">
+                <h3>🔧 Correção de Admin</h3>
+                <div id="fix-result" class="status info">Pronto para corrigir</div>
+                <button onclick="fixAdminRecord()" class="danger">🔧 Corrigir Registro Admin</button>
+            </div>
+        </div>
+        
+        <!-- Logs -->
+        <div class="debug-panel">
+            <h3>📋 Logs Detalhados</h3>
+            <div id="debug-logs" class="log-area">Iniciando debug...\n</div>
+            <button onclick="clearLogs()">Limpar</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let currentUser = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logArea = document.getElementById('debug-logs');
+            logArea.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `status ${type}`;
+            }
+            log(`${elementId}: ${message}`, type);
+        }
+        
+        // Teste completo de login
+        async function testFullLogin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            log('🔐 Iniciando teste completo de login...');
+            updateStatus('login-result', '⏳ Testando login...', 'info');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Passo 1: Tentar login
+                log(`Tentando login com: ${email}`);
+                const loginResult = await window.FirebaseDB.adminLogin(email, password);
+                
+                log(`Resultado adminLogin: ${JSON.stringify(loginResult, null, 2)}`);
+                
+                if (!loginResult.success) {
+                    throw new Error(`Login falhou: ${loginResult.error}`);
+                }
+                
+                currentUser = loginResult.user;
+                updateStatus('login-result', `✅ Login OK: ${loginResult.user.email}`, 'success');
+                
+                // Habilitar próximo teste
+                document.getElementById('admin-check-btn').disabled = false;
+                
+                log(`✅ Login realizado com sucesso: ${loginResult.user.uid}`);
+                
+                // Aguardar um pouco e fazer verificação automática
+                setTimeout(checkAdminStatus, 1000);
+                
+            } catch (error) {
+                log(`❌ Erro no login: ${error.message}`, 'error');
+                updateStatus('login-result', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Verificar status de admin
+        async function checkAdminStatus() {
+            if (!currentUser) {
+                updateStatus('admin-check-result', '❌ Faça login primeiro', 'error');
+                return;
+            }
+            
+            log('🛡️ Verificando status de administrador...');
+            updateStatus('admin-check-result', '⏳ Verificando...', 'info');
+            
+            try {
+                // Verificação 1: isAdmin
+                log(`Executando isAdmin(${currentUser.uid})...`);
+                const isAdmin = await window.FirebaseDB.isAdmin(currentUser.uid);
+                log(`isAdmin resultado: ${isAdmin}`);
+                
+                // Verificação 2: getCurrentAdmin
+                log('Executando getCurrentAdmin()...');
+                const currentAdmin = await window.FirebaseDB.getCurrentAdmin();
+                log(`getCurrentAdmin resultado: ${JSON.stringify(currentAdmin, null, 2)}`);
+                
+                // Verificação 3: Buscar diretamente no Firestore
+                log('Verificando registro direto no Firestore...');
+                const adminDoc = await firebase.firestore().collection('admin_users').doc(currentUser.uid).get();
+                if (adminDoc.exists) {
+                    const adminData = adminDoc.data();
+                    log(`Dados do admin no Firestore: ${JSON.stringify(adminData, null, 2)}`);
+                } else {
+                    log('❌ Nenhum registro encontrado na coleção admin_users');
+                }
+                
+                // Resultado final
+                if (isAdmin && currentAdmin.success && currentAdmin.isAdmin) {
+                    updateStatus('admin-check-result', '✅ Todas as verificações OK', 'success');
+                    log('✅ Usuário confirmado como administrador');
+                } else {
+                    updateStatus('admin-check-result', '❌ Falha na verificação de admin', 'error');
+                    log('❌ Uma ou mais verificações falharam');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na verificação: ${error.message}`, 'error');
+                updateStatus('admin-check-result', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Verificar banco de dados
+        async function checkDatabase() {
+            log('💾 Verificando registros no banco...');
+            updateStatus('database-result', '⏳ Consultando...', 'info');
+            
+            try {
+                // Listar todos os admins
+                const snapshot = await firebase.firestore().collection('admin_users').get();
+                
+                log(`Encontrados ${snapshot.size} registros na coleção admin_users`);
+                
+                if (snapshot.empty) {
+                    updateStatus('database-result', '❌ Nenhum admin encontrado', 'error');
+                    log('❌ Coleção admin_users está vazia');
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    log(`Admin ${doc.id}: ${JSON.stringify(data, null, 2)}`);
+                });
+                
+                // Verificar se existe admin autorizado
+                const authorizedQuery = await firebase.firestore()
+                    .collection('admin_users')
+                    .where('email', '==', 'admin@rifathomas.com')
+                    .get();
+                
+                if (authorizedQuery.empty) {
+                    updateStatus('database-result', '❌ Admin autorizado não encontrado', 'error');
+                    log('❌ Não há registro para admin@rifathomas.com');
+                } else {
+                    updateStatus('database-result', '✅ Admin autorizado encontrado', 'success');
+                    log('✅ Registro de admin autorizado existe');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na consulta: ${error.message}`, 'error');
+                updateStatus('database-result', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Corrigir registro de admin
+        async function fixAdminRecord() {
+            if (!currentUser) {
+                alert('Faça login primeiro');
+                return;
+            }
+            
+            if (!confirm('Corrigir o registro de admin? Isso pode recriar os dados.')) {
+                return;
+            }
+            
+            log('🔧 Corrigindo registro de administrador...');
+            updateStatus('fix-result', '⏳ Corrigindo...', 'info');
+            
+            try {
+                // Criar/atualizar registro correto
+                const adminData = {
+                    email: 'admin@rifathomas.com',
+                    isAdmin: true,
+                    isAuthorized: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
+                await firebase.firestore().collection('admin_users').doc(currentUser.uid).set(adminData, { merge: true });
+                
+                log('✅ Registro de admin corrigido');
+                updateStatus('fix-result', '✅ Registro corrigido', 'success');
+                
+                // Verificar novamente
+                setTimeout(checkAdminStatus, 1000);
+                
+            } catch (error) {
+                log(`❌ Erro na correção: ${error.message}`, 'error');
+                updateStatus('fix-result', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLogs() {
+            document.getElementById('debug-logs').textContent = 'Logs limpos.\n';
+        }
+        
+        // Auto-inicialização
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 Firebase carregado');
+            checkDatabase();
+        });
+        
+        if (typeof window.FirebaseDB !== 'undefined') {
+            log('🔥 Firebase já disponível');
+            checkDatabase();
+        }
+        
+        log('🚀 Debug de login iniciado');
+    </script>
+</body>
+</html>

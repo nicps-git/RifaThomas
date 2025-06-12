@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Admin - Verificação de Permissões</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px;
+            font-size: 16px;
+        }
+        .log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            margin-top: 20px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Admin - Verificação de Permissões</h1>
+        <p>Esta página vai verificar exatamente por que o admin.html está mostrando "sem permissões"</p>
+        
+        <div id="main-status" class="status info">🔄 Clique em "Verificar Permissões" para iniciar</div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="checkAdminPermissions()">🔍 Verificar Permissões</button>
+            <button onclick="openAdmin()">🔗 Abrir Admin</button>
+            <button onclick="openLogin()">🔐 Abrir Login</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'error' ? 'style="color: #dc3545;"' : 
+                              type === 'success' ? 'style="color: #28a745;"' : 
+                              type === 'warning' ? 'style="color: #ffc107;"' : '';
+            
+            logDiv.innerHTML += `<div ${colorClass}>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[DEBUG] ${message}`);
+        }
+
+        let firebaseReady = false;
+        
+        window.addEventListener('firebaseReady', () => {
+            log('Firebase carregado e pronto!', 'success');
+            firebaseReady = true;
+        });
+        
+        setTimeout(() => {
+            if (!firebaseReady) {
+                log('Timeout Firebase - tentando mesmo assim...', 'warning');
+                firebaseReady = true;
+            }
+        }, 3000);
+
+        async function checkAdminPermissions() {
+            const statusDiv = document.getElementById('main-status');
+            
+            try {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⏳ Verificando permissões de administrador...';
+                
+                log('=== INICIANDO VERIFICAÇÃO DE PERMISSÕES ===');
+                
+                // 1. Verificar se Firebase está carregado
+                log('1. Verificando Firebase...');
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase não carregado');
+                }
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não encontrado');
+                }
+                log('✓ Firebase e FirebaseDB OK', 'success');
+                
+                // 2. Verificar usuário atualmente logado no Firebase Auth
+                log('2. Verificando usuário atual no Firebase Auth...');
+                const currentUser = firebase.auth().currentUser;
+                
+                if (currentUser) {
+                    log(`✓ Usuário logado: ${currentUser.email} (UID: ${currentUser.uid})`, 'success');
+                } else {
+                    log('✗ Nenhum usuário logado no Firebase Auth', 'error');
+                }
+                
+                // 3. Testar getCurrentAdmin()
+                log('3. Testando getCurrentAdmin()...');
+                const currentAdminResult = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (currentAdminResult.success) {
+                    log(`✓ getCurrentAdmin OK: ${currentAdminResult.user.email}`, 'success');
+                } else {
+                    log(`✗ getCurrentAdmin falhou: ${currentAdminResult.error}`, 'error');
+                }
+                
+                // 4. Se há usuário, testar isAdmin()
+                if (currentUser) {
+                    log('4. Testando isAdmin()...');
+                    const isAdminResult = await window.FirebaseDB.isAdmin(currentUser.uid);
+                    
+                    if (isAdminResult) {
+                        log(`✓ isAdmin retornou TRUE para ${currentUser.uid}`, 'success');
+                    } else {
+                        log(`✗ isAdmin retornou FALSE para ${currentUser.uid}`, 'error');
+                        
+                        // Verificar documento no Firestore
+                        log('4.1. Verificando documento admin no Firestore...');
+                        try {
+                            const adminDoc = await firebase.firestore()
+                                .collection('admin_users')
+                                .doc(currentUser.uid)
+                                .get();
+                            
+                            if (adminDoc.exists()) {
+                                const data = adminDoc.data();
+                                log(`✓ Documento encontrado: isAdmin=${data.isAdmin}, isAuthorized=${data.isAuthorized}, email=${data.email}`, 'info');
+                                
+                                if (data.email !== 'admin@rifathomas.com') {
+                                    log(`✗ Email incorreto no documento: ${data.email}`, 'error');
+                                }
+                            } else {
+                                log(`✗ Documento admin não encontrado para UID: ${currentUser.uid}`, 'error');
+                            }
+                        } catch (error) {
+                            log(`✗ Erro ao verificar documento: ${error.message}`, 'error');
+                        }
+                    }
+                } else {
+                    log('4. Pulando isAdmin() - nenhum usuário logado', 'warning');
+                }
+                
+                // 5. Verificar se deve fazer login
+                if (!currentUser) {
+                    log('5. SOLUÇÃO: Nenhum usuário logado - precisa fazer login primeiro', 'warning');
+                    statusDiv.className = 'status warning';
+                    statusDiv.innerHTML = `
+                        ⚠️ <strong>PROBLEMA IDENTIFICADO</strong><br>
+                        Nenhum usuário logado no Firebase Auth<br>
+                        <strong>SOLUÇÃO:</strong> Faça login primeiro em login.html
+                    `;
+                } else if (!currentAdminResult.success) {
+                    log('5. SOLUÇÃO: getCurrentAdmin falhou - problema na verificação', 'warning');
+                    statusDiv.className = 'status warning';
+                    statusDiv.innerHTML = `
+                        ⚠️ <strong>PROBLEMA IDENTIFICADO</strong><br>
+                        getCurrentAdmin() falhou: ${currentAdminResult.error}<br>
+                        <strong>SOLUÇÃO:</strong> Verificar implementação da função
+                    `;
+                } else {
+                    log('5. TUDO OK: Usuário logado e com permissões', 'success');
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `
+                        ✅ <strong>PERMISSÕES OK</strong><br>
+                        Usuário: ${currentUser.email}<br>
+                        Admin: Confirmado<br>
+                        <strong>admin.html deveria funcionar!</strong>
+                    `;
+                }
+                
+                log('=== VERIFICAÇÃO CONCLUÍDA ===');
+                
+            } catch (error) {
+                log(`Erro na verificação: ${error.message}`, 'error');
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Erro: ${error.message}`;
+            }
+        }
+
+        function openAdmin() {
+            window.open('admin.html', '_blank');
+            log('Abrindo admin.html...', 'info');
+        }
+
+        function openLogin() {
+            window.open('login.html', '_blank');
+            log('Abrindo login.html...', 'info');
+        }
+
+        // Inicialização
+        log('Sistema de debug carregado');
+        log('Use este debug para entender por que admin.html não reconhece permissões');
+    </script>
+</body>
+</html>

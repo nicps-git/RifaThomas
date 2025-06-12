@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug em Tempo Real - Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .debug-panel { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 4px solid; }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .log-area { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; font-family: monospace; max-height: 400px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button.danger { background: #dc3545; }
+        button.success { background: #28a745; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="debug-panel">
+            <h1>🔍 Debug em Tempo Real - Sistema Admin</h1>
+            <p>Diagnóstico detalhado do erro de permissão no painel admin</p>
+        </div>
+        
+        <div class="grid">
+            <!-- Status Firebase -->
+            <div class="debug-panel">
+                <h3>🔥 Status Firebase</h3>
+                <div id="firebase-status" class="status info">⏳ Verificando...</div>
+                <button onclick="checkFirebase()">Verificar Firebase</button>
+            </div>
+            
+            <!-- Status Autenticação -->
+            <div class="debug-panel">
+                <h3>🔐 Status Autenticação</h3>
+                <div id="auth-status" class="status info">⏳ Verificando...</div>
+                <button onclick="checkAuth()">Verificar Auth</button>
+            </div>
+            
+            <!-- Teste getCurrentAdmin -->
+            <div class="debug-panel">
+                <h3>👤 getCurrentAdmin()</h3>
+                <div id="current-admin-status" class="status info">⏳ Aguardando...</div>
+                <button onclick="testGetCurrentAdmin()">Testar</button>
+            </div>
+            
+            <!-- Teste isAdmin -->
+            <div class="debug-panel">
+                <h3>🛡️ isAdmin(uid)</h3>
+                <div id="is-admin-status" class="status info">⏳ Aguardando...</div>
+                <button onclick="testIsAdmin()">Testar</button>
+            </div>
+            
+            <!-- Dados da Sessão -->
+            <div class="debug-panel full-width">
+                <h3>📊 Dados da Sessão Atual</h3>
+                <div id="session-data" class="status info">Carregando...</div>
+                <button onclick="showSessionData()">Atualizar</button>
+                <button onclick="clearSession()" class="danger">Limpar Sessão</button>
+            </div>
+            
+            <!-- Simulação do Admin.html -->
+            <div class="debug-panel full-width">
+                <h3>🖥️ Simulação do admin.html</h3>
+                <div id="simulation-status" class="status info">Pronto para simular</div>
+                <button onclick="simulateAdminPage()" class="success">Simular Carregamento do Admin</button>
+                <button onclick="openRealAdmin()">🚀 Abrir Admin Real</button>
+            </div>
+        </div>
+        
+        <!-- Logs em Tempo Real -->
+        <div class="debug-panel">
+            <h3>📋 Logs em Tempo Real</h3>
+            <div id="real-time-logs" class="log-area">Iniciando monitoramento...\n</div>
+            <button onclick="clearLogs()">Limpar</button>
+            <button onclick="enableVerboseLogging()" id="verbose-btn">Ativar Log Detalhado</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let verboseLogging = false;
+        let currentUser = null;
+        
+        // Logging em tempo real
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logArea = document.getElementById('real-time-logs');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logArea.textContent += logEntry;
+            logArea.scrollTop = logArea.scrollHeight;
+            
+            // Console também
+            console.log(`${type.toUpperCase()}: ${message}`);
+            
+            // Verbose logging
+            if (verboseLogging) {
+                console.trace(message);
+            }
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `status ${type}`;
+            }
+            log(`${elementId}: ${message}`, type);
+        }
+        
+        // Verificar Firebase
+        function checkFirebase() {
+            log('Verificando disponibilidade do Firebase...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    updateStatus('firebase-status', '❌ FirebaseDB não disponível', 'error');
+                    return false;
+                }
+                
+                log(`FirebaseDB disponível. Admin autorizado: ${window.FirebaseDB.ADMIN_AUTORIZADO}`);
+                updateStatus('firebase-status', '✅ FirebaseDB carregado', 'success');
+                
+                // Verificar funções principais
+                const functions = ['getCurrentAdmin', 'isAdmin', 'adminLogin', 'adminLogout'];
+                functions.forEach(func => {
+                    if (typeof window.FirebaseDB[func] === 'function') {
+                        log(`✓ Função ${func} disponível`);
+                    } else {
+                        log(`✗ Função ${func} NÃO disponível`, 'error');
+                    }
+                });
+                
+                return true;
+            } catch (error) {
+                log(`Erro na verificação do Firebase: ${error.message}`, 'error');
+                updateStatus('firebase-status', `❌ Erro: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Verificar autenticação
+        async function checkAuth() {
+            log('Verificando estado de autenticação...');
+            
+            try {
+                if (!checkFirebase()) return;
+                
+                // Verificar usuário autenticado no Firebase Auth
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    log(`Usuário Firebase Auth: ${user.email} (${user.uid})`);
+                    currentUser = user;
+                    updateStatus('auth-status', `✅ Autenticado: ${user.email}`, 'success');
+                } else {
+                    log('Nenhum usuário autenticado no Firebase Auth');
+                    updateStatus('auth-status', '❌ Não autenticado', 'error');
+                }
+                
+                // Escutar mudanças de auth
+                firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        log(`Auth changed: ${user.email} logado`);
+                    } else {
+                        log('Auth changed: usuário deslogado');
+                    }
+                });
+                
+            } catch (error) {
+                log(`Erro na verificação de auth: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Testar getCurrentAdmin
+        async function testGetCurrentAdmin() {
+            log('Testando getCurrentAdmin()...');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    updateStatus('current-admin-status', '❌ FirebaseDB não disponível', 'error');
+                    return;
+                }
+                
+                updateStatus('current-admin-status', '⏳ Executando getCurrentAdmin...', 'info');
+                
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                log(`getCurrentAdmin result: ${JSON.stringify(result, null, 2)}`);
+                
+                if (result.success) {
+                    if (result.isAdmin) {
+                        updateStatus('current-admin-status', `✅ Admin: ${result.user.email}`, 'success');
+                        log(`getCurrentAdmin SUCESSO: ${result.user.email} é admin`);
+                    } else {
+                        updateStatus('current-admin-status', `❌ Não é admin: ${result.user.email}`, 'error');
+                        log(`getCurrentAdmin FALHA: ${result.user.email} não é admin`);
+                    }
+                } else {
+                    updateStatus('current-admin-status', `❌ Falha: ${result.error}`, 'error');
+                    log(`getCurrentAdmin ERRO: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`Erro em getCurrentAdmin: ${error.message}`, 'error');
+                updateStatus('current-admin-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Testar isAdmin
+        async function testIsAdmin() {
+            log('Testando isAdmin()...');
+            
+            try {
+                if (!currentUser) {
+                    updateStatus('is-admin-status', '❌ Nenhum usuário para testar', 'error');
+                    return;
+                }
+                
+                updateStatus('is-admin-status', '⏳ Executando isAdmin...', 'info');
+                
+                const isAdmin = await window.FirebaseDB.isAdmin(currentUser.uid);
+                
+                log(`isAdmin(${currentUser.uid}) = ${isAdmin}`);
+                
+                if (isAdmin) {
+                    updateStatus('is-admin-status', `✅ ${currentUser.email} é admin`, 'success');
+                } else {
+                    updateStatus('is-admin-status', `❌ ${currentUser.email} NÃO é admin`, 'error');
+                }
+                
+            } catch (error) {
+                log(`Erro em isAdmin: ${error.message}`, 'error');
+                updateStatus('is-admin-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Mostrar dados da sessão
+        function showSessionData() {
+            log('Coletando dados da sessão...');
+            
+            try {
+                const data = {
+                    firebaseUser: firebase.auth().currentUser ? {
+                        uid: firebase.auth().currentUser.uid,
+                        email: firebase.auth().currentUser.email,
+                        emailVerified: firebase.auth().currentUser.emailVerified
+                    } : null,
+                    localStorage: Object.keys(localStorage).length > 0 ? Object.fromEntries(Object.entries(localStorage)) : 'Vazio',
+                    sessionStorage: Object.keys(sessionStorage).length > 0 ? Object.fromEntries(Object.entries(sessionStorage)) : 'Vazio',
+                    windowVars: {
+                        FirebaseDB: typeof window.FirebaseDB !== 'undefined',
+                        adminAuthApproved: window.adminAuthApproved || false
+                    }
+                };
+                
+                updateStatus('session-data', `📊 Dados coletados (ver console)`, 'info');
+                console.log('📊 DADOS DA SESSÃO:', data);
+                log(`Dados da sessão: ${JSON.stringify(data, null, 2)}`);
+                
+            } catch (error) {
+                log(`Erro ao coletar dados: ${error.message}`, 'error');
+                updateStatus('session-data', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Limpar sessão
+        function clearSession() {
+            if (confirm('Limpar toda a sessão? Isso fará logout.')) {
+                log('Limpando sessão...');
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    if (firebase.auth().currentUser) {
+                        firebase.auth().signOut();
+                    }
+                    window.adminAuthApproved = false;
+                    updateStatus('session-data', '🧹 Sessão limpa', 'info');
+                    log('Sessão limpa com sucesso');
+                } catch (error) {
+                    log(`Erro ao limpar sessão: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        // Simular carregamento do admin.html
+        async function simulateAdminPage() {
+            log('🖥️ Simulando carregamento do admin.html...');
+            updateStatus('simulation-status', '⏳ Simulando...', 'info');
+            
+            try {
+                // Etapa 1: Verificar se Firebase está pronto
+                log('Etapa 1: Verificando Firebase...');
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Etapa 2: Aguardar sincronização (como no admin.html)
+                log('Etapa 2: Aguardando sincronização...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Etapa 3: Executar getCurrentAdmin
+                log('Etapa 3: Executando getCurrentAdmin...');
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                log(`Resultado getCurrentAdmin: ${JSON.stringify(result, null, 2)}`);
+                
+                // Etapa 4: Verificar resultado (exatamente como admin.html)
+                if (!result.success) {
+                    throw new Error(`getCurrentAdmin falhou: ${result.error}`);
+                }
+                
+                if (!result.isAdmin) {
+                    throw new Error('Usuário não tem permissões de admin');
+                }
+                
+                // Etapa 5: Sucesso
+                log('✅ Simulação bem-sucedida! Usuário tem permissões de admin');
+                updateStatus('simulation-status', '✅ Simulação OK - Admin autorizado', 'success');
+                
+            } catch (error) {
+                log(`❌ Simulação falhou: ${error.message}`, 'error');
+                updateStatus('simulation-status', `❌ Falha: ${error.message}`, 'error');
+            }
+        }
+        
+        // Abrir admin real
+        function openRealAdmin() {
+            log('Abrindo admin.html real...');
+            window.open('admin.html', '_blank');
+        }
+        
+        // Utilitários
+        function clearLogs() {
+            document.getElementById('real-time-logs').textContent = 'Logs limpos.\n';
+        }
+        
+        function enableVerboseLogging() {
+            verboseLogging = !verboseLogging;
+            const btn = document.getElementById('verbose-btn');
+            btn.textContent = verboseLogging ? 'Desativar Log Detalhado' : 'Ativar Log Detalhado';
+            btn.style.background = verboseLogging ? '#dc3545' : '#007bff';
+            log(`Verbose logging ${verboseLogging ? 'ativado' : 'desativado'}`);
+        }
+        
+        // Auto-inicialização
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 FirebaseReady event recebido');
+            setTimeout(() => {
+                checkFirebase();
+                checkAuth();
+            }, 500);
+        });
+        
+        // Se Firebase já estiver pronto
+        if (typeof window.FirebaseDB !== 'undefined') {
+            log('🔥 Firebase já disponível na inicialização');
+            setTimeout(() => {
+                checkFirebase();
+                checkAuth();
+            }, 500);
+        }
+        
+        // Inicialização
+        log('🚀 Debug em tempo real iniciado');
+    </script>
+</body>
+</html>

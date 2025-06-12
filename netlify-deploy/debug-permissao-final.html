@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Final - Permissão Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .debug-container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; border-left: 4px solid; }
+        .success { background: #e8f5e8; border-color: #4caf50; color: #2e7d32; }
+        .error { background: #ffe8e8; border-color: #f44336; color: #c62828; }
+        .warning { background: #fff3e0; border-color: #ff9800; color: #ef6c00; }
+        .info { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .code-block { background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; margin: 10px 0; }
+        input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔍 Debug Final - Permissão de Administrador</h1>
+        <p>Esta página vai diagnosticar exatamente onde está o problema de permissão.</p>
+        
+        <!-- Status do Firebase -->
+        <div id="firebase-status" class="status info">
+            ⏳ Aguardando Firebase...
+        </div>
+        
+        <!-- Status da Autenticação -->
+        <div id="auth-status" class="status info">
+            ⏳ Verificando autenticação...
+        </div>
+        
+        <!-- Status das Permissões -->
+        <div id="permission-status" class="status info">
+            ⏳ Aguardando verificação de permissões...
+        </div>
+        
+        <!-- Dados do Usuário -->
+        <div id="user-data" class="status info">
+            ⏳ Carregando dados do usuário...
+        </div>
+        
+        <!-- Área de Teste -->
+        <div style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 5px;">
+            <h3>Teste Manual de Login</h3>
+            <input type="email" id="test-email" placeholder="Email (admin@rifathomas.com)" value="admin@rifathomas.com">
+            <input type="password" id="test-password" placeholder="Senha (casaVERDE123)" value="casaVERDE123">
+            <br>
+            <button onclick="testLogin()">🔐 Testar Login</button>
+            <button onclick="testLogout()">🚪 Testar Logout</button>
+            <button onclick="checkCurrentUser()">👤 Verificar Usuário Atual</button>
+            <button onclick="cleanAuth()">🧹 Limpar Autenticação</button>
+        </div>
+        
+        <!-- Logs Detalhados -->
+        <div style="margin: 20px 0;">
+            <h3>📋 Logs Detalhados</h3>
+            <div id="detailed-logs" class="code-block">
+                Aguardando logs...
+            </div>
+        </div>
+        
+        <!-- Correção Automática -->
+        <div style="margin: 20px 0; padding: 20px; background: #fff3e0; border-radius: 5px;">
+            <h3>🔧 Correção Automática</h3>
+            <p>Se detectarmos problemas, tentaremos corrigi-los automaticamente.</p>
+            <button onclick="autoFix()">🔧 Executar Correção Automática</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let logs = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
+            updateLogsDisplay();
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateLogsDisplay() {
+            document.getElementById('detailed-logs').textContent = logs.join('\n');
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+            addLog(`${elementId}: ${message}`, type);
+        }
+        
+        // Verificar Firebase
+        function checkFirebase() {
+            addLog('Verificando disponibilidade do Firebase...');
+            
+            if (typeof window.FirebaseDB === 'undefined') {
+                updateStatus('firebase-status', '❌ FirebaseDB não está disponível', 'error');
+                return false;
+            }
+            
+            updateStatus('firebase-status', '✅ FirebaseDB carregado com sucesso', 'success');
+            addLog(`Admin autorizado: ${window.FirebaseDB.ADMIN_AUTORIZADO}`);
+            return true;
+        }
+        
+        // Verificar autenticação atual
+        async function checkCurrentUser() {
+            addLog('Verificando usuário atual...');
+            
+            if (!checkFirebase()) return;
+            
+            try {
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (result.success) {
+                    updateStatus('auth-status', `✅ Usuário autenticado: ${result.user.email}`, 'success');
+                    updateStatus('user-data', `👤 UID: ${result.user.uid} | Email: ${result.user.email} | Admin: ${result.isAdmin}`, 'success');
+                    
+                    // Verificar permissões específicas
+                    const isAdmin = await window.FirebaseDB.isAdmin(result.user.uid);
+                    updateStatus('permission-status', `🔐 Permissão de admin: ${isAdmin ? 'SIM' : 'NÃO'}`, isAdmin ? 'success' : 'error');
+                } else {
+                    updateStatus('auth-status', `❌ Não autenticado: ${result.error}`, 'error');
+                    updateStatus('user-data', '❌ Nenhum usuário logado', 'error');
+                    updateStatus('permission-status', '❌ Sem permissões', 'error');
+                }
+            } catch (error) {
+                addLog(`Erro na verificação: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        // Testar login
+        async function testLogin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            addLog(`Tentando login com: ${email}`);
+            
+            if (!checkFirebase()) return;
+            
+            try {
+                updateStatus('auth-status', '⏳ Fazendo login...', 'info');
+                
+                const result = await window.FirebaseDB.adminLogin(email, password);
+                
+                if (result.success) {
+                    updateStatus('auth-status', `✅ Login bem-sucedido: ${result.user.email}`, 'success');
+                    addLog(`Login realizado: ${result.user.uid}`);
+                    
+                    // Aguardar um pouco e verificar permissões
+                    setTimeout(async () => {
+                        await checkCurrentUser();
+                    }, 1000);
+                } else {
+                    updateStatus('auth-status', `❌ Falha no login: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`Erro no login: ${error.message}`, 'error');
+                updateStatus('auth-status', `❌ Erro no login: ${error.message}`, 'error');
+            }
+        }
+        
+        // Testar logout
+        async function testLogout() {
+            addLog('Tentando logout...');
+            
+            if (!checkFirebase()) return;
+            
+            try {
+                const result = await window.FirebaseDB.adminLogout();
+                
+                if (result.success) {
+                    updateStatus('auth-status', '✅ Logout realizado', 'success');
+                    updateStatus('user-data', '❌ Nenhum usuário logado', 'info');
+                    updateStatus('permission-status', '❌ Sem permissões', 'info');
+                } else {
+                    updateStatus('auth-status', `❌ Erro no logout: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                addLog(`Erro no logout: ${error.message}`, 'error');
+            }
+        }
+        
+        // Limpar autenticação
+        async function cleanAuth() {
+            addLog('Limpando estado de autenticação...');
+            
+            try {
+                // Limpar localStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Fazer logout do Firebase
+                if (typeof firebase !== 'undefined' && firebase.auth()) {
+                    await firebase.auth().signOut();
+                }
+                
+                // Limpar dados não autorizados
+                if (window.FirebaseDB && window.FirebaseDB.cleanUnauthorizedAdmins) {
+                    const cleanResult = await window.FirebaseDB.cleanUnauthorizedAdmins();
+                    addLog(`Limpeza de admins: ${JSON.stringify(cleanResult)}`);
+                }
+                
+                updateStatus('auth-status', '🧹 Estado de autenticação limpo', 'info');
+                updateStatus('user-data', '❌ Nenhum usuário logado', 'info');
+                updateStatus('permission-status', '❌ Sem permissões', 'info');
+                
+                addLog('Limpeza concluída');
+            } catch (error) {
+                addLog(`Erro na limpeza: ${error.message}`, 'error');
+            }
+        }
+        
+        // Correção automática
+        async function autoFix() {
+            addLog('Iniciando correção automática...');
+            
+            if (!checkFirebase()) {
+                addLog('Não é possível corrigir sem Firebase', 'error');
+                return;
+            }
+            
+            try {
+                // 1. Limpar estado
+                await cleanAuth();
+                
+                // 2. Aguardar um pouco
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 3. Tentar criar/logar admin
+                const email = 'admin@rifathomas.com';
+                const password = 'casaVERDE123';
+                
+                addLog('Tentando criar/logar admin automaticamente...');
+                
+                let result = await window.FirebaseDB.createAdmin(email, password);
+                
+                if (!result.success && result.error.includes('já existe')) {
+                    addLog('Admin já existe, tentando login...');
+                    result = await window.FirebaseDB.adminLogin(email, password);
+                }
+                
+                if (result.success) {
+                    addLog('Correção bem-sucedida!', 'success');
+                    setTimeout(async () => {
+                        await checkCurrentUser();
+                    }, 1000);
+                } else {
+                    addLog(`Correção falhou: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`Erro na correção automática: ${error.message}`, 'error');
+            }
+        }
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            addLog('Firebase carregado, iniciando verificações...');
+            checkFirebase();
+            checkCurrentUser();
+        });
+        
+        // Se Firebase já estiver pronto
+        if (typeof window.FirebaseDB !== 'undefined') {
+            addLog('Firebase já disponível, iniciando verificações...');
+            checkFirebase();
+            checkCurrentUser();
+        }
+        
+        // Timeout de segurança
+        setTimeout(() => {
+            if (typeof window.FirebaseDB === 'undefined') {
+                updateStatus('firebase-status', '❌ Timeout - Firebase não carregou', 'error');
+                addLog('Firebase não carregou dentro do tempo esperado', 'error');
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

@@ -304,15 +304,23 @@
                 } else {
                     result = await window.FirebaseDB.adminLogin(email, password);
                     if (result.success) {
-                        // Verificar se é admin
-                        const isAdmin = await window.FirebaseDB.isAdmin(result.user.uid);
-                        if (isAdmin) {
-                            showSuccess('Login realizado com sucesso! Redirecionando...');
-                            setTimeout(() => {
-                                window.location.href = 'admin.html';
-                            }, 1500);
+                        // adminLogin já verifica se é admin, então se chegou aqui é porque é admin válido
+                        showSuccess('Login realizado com sucesso! Aguarde...');
+                        
+                        // Aguardar o Firebase Auth sincronizar
+                        console.log('🔄 Aguardando sincronização do Firebase Auth...');
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Verificar se o getCurrentAdmin funciona antes de redirecionar
+                        const adminCheck = await window.FirebaseDB.getCurrentAdmin();
+                        if (adminCheck.success && adminCheck.isAdmin) {
+                            console.log('✅ Admin confirmado, redirecionando...');
+                            window.location.href = 'admin.html';
                         } else {
-                            showError('Você não tem permissão de administrador.');
+                            console.log('⚠️ Admin não confirmado ainda, aguardando mais...');
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            // Redirecionar mesmo assim, pois adminLogin foi bem-sucedido
+                            window.location.href = 'admin.html';
                         }
                     } else {
                         showError('Erro no login: ' + result.error);

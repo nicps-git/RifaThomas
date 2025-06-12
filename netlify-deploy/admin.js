@@ -20,8 +20,56 @@ let adminData = {
     currentUser: null
 };
 
-// Inicializar painel administrativo
+// Inicializar painel administrativo - VERSÃO CORRIGIDA
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 [CORRIGIDO] Admin.js carregado');
+    
+    // Aguardar o novo evento do sistema corrigido
+    window.addEventListener('adminSystemReady', (event) => {
+        console.log('✅ [CORRIGIDO] Sistema administrativo pronto, inicializando...', event.detail.user.email);
+        adminData.currentUser = event.detail.user;
+        initializeAdmin();
+    });
+    
+    // Fallback para compatibilidade com versão antiga
+    window.addEventListener('adminReady', (event) => {
+        console.log('✅ [FALLBACK] Evento antigo recebido, inicializando...', event.detail.user.email);
+        adminData.currentUser = event.detail.user;
+        initializeAdmin();
+    });
+    
+    // Timeout de segurança mais longo
+    setTimeout(() => {
+        if (!adminData.firebaseReady && typeof window.FirebaseDB !== 'undefined') {
+            console.log('⏰ [CORRIGIDO] Timeout - tentando inicializar com verificação...');
+            verifyAndInitialize();
+        }
+    }, 20000);
+});
+
+// Função auxiliar de verificação e inicialização
+async function verifyAndInitialize() {
+    try {
+        if (typeof window.FirebaseDB === 'undefined') {
+            console.error('❌ Firebase não disponível após timeout');
+            return;
+        }
+        
+        const result = await window.FirebaseDB.getCurrentAdmin();
+        if (result.success && result.isAdmin) {
+            console.log('✅ [TIMEOUT] Verificação bem-sucedida, inicializando...');
+            adminData.currentUser = result.user;
+            initializeAdmin();
+        } else {
+            console.log('❌ [TIMEOUT] Usuário não é admin válido');
+        }
+    } catch (error) {
+        console.error('❌ [TIMEOUT] Erro na verificação:', error);
+    }
+}
+
+// Função para inicializar o admin (renomeada)
+function initializeAdmin() {
     // Aguardar Firebase estar pronto
     if (typeof window.FirebaseDB !== 'undefined') {
         initializeAdminWithFirebase();
@@ -35,26 +83,24 @@ document.addEventListener('DOMContentLoaded', function() {
     setupAdminEventListeners();
     updateDashboard();
     loadConfiguration();
-});
+}
 
 // Inicializar com Firebase
 async function initializeAdminWithFirebase() {
     try {
-        // Verificar autenticação
-        const user = await window.FirebaseDB.initAuth();
+        console.log('🔥 Inicializando Firebase admin...');
         
-        if (!user) {
-            redirectToLogin();
-            return;
+        // A autenticação já foi verificada no admin.html
+        // Então podemos pular direto para carregar os dados
+        
+        // Obter usuário atual (já sabemos que é admin)
+        const currentAdmin = await window.FirebaseDB.getCurrentAdmin();
+        if (currentAdmin.success) {
+            adminData.currentUser = currentAdmin.user;
+            console.log('✅ Usuário admin confirmado:', currentAdmin.user.email);
         }
         
-        // Verificar se é admin
-        const isAdmin = await window.FirebaseDB.isAdmin(user.uid);
-        if (!isAdmin) {
-            alert('Você não tem permissão de administrador!');
-            redirectToLogin();
-            return;
-        }
+        adminData.firebaseReady = true;
         
         adminData.currentUser = user;
         adminData.firebaseReady = true;

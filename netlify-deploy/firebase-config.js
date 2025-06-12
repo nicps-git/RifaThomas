@@ -426,14 +426,31 @@ waitForFirebase().then(() => {
     // Verificar se há admin autenticado
     async getCurrentAdmin() {
       try {
-        const user = auth.currentUser;
+        console.log('🔍 Verificando admin atual...');
+        
+        // Aguardar o estado de autenticação ser resolvido
+        const user = await new Promise((resolve) => {
+          const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+            unsubscribe();
+            resolve(user);
+          });
+        });
+        
         if (user) {
+          console.log(`✓ Usuário encontrado: ${user.email} (${user.uid})`);
           const isAdmin = await this.isAdmin(user.uid);
+          
           if (isAdmin) {
+            console.log('✓ Usuário confirmado como admin');
             return { success: true, user: user, isAdmin: true };
+          } else {
+            console.log('✗ Usuário não tem permissões de admin');
+            return { success: false, error: 'Usuário não tem permissões de administrador' };
           }
+        } else {
+          console.log('✗ Nenhum usuário autenticado');
+          return { success: false, error: 'Nenhum administrador autenticado' };
         }
-        return { success: false, error: 'Nenhum administrador autenticado' };
       } catch (error) {
         console.error('❌ Erro ao verificar admin atual:', error);
         return { success: false, error: error.message };

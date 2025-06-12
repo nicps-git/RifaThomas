@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Teste Final - Sistema Admin Corrigido</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; padding: 20px; margin: 20px 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 5px solid; }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        button { background: #007bff; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; margin: 8px; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        button.success { background: #28a745; }
+        button.success:hover { background: #1e7e34; }
+        button.danger { background: #dc3545; }
+        button.danger:hover { background: #c82333; }
+        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .log-area { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; font-family: monospace; max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; }
+        .progress { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #007bff, #28a745); transition: width 0.3s ease; }
+        input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ced4da; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 style="text-align: center; color: #28a745;">🎉 Sistema Admin - Teste Final de Validação</h1>
+            <p style="text-align: center; font-size: 18px;">Vamos validar se o problema de permissão foi definitivamente resolvido</p>
+            
+            <!-- Progresso Geral -->
+            <div class="progress">
+                <div id="overall-progress" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" style="text-align: center; margin: 10px 0;">Preparando testes...</p>
+        </div>
+        
+        <div class="test-grid">
+            <!-- Teste 1: Firebase -->
+            <div class="card">
+                <h3>🔥 Teste 1: Firebase Conectividade</h3>
+                <div id="firebase-result" class="status info">⏳ Aguardando...</div>
+                <button onclick="testFirebase()" id="firebase-btn">Testar Firebase</button>
+            </div>
+            
+            <!-- Teste 2: Autenticação -->
+            <div class="card">
+                <h3>🔐 Teste 2: Sistema de Autenticação</h3>
+                <div id="auth-result" class="status info">⏳ Aguardando...</div>
+                <input type="email" id="test-email" placeholder="Email (admin@rifathomas.com)" value="admin@rifathomas.com">
+                <input type="password" id="test-password" placeholder="Senha (casaVERDE123)" value="casaVERDE123">
+                <button onclick="testAuth()" id="auth-btn">Testar Login</button>
+            </div>
+            
+            <!-- Teste 3: Permissões -->
+            <div class="card">
+                <h3>🛡️ Teste 3: Verificação de Permissões</h3>
+                <div id="permission-result" class="status info">⏳ Aguardando login...</div>
+                <button onclick="testPermissions()" id="permission-btn" disabled>Verificar Permissões</button>
+            </div>
+            
+            <!-- Teste 4: Admin Panel -->
+            <div class="card">
+                <h3>📊 Teste 4: Acesso ao Painel Admin</h3>
+                <div id="panel-result" class="status info">⏳ Aguardando permissões...</div>
+                <button onclick="testAdminPanel()" id="panel-btn" disabled>Testar Painel</button>
+                <button onclick="openAdminPanel()" id="open-panel-btn" class="success" disabled>🚀 Abrir Admin</button>
+            </div>
+        </div>
+        
+        <!-- Seção de Correção -->
+        <div class="card">
+            <h3>🔧 Correção Automática</h3>
+            <p>Se algum teste falhar, tentaremos corrigir automaticamente.</p>
+            <div id="fix-result" class="status info">Pronto para correções se necessário</div>
+            <button onclick="autoFix()" id="fix-btn" class="danger">🔧 Executar Correção Completa</button>
+        </div>
+        
+        <!-- Logs Detalhados -->
+        <div class="card">
+            <h3>📋 Logs Detalhados</h3>
+            <div id="detailed-logs" class="log-area">Iniciando testes...\n</div>
+            <button onclick="clearLogs()">🧹 Limpar Logs</button>
+            <button onclick="exportLogs()">📊 Exportar Logs</button>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let currentUser = null;
+        let testResults = {
+            firebase: false,
+            auth: false,
+            permission: false,
+            panel: false
+        };
+        
+        // Logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logArea = document.getElementById('detailed-logs');
+            logArea.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+            log(`${elementId}: ${message}`, type);
+        }
+        
+        function updateProgress() {
+            const completed = Object.values(testResults).filter(Boolean).length;
+            const total = Object.keys(testResults).length;
+            const percentage = (completed / total) * 100;
+            
+            document.getElementById('overall-progress').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = 
+                `Progresso: ${completed}/${total} testes concluídos (${percentage.toFixed(1)}%)`;
+        }
+        
+        // Teste 1: Firebase
+        async function testFirebase() {
+            log('Iniciando teste do Firebase...');
+            updateStatus('firebase-result', '⏳ Testando conectividade...', 'info');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não está disponível');
+                }
+                
+                log(`Admin autorizado configurado: ${window.FirebaseDB.ADMIN_AUTORIZADO}`);
+                
+                // Testar conexão básica
+                const testConfig = await window.FirebaseDB.loadConfig();
+                log(`Teste de conexão: ${testConfig.success ? 'Sucesso' : 'Falha - ' + testConfig.error}`);
+                
+                testResults.firebase = true;
+                updateStatus('firebase-result', '✅ Firebase conectado e funcionando', 'success');
+                document.getElementById('auth-btn').disabled = false;
+                
+            } catch (error) {
+                testResults.firebase = false;
+                updateStatus('firebase-result', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste Firebase: ${error.message}`, 'error');
+            }
+            
+            updateProgress();
+        }
+        
+        // Teste 2: Autenticação
+        async function testAuth() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            
+            log(`Iniciando teste de autenticação com: ${email}`);
+            updateStatus('auth-result', '⏳ Fazendo login...', 'info');
+            
+            try {
+                if (!testResults.firebase) {
+                    throw new Error('Firebase deve estar funcionando primeiro');
+                }
+                
+                const result = await window.FirebaseDB.adminLogin(email, password);
+                
+                if (result.success) {
+                    currentUser = result.user;
+                    testResults.auth = true;
+                    updateStatus('auth-result', `✅ Login bem-sucedido: ${result.user.email}`, 'success');
+                    document.getElementById('permission-btn').disabled = false;
+                    log(`Login realizado com sucesso: ${result.user.uid}`);
+                } else {
+                    testResults.auth = false;
+                    updateStatus('auth-result', `❌ Falha no login: ${result.error}`, 'error');
+                    log(`Falha no login: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                testResults.auth = false;
+                updateStatus('auth-result', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste de autenticação: ${error.message}`, 'error');
+            }
+            
+            updateProgress();
+        }
+        
+        // Teste 3: Permissões
+        async function testPermissions() {
+            log('Iniciando teste de permissões...');
+            updateStatus('permission-result', '⏳ Verificando permissões...', 'info');
+            
+            try {
+                if (!currentUser) {
+                    throw new Error('Usuário deve estar logado primeiro');
+                }
+                
+                // Verificar se é admin
+                const isAdmin = await window.FirebaseDB.isAdmin(currentUser.uid);
+                log(`Verificação de admin: ${isAdmin}`);
+                
+                // Verificar getCurrentAdmin
+                const currentAdminResult = await window.FirebaseDB.getCurrentAdmin();
+                log(`getCurrentAdmin: success=${currentAdminResult.success}, isAdmin=${currentAdminResult.isAdmin}`);
+                
+                if (isAdmin && currentAdminResult.success && currentAdminResult.isAdmin) {
+                    testResults.permission = true;
+                    updateStatus('permission-result', '✅ Permissões de admin confirmadas', 'success');
+                    document.getElementById('panel-btn').disabled = false;
+                    log('Todas as verificações de permissão passaram');
+                } else {
+                    testResults.permission = false;
+                    updateStatus('permission-result', '❌ Permissões insuficientes', 'error');
+                    log('Falha na verificação de permissões');
+                }
+                
+            } catch (error) {
+                testResults.permission = false;
+                updateStatus('permission-result', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste de permissões: ${error.message}`, 'error');
+            }
+            
+            updateProgress();
+        }
+        
+        // Teste 4: Painel Admin
+        async function testAdminPanel() {
+            log('Testando acesso ao painel admin...');
+            updateStatus('panel-result', '⏳ Simulando acesso ao painel...', 'info');
+            
+            try {
+                if (!testResults.permission) {
+                    throw new Error('Permissões devem estar validadas primeiro');
+                }
+                
+                // Simular carregamento de dados do admin
+                const stats = await window.FirebaseDB.getStats();
+                log(`Carregamento de estatísticas: ${stats.success ? 'Sucesso' : 'Falha'}`);
+                
+                const purchases = await window.FirebaseDB.loadPurchases();
+                log(`Carregamento de compras: ${purchases.success ? 'Sucesso' : 'Falha'}`);
+                
+                if (stats.success || purchases.success) {
+                    testResults.panel = true;
+                    updateStatus('panel-result', '✅ Painel admin acessível', 'success');
+                    document.getElementById('open-panel-btn').disabled = false;
+                    log('Acesso ao painel admin validado com sucesso');
+                } else {
+                    testResults.panel = false;
+                    updateStatus('panel-result', '❌ Problemas no acesso aos dados', 'error');
+                    log('Falha no acesso aos dados do painel');
+                }
+                
+            } catch (error) {
+                testResults.panel = false;
+                updateStatus('panel-result', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste do painel: ${error.message}`, 'error');
+            }
+            
+            updateProgress();
+        }
+        
+        // Abrir painel admin
+        function openAdminPanel() {
+            if (testResults.panel) {
+                log('Abrindo painel administrativo...');
+                window.open('admin.html', '_blank');
+            } else {
+                alert('Execute todos os testes com sucesso primeiro!');
+            }
+        }
+        
+        // Correção automática
+        async function autoFix() {
+            log('Iniciando correção automática...');
+            updateStatus('fix-result', '⏳ Executando correções...', 'info');
+            
+            try {
+                // Limpar estado
+                if (window.FirebaseDB && window.FirebaseDB.adminLogout) {
+                    await window.FirebaseDB.adminLogout();
+                    log('Estado de autenticação limpo');
+                }
+                
+                // Aguardar
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Limpar admins não autorizados
+                if (window.FirebaseDB && window.FirebaseDB.cleanUnauthorizedAdmins) {
+                    const cleanResult = await window.FirebaseDB.cleanUnauthorizedAdmins();
+                    log(`Limpeza de admins: ${JSON.stringify(cleanResult)}`);
+                }
+                
+                // Tentar recriar admin
+                const email = 'admin@rifathomas.com';
+                const password = 'casaVERDE123';
+                
+                let result = await window.FirebaseDB.createAdmin(email, password);
+                if (!result.success && result.error.includes('já existe')) {
+                    result = await window.FirebaseDB.adminLogin(email, password);
+                }
+                
+                if (result.success) {
+                    updateStatus('fix-result', '✅ Correção realizada com sucesso', 'success');
+                    log('Correção automática concluída com sucesso');
+                    
+                    // Resetar testes
+                    Object.keys(testResults).forEach(key => testResults[key] = false);
+                    updateProgress();
+                    
+                    alert('Correção concluída! Execute os testes novamente.');
+                } else {
+                    updateStatus('fix-result', `❌ Correção falhou: ${result.error}`, 'error');
+                    log(`Correção falhou: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                updateStatus('fix-result', `❌ Erro na correção: ${error.message}`, 'error');
+                log(`Erro na correção: ${error.message}`, 'error');
+            }
+        }
+        
+        // Utilitários
+        function clearLogs() {
+            document.getElementById('detailed-logs').textContent = 'Logs limpos.\n';
+        }
+        
+        function exportLogs() {
+            const logs = document.getElementById('detailed-logs').textContent;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `admin-test-logs-${new Date().toISOString().slice(0, 19)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Auto-inicialização
+        window.addEventListener('firebaseReady', () => {
+            log('Firebase carregado, iniciando teste automático...');
+            setTimeout(testFirebase, 1000);
+        });
+        
+        if (typeof window.FirebaseDB !== 'undefined') {
+            log('Firebase já disponível, iniciando teste...');
+            setTimeout(testFirebase, 1000);
+        }
+        
+        // Inicialização
+        log('Sistema de teste carregado e pronto');
+        updateProgress();
+    </script>
+</body>
+</html>
