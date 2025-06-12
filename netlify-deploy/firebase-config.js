@@ -51,6 +51,12 @@ waitForFirebase().then(() => {
   
   console.log('🔗 Serviços Firebase obtidos');
   
+  // Teste de conectividade com o Firestore
+  db.collection('test_connection').doc('ping')
+    .set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() })
+    .then(() => console.log('✅ Teste de conectividade com Firestore bem-sucedido'))
+    .catch(err => console.error('❌ Erro de conectividade com Firestore:', err));
+
   // Criar objeto FirebaseDB global
   window.FirebaseDB = {
     // Inicializar autenticação anônima

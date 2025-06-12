@@ -52,7 +52,14 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             if (!rifaState.firebaseReady) {
                 console.log('⚠️ Timeout do Firebase, usando fallback localStorage');
-                initializeRifa();
+                console.error('Erro na conexão com Firebase. Verificando disponibilidade do Firebase...');
+                if (typeof firebase !== 'undefined') {
+                    console.log('Firebase está disponível mas FirebaseDB não está. Tentando reconectar...');
+                    // Dispatch event para tentar novamente
+                    window.dispatchEvent(new Event('firebaseReady'));
+                } else {
+                    initializeRifa();
+                }
             }
         }, 5000);
     }
@@ -74,6 +81,9 @@ async function initializeWithFirebase() {
         console.log('👤 Usuário autenticado:', user?.uid);
         
         rifaState.firebaseReady = true;
+        
+        // Inicializar configurações básicas
+        initializeRifa();
         
         // Carregar números vendidos em tempo real
         console.log('📊 Carregando números vendidos...');
@@ -104,28 +114,65 @@ async function loadSoldNumbersFromFirebase() {
         console.log('📥 Resultado da busca:', result);
         
         if (result.success) {
-            rifaState.soldNumbers = new Set(result.data);
-            console.log('✅ Números vendidos carregados:', result.data.length);
+            let soldNumbersArray = [];
+            let reservedNumbersArray = [];
+            
+            // Extrair números de todas as compras por status
+            result.data.forEach(purchase => {
+                if (Array.isArray(purchase.numbers)) {
+                    // Status confirmados vão para números vendidos
+                    if (purchase.status === 'confirmed') {
+                        soldNumbersArray = soldNumbersArray.concat(purchase.numbers);
+                    } 
+                    // Status pendentes ou reservados vão para números reservados
+                    else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
+                        reservedNumbersArray = reservedNumbersArray.concat(purchase.numbers);
+                    }
+                }
+            });
+            
+            rifaState.soldNumbers = new Set(soldNumbersArray);
+            rifaState.reservedNumbers = new Set(reservedNumbersArray);
+            
+            console.log('✅ Números vendidos carregados:', soldNumbersArray.length);
+            console.log('✅ Números reservados carregados:', reservedNumbersArray.length);
+            
+            // Forçar atualização da exibição
             updateNumbersDisplay();
         } else {
             console.warn('⚠️ Nenhum número vendido encontrado:', result.error);
+            // Mesmo sem números vendidos, atualizar a exibição
+            updateNumbersDisplay();
         }
     } catch (error) {
         console.warn('❌ Erro ao carregar números vendidos:', error);
+        // Em caso de erro, ainda garantir que os números sejam exibidos
+        updateNumbersDisplay();
     }
 }
 
 // Atualizar números vendidos a partir das compras
 function updateSoldNumbersFromPurchases(purchases) {
     const soldNumbers = new Set();
+    const reservedNumbers = new Set();
     
     purchases.forEach(purchase => {
-        if (purchase.status === 'confirmed' && purchase.numbers) {
-            purchase.numbers.forEach(number => soldNumbers.add(number));
+        if (purchase.numbers && Array.isArray(purchase.numbers)) {
+            // Status confirmados vão para números vendidos
+            if (purchase.status === 'confirmed') {
+                purchase.numbers.forEach(number => soldNumbers.add(number));
+            } 
+            // Status pendentes ou reservados vão para números reservados
+            else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
+                purchase.numbers.forEach(number => reservedNumbers.add(number));
+            }
         }
     });
     
     rifaState.soldNumbers = soldNumbers;
+    rifaState.reservedNumbers = reservedNumbers;
+    
+    console.log('🔄 Atualizados em tempo real - Vendidos:', soldNumbers.size, 'Reservados:', reservedNumbers.size);
     updateNumbersDisplay();
 }
 
@@ -144,6 +191,14 @@ function initializeRifa() {
     document.getElementById('total-tickets').textContent = RIFA_CONFIG.totalNumbers;
     document.getElementById('ticket-price').textContent = `R$ ${RIFA_CONFIG.ticketPrice.toFixed(2)}`;
     document.getElementById('draw-date').textContent = 'Sorteio: 11 de Julho de 2025 às 16h';
+    
+    // Verificar se os números já foram gerados
+    const grid = document.getElementById('numbers-grid');
+    if (grid && grid.children.length === 0) {
+        console.log('🔢 Gerando grade de números...');
+        generateNumbers();
+        updateStatistics();
+    }
 }
 
 // Configurar event listeners
@@ -189,12 +244,20 @@ function setupEventListeners() {
 // Gerar grade de números
 function generateNumbers() {
     const grid = document.getElementById('numbers-grid');
+    if (!grid) {
+        console.error('❌ Elemento numbers-grid não encontrado!');
+        return;
+    }
+    
+    console.log('🎲 Iniciando geração de números da rifa...');
     grid.innerHTML = '';
     
     for (let i = 1; i <= RIFA_CONFIG.totalNumbers; i++) {
         const numberCard = createNumberCard(i);
         grid.appendChild(numberCard);
     }
+    
+    console.log(`✅ ${RIFA_CONFIG.totalNumbers} números gerados com sucesso!`);
 }
 
 // Criar card de número
@@ -488,6 +551,15 @@ function validatePurchaseData(data) {
 
 // Atualizar display de todos os números
 function updateNumbersDisplay() {
+    const grid = document.getElementById('numbers-grid');
+    
+    // Se a grade estiver vazia, gerar os números primeiro
+    if (grid && grid.children.length === 0) {
+        console.log('🔄 Grid de números vazia, gerando números...');
+        generateNumbers();
+    }
+    
+    // Atualizar o status de cada número
     for (let i = 1; i <= RIFA_CONFIG.totalNumbers; i++) {
         updateNumberDisplay(i);
     }
