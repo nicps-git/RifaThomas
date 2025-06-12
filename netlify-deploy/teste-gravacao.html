@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Gravação Firebase</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .info { color: #007bff; }
+        #log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            margin-top: 20px;
+        }
+        .status-box {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .status-waiting { border-color: #ffc107; background: #fff3cd; }
+        .status-success { border-color: #28a745; background: #d4edda; }
+        .status-error { border-color: #dc3545; background: #f8d7da; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Teste de Gravação Firebase</h1>
+        <p>Este teste verifica especificamente se o Firebase está aceitando gravações.</p>
+
+        <div id="status-firebase" class="status-box status-waiting">
+            <h3>📡 Status do Firebase</h3>
+            <p id="firebase-message">Aguardando inicialização...</p>
+        </div>
+
+        <div id="status-auth" class="status-box status-waiting">
+            <h3>🔐 Status da Autenticação</h3>
+            <p id="auth-message">Aguardando autenticação...</p>
+        </div>
+
+        <div id="status-write" class="status-box status-waiting">
+            <h3>💾 Status da Gravação</h3>
+            <p id="write-message">Aguardando teste de gravação...</p>
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="testWrite()" id="test-btn">🧪 Testar Gravação</button>
+            <button onclick="testPurchase()" id="purchase-btn">🛒 Testar Compra</button>
+            <button onclick="clearLog()">🗑️ Limpar Log</button>
+        </div>
+
+        <h3>📋 Log Detalhado:</h3>
+        <div id="log"></div>
+    </div>
+
+    <script type="module" src="firebase-config-module.js"></script>
+    <script type="module">
+        let authUser = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#007bff',
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107'
+            };
+            logDiv.innerHTML += `<div style="color: ${colors[type]}; margin: 5px 0; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                <strong>[${timestamp}]</strong> ${message}
+            </div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(statusId, messageId, success, message) {
+            const statusDiv = document.getElementById(statusId);
+            const messageDiv = document.getElementById(messageId);
+            
+            statusDiv.className = `status-box ${success ? 'status-success' : 'status-error'}`;
+            messageDiv.textContent = message;
+        }
+
+        // Inicializar Firebase
+        async function initFirebase() {
+            try {
+                log('🔄 Aguardando carregamento do Firebase...', 'info');
+                
+                // Aguardar até que FirebaseDB esteja disponível
+                let attempts = 0;
+                while (typeof window.FirebaseDB === 'undefined' && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não carregou após 5 segundos');
+                }
+                
+                updateStatus('status-firebase', 'firebase-message', true, '✅ Firebase carregado com sucesso!');
+                log('✅ FirebaseDB encontrado', 'success');
+                
+                // Testar autenticação
+                log('🔐 Inicializando autenticação anônima...', 'info');
+                authUser = await window.FirebaseDB.initAuth();
+                
+                updateStatus('status-auth', 'auth-message', true, `✅ Usuário autenticado: ${authUser.uid.substring(0, 8)}...`);
+                log(`✅ Autenticação bem-sucedida: ${authUser.uid}`, 'success');
+                
+                // Habilitar botões
+                document.getElementById('test-btn').disabled = false;
+                document.getElementById('purchase-btn').disabled = false;
+                
+            } catch (error) {
+                updateStatus('status-firebase', 'firebase-message', false, `❌ Erro: ${error.message}`);
+                log(`❌ Erro na inicialização: ${error.message}`, 'error');
+                console.error('Erro detalhado:', error);
+            }
+        }
+
+        // Testar gravação simples
+        async function testWrite() {
+            try {
+                log('💾 Testando gravação simples no Firestore...', 'info');
+                
+                const testData = {
+                    test: true,
+                    timestamp: new Date().toISOString(),
+                    message: 'Teste de gravação básica',
+                    userAgent: navigator.userAgent,
+                    userId: authUser?.uid || 'anonymous'
+                };
+                
+                const result = await window.FirebaseDB.saveConfig(testData);
+                
+                if (result.success) {
+                    updateStatus('status-write', 'write-message', true, '✅ Gravação bem-sucedida!');
+                    log('✅ Dados gravados com sucesso no Firestore!', 'success');
+                    log(`📄 Dados salvos: ${JSON.stringify(testData, null, 2)}`, 'info');
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+                
+            } catch (error) {
+                updateStatus('status-write', 'write-message', false, `❌ Erro: ${error.message}`);
+                log(`❌ Erro na gravação: ${error.message}`, 'error');
+                console.error('Erro detalhado:', error);
+            }
+        }
+
+        // Testar compra completa
+        async function testPurchase() {
+            try {
+                log('🛒 Testando gravação de compra...', 'info');
+                
+                const purchaseData = {
+                    name: 'Teste Automático',
+                    phone: '(11) 99999-9999',
+                    numbers: [1, 2, 3],
+                    totalAmount: 120.00,
+                    paymentMethod: 'pix',
+                    status: 'test',
+                    date: new Date().toISOString()
+                };
+                
+                const result = await window.FirebaseDB.savePurchase(purchaseData);
+                
+                if (result.success) {
+                    log('✅ Compra gravada com sucesso!', 'success');
+                    log(`📄 ID da compra: ${result.id}`, 'info');
+                    log(`📄 Dados da compra: ${JSON.stringify(purchaseData, null, 2)}`, 'info');
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na gravação da compra: ${error.message}`, 'error');
+                console.error('Erro detalhado:', error);
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Inicializar quando a página carregar
+        window.addEventListener('load', () => {
+            log('🚀 Página carregada, iniciando testes...', 'info');
+            setTimeout(initFirebase, 1000);
+        });
+
+        // Log de erros globais
+        window.addEventListener('error', (event) => {
+            log(`❌ Erro JavaScript: ${event.message}`, 'error');
+        });
+
+        // Log de erros de rede
+        window.addEventListener('unhandledrejection', (event) => {
+            log(`❌ Promise rejeitada: ${event.reason}`, 'error');
+        });
+    </script>
+</body>
+</html>

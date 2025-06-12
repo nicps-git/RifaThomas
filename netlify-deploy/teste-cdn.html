@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Firebase CDN</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 20px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #007bff; }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Teste Firebase CDN Direto</h1>
+        <p>Este teste carrega Firebase diretamente do CDN para verificar se a configuração funciona.</p>
+        
+        <div id="status" class="status"></div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="testConnection()" id="connect-btn">🔌 Testar Conexão</button>
+            <button onclick="testWrite()" id="write-btn" disabled>💾 Testar Gravação</button>
+            <button onclick="testRead()" id="read-btn" disabled>📖 Testar Leitura</button>
+            <button onclick="clearLog()" id="clear-btn">🗑️ Limpar Log</button>
+        </div>
+
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+    <script>
+        // Sua configuração Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDrTY8pnDXwDPnWkTGYVxpKTxXy8p8zAmo",
+            authDomain: "raffle-thomas.firebaseapp.com",
+            projectId: "raffle-thomas",
+            storageBucket: "raffle-thomas.firebasestorage.app",
+            messagingSenderId: "159264133906",
+            appId: "1:159264133906:web:4c02a04e29e5b0a896fe09"
+        };
+
+        let db, auth;
+        let isConnected = false;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        async function testConnection() {
+            try {
+                log('🔄 Iniciando teste de conexão Firebase...', 'info');
+                updateStatus('🔄 Conectando ao Firebase...', 'info');
+
+                // Verificar se Firebase está disponível
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase não carregou do CDN');
+                }
+                log('✅ Firebase CDN carregado', 'success');
+
+                // Inicializar Firebase
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    log('✅ Firebase App inicializado', 'success');
+                } else {
+                    log('ℹ️ Firebase App já estava inicializado', 'info');
+                }
+
+                // Inicializar Firestore
+                db = firebase.firestore();
+                auth = firebase.auth();
+                log('✅ Firestore e Auth inicializados', 'success');
+
+                // Autenticação anônima
+                log('🔐 Fazendo login anônimo...', 'info');
+                const userCredential = await auth.signInAnonymously();
+                log(`✅ Login anônimo bem-sucedido! UID: ${userCredential.user.uid}`, 'success');
+
+                // Testar conexão básica
+                log('🧪 Testando conexão com Firestore...', 'info');
+                await db.enableNetwork();
+                log('✅ Conexão com Firestore estabelecida', 'success');
+
+                isConnected = true;
+                document.getElementById('write-btn').disabled = false;
+                document.getElementById('read-btn').disabled = false;
+                
+                updateStatus('✅ Firebase conectado e funcionando!', 'success');
+                log('🎉 Teste de conexão concluído com sucesso!', 'success');
+
+            } catch (error) {
+                log(`❌ Erro na conexão: ${error.message}`, 'error');
+                updateStatus(`❌ Erro: ${error.message}`, 'error');
+                console.error('Erro completo:', error);
+            }
+        }
+
+        async function testWrite() {
+            if (!isConnected) {
+                log('❌ Execute o teste de conexão primeiro', 'error');
+                return;
+            }
+
+            try {
+                log('💾 Testando gravação no Firestore...', 'info');
+
+                const testData = {
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    message: 'Teste de gravação',
+                    number: Math.floor(Math.random() * 1000),
+                    browser: navigator.userAgent.substring(0, 50) + '...'
+                };
+
+                log('📝 Dados para gravar:', 'info');
+                log(JSON.stringify(testData, null, 2), 'info');
+
+                // Tentar gravar na coleção 'teste'
+                const docRef = await db.collection('teste').add(testData);
+                log(`✅ Documento gravado com ID: ${docRef.id}`, 'success');
+
+                // Verificar se foi gravado
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    log('✅ Documento confirmado no banco:', 'success');
+                    log(JSON.stringify(doc.data(), null, 2), 'info');
+                } else {
+                    log('⚠️ Documento não encontrado após gravação', 'error');
+                }
+
+                updateStatus('✅ Gravação funcionando!', 'success');
+
+            } catch (error) {
+                log(`❌ Erro na gravação: ${error.message}`, 'error');
+                updateStatus(`❌ Erro na gravação`, 'error');
+                console.error('Erro completo:', error);
+            }
+        }
+
+        async function testRead() {
+            if (!isConnected) {
+                log('❌ Execute o teste de conexão primeiro', 'error');
+                return;
+            }
+
+            try {
+                log('📖 Testando leitura do Firestore...', 'info');
+
+                const snapshot = await db.collection('teste').limit(5).get();
+                
+                if (snapshot.empty) {
+                    log('📭 Nenhum documento encontrado na coleção "teste"', 'info');
+                    return;
+                }
+
+                log(`📚 Encontrados ${snapshot.size} documentos:`, 'success');
+                
+                snapshot.forEach((doc) => {
+                    log(`📄 ID: ${doc.id}`, 'info');
+                    log(`   Dados: ${JSON.stringify(doc.data(), null, 2)}`, 'info');
+                });
+
+                updateStatus('✅ Leitura funcionando!', 'success');
+
+            } catch (error) {
+                log(`❌ Erro na leitura: ${error.message}`, 'error');
+                updateStatus(`❌ Erro na leitura`, 'error');
+                console.error('Erro completo:', error);
+            }
+        }
+
+        // Log inicial
+        log('🚀 Página carregada. Clique em "Testar Conexão" para começar.', 'info');
+    </script>
+</body>
+</html>

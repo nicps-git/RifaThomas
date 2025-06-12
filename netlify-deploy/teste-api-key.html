@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste API Key Corrigida</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background: #cce7ff; color: #004085; border: 1px solid #99d5ff; }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 300px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔑 Teste API Key Corrigida</h1>
+        <p>Testando a nova configuração Firebase com API Key correta</p>
+        
+        <div id="status" class="status loading">⏳ Clique no botão para testar</div>
+        
+        <button onclick="testarApiKey()" id="test-btn">🧪 Testar API Key</button>
+        <button onclick="limparLog()" id="clear-btn">🗑️ Limpar</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+    <script>
+        // Configuração corrigida
+        const firebaseConfig = {
+        apiKey: "AIzaSyDtB1YfeOLWm6_xH1pI8mXJzO-IxIC4vHc",
+        authDomain: "rifa-cha-thomas.firebaseapp.com",
+        projectId: "rifa-cha-thomas",
+        storageBucket: "rifa-cha-thomas.firebasestorage.app",
+        messagingSenderId: "761618695276",
+        appId: "1:761618695276:web:bf72f84cbbf5026fa74449"
+}       ;
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('log');
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function limparLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function testarApiKey() {
+            try {
+                log('🔄 Iniciando teste da API Key...');
+                updateStatus('🔄 Testando API Key...', 'loading');
+                
+                // Verificar se Firebase carregou
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase não carregou do CDN');
+                }
+                log('✅ Firebase CDN carregado');
+                
+                // Inicializar Firebase
+                firebase.initializeApp(firebaseConfig);
+                log('✅ Firebase App inicializado');
+                
+                // Testar autenticação (aqui é onde a API Key é validada)
+                const auth = firebase.auth();
+                log('🔐 Tentando autenticação anônima...');
+                
+                const userCredential = await auth.signInAnonymously();
+                log(`✅ API Key VÁLIDA! Autenticação bem-sucedida!`);
+                log(`   UID do usuário: ${userCredential.user.uid}`);
+                
+                updateStatus('🎉 API Key corrigida com sucesso!', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+                log(`   Código do erro: ${error.code || 'N/A'}`);
+                
+                if (error.code === 'auth/api-key-not-valid') {
+                    updateStatus('❌ API Key ainda inválida', 'error');
+                    log('🔍 Verifique se a API Key foi copiada corretamente do Console Firebase');
+                } else {
+                    updateStatus(`❌ Erro: ${error.message}`, 'error');
+                }
+                
+                console.error('Erro completo:', error);
+            }
+        }
+        
+        log('🚀 Página carregada. Clique em "Testar API Key" para verificar.');
+    </script>
+</body>
+</html>

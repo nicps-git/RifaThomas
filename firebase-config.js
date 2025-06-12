@@ -6,14 +6,19 @@
 // 4. Ative Firestore Database
 // 5. Copie as configurações e substitua abaixo
 
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  // SUBSTITUA PELAS SUAS CONFIGURAÇÕES DO FIREBASE
-  apiKey: "SUA_API_KEY_AQUI",
+  apiKey: "AIzaSyDtB1YfeOLWm6_xH1pI8mXJzO-IxIC4vHc",
   authDomain: "rifa-cha-thomas.firebaseapp.com",
   projectId: "rifa-cha-thomas",
-  storageBucket: "rifa-cha-thomas.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "SUA_APP_ID_AQUI"
+  storageBucket: "rifa-cha-thomas.firebasestorage.app",
+  messagingSenderId: "761618695276",
+  appId: "1:761618695276:web:bf72f84cbbf5026fa74449"
 };
 
 // Inicializar Firebase

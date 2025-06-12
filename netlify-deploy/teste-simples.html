@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Firebase - Simples</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 50px auto; 
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .log { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 15px; 
+            border-radius: 5px; 
+            max-height: 400px; 
+            overflow-y: auto; 
+            font-family: monospace; 
+            margin-top: 20px;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Teste Firebase Simples</h1>
+        
+        <div id="status"></div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button id="test-btn">🧪 Testar Gravação</button>
+            <button id="purchase-btn">🛒 Testar Compra</button>
+            <button id="clear-btn">🗑️ Limpar</button>
+        </div>
+
+        <div id="log" class="log"></div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        let logDiv = document.getElementById('log');
+        let statusDiv = document.getElementById('status');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusDiv.innerHTML = `<div class="${type}"><strong>${message}</strong></div>`;
+        }
+
+        // Aguardar Firebase carregar
+        function waitForFirebase() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const check = () => {
+                    if (typeof window.FirebaseDB !== 'undefined') {
+                        resolve();
+                    } else if (attempts > 50) {
+                        reject(new Error('Firebase não carregou'));
+                    } else {
+                        attempts++;
+                        setTimeout(check, 100);
+                    }
+                };
+                check();
+            });
+        }
+
+        // Inicializar
+        async function init() {
+            try {
+                log('🔄 Aguardando Firebase...', 'info');
+                updateStatus('Carregando Firebase...', 'info');
+                
+                await waitForFirebase();
+                
+                log('✅ Firebase carregado!', 'success');
+                updateStatus('✅ Firebase carregado!', 'success');
+                
+                // Autenticar
+                log('🔐 Autenticando...', 'info');
+                const user = await window.FirebaseDB.initAuth();
+                log(`✅ Autenticado: ${user.uid}`, 'success');
+                
+                // Habilitar botões
+                document.getElementById('test-btn').disabled = false;
+                document.getElementById('purchase-btn').disabled = false;
+                
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+                updateStatus(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+
+        // Testar gravação
+        async function testWrite() {
+            try {
+                log('💾 Testando gravação...', 'info');
+                
+                const data = {
+                    test: true,
+                    timestamp: new Date().toISOString(),
+                    message: 'Teste simples'
+                };
+                
+                const result = await window.FirebaseDB.saveConfig(data);
+                
+                if (result.success) {
+                    log('✅ Gravação bem-sucedida!', 'success');
+                    updateStatus('✅ Gravação funcionando!', 'success');
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na gravação: ${error.message}`, 'error');
+                updateStatus(`❌ Erro na gravação`, 'error');
+            }
+        }
+
+        // Testar compra
+        async function testPurchase() {
+            try {
+                log('🛒 Testando compra...', 'info');
+                
+                const purchase = {
+                    name: 'Teste',
+                    phone: '11999999999',
+                    numbers: [1, 2, 3],
+                    totalAmount: 120,
+                    paymentMethod: 'pix',
+                    status: 'test',
+                    date: new Date().toISOString()
+                };
+                
+                const result = await window.FirebaseDB.savePurchase(purchase);
+                
+                if (result.success) {
+                    log('✅ Compra salva!', 'success');
+                    log(`ID: ${result.id}`, 'info');
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na compra: ${error.message}`, 'error');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('test-btn').addEventListener('click', testWrite);
+        document.getElementById('purchase-btn').addEventListener('click', testPurchase);
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            logDiv.innerHTML = '';
+            statusDiv.innerHTML = '';
+        });
+
+        // Inicializar quando carregar
+        window.addEventListener('load', () => {
+            setTimeout(init, 1000);
+        });
+    </script>
+</body>
+</html>

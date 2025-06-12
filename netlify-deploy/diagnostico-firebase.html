@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Firebase</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 900px; 
+            margin: 20px auto; 
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .check-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 5px solid #ccc;
+        }
+        .check-item.success { 
+            background: #d4edda; 
+            border-left-color: #28a745; 
+            color: #155724;
+        }
+        .check-item.error { 
+            background: #f8d7da; 
+            border-left-color: #dc3545; 
+            color: #721c24;
+        }
+        .check-item.warning { 
+            background: #fff3cd; 
+            border-left-color: #ffc107; 
+            color: #856404;
+        }
+        .check-item.info { 
+            background: #d1ecf1; 
+            border-left-color: #17a2b8; 
+            color: #0c5460;
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .recommendations {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Diagnóstico Completo Firebase</h1>
+        <p>Este diagnóstico verifica todos os aspectos da configuração Firebase.</p>
+        
+        <button onclick="runDiagnostics()" id="start-btn">🔍 Executar Diagnóstico</button>
+        <button onclick="clearResults()" id="clear-btn">🗑️ Limpar</button>
+
+        <div id="results"></div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDrTY8pnDXwDPnWkTGYVxpKTxXy8p8zAmo",
+            authDomain: "raffle-thomas.firebaseapp.com",
+            projectId: "raffle-thomas",
+            storageBucket: "raffle-thomas.firebasestorage.app",
+            messagingSenderId: "159264133906",
+            appId: "1:159264133906:web:4c02a04e29e5b0a896fe09"
+        };
+
+        let results = [];
+
+        function addResult(title, status, message, details = null) {
+            results.push({ title, status, message, details });
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = results.map(result => `
+                <div class="check-item ${result.status}">
+                    <strong>${result.title}</strong><br>
+                    ${result.message}
+                    ${result.details ? `<div class="code-block">${result.details}</div>` : ''}
+                </div>
+            `).join('');
+
+            // Adicionar recomendações se houver erros
+            const hasErrors = results.some(r => r.status === 'error');
+            if (hasErrors && results.length > 0) {
+                resultsDiv.innerHTML += `
+                    <div class="recommendations">
+                        <h3>🎯 Recomendações:</h3>
+                        <ol>
+                            <li><strong>Verifique as regras do Firestore:</strong> Acesse o Console Firebase → Firestore Database → Rules</li>
+                            <li><strong>Habilite autenticação:</strong> Authentication → Sign-in method → Enable Anonymous e Email/Password</li>
+                            <li><strong>Teste em modo de desenvolvimento:</strong> Use as regras temporárias permissivas</li>
+                            <li><strong>Verifique conectividade:</strong> Tente acessar firebase.google.com para verificar se não há bloqueios</li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+
+        function clearResults() {
+            results = [];
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function runDiagnostics() {
+            clearResults();
+            
+            try {
+                // 1. Verificar carregamento Firebase
+                addResult(
+                    '📦 Firebase CDN',
+                    typeof firebase !== 'undefined' ? 'success' : 'error',
+                    typeof firebase !== 'undefined' ? 
+                        'Firebase carregado com sucesso do CDN' : 
+                        'Firebase não foi carregado do CDN'
+                );
+
+                if (typeof firebase === 'undefined') {
+                    addResult('🚫 Diagnóstico Interrompido', 'error', 'Não é possível continuar sem Firebase');
+                    return;
+                }
+
+                // 2. Verificar inicialização
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+                    addResult('🚀 Inicialização Firebase', 'success', 'Firebase App inicializado com sucesso');
+                } catch (error) {
+                    addResult('🚀 Inicialização Firebase', 'error', `Erro na inicialização: ${error.message}`);
+                    return;
+                }
+
+                // 3. Verificar serviços
+                const db = firebase.firestore();
+                const auth = firebase.auth();
+                addResult('🔗 Serviços Firebase', 'success', 'Firestore e Auth inicializados');
+
+                // 4. Teste de conectividade
+                try {
+                    await db.enableNetwork();
+                    addResult('🌐 Conectividade', 'success', 'Conexão com Firestore estabelecida');
+                } catch (error) {
+                    addResult('🌐 Conectividade', 'error', `Erro de conectividade: ${error.message}`);
+                }
+
+                // 5. Teste de autenticação
+                try {
+                    const userCredential = await auth.signInAnonymously();
+                    addResult('🔐 Autenticação', 'success', `Login anônimo bem-sucedido. UID: ${userCredential.user.uid}`);
+                } catch (error) {
+                    addResult('🔐 Autenticação', 'error', `Erro na autenticação: ${error.message}`, 
+                        'Possível causa: Autenticação anônima não habilitada no Console Firebase');
+                }
+
+                // 6. Teste de leitura
+                try {
+                    const snapshot = await db.collection('teste').limit(1).get();
+                    addResult('📖 Teste de Leitura', 'success', 
+                        `Leitura bem-sucedida. Documentos encontrados: ${snapshot.size}`);
+                } catch (error) {
+                    addResult('📖 Teste de Leitura', 'error', `Erro na leitura: ${error.message}`,
+                        'Possível causa: Regras de segurança bloqueando leitura');
+                }
+
+                // 7. Teste de escrita
+                try {
+                    const testDoc = {
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        test: 'diagnóstico',
+                        id: Math.random().toString(36).substr(2, 9)
+                    };
+                    
+                    const docRef = await db.collection('teste').add(testDoc);
+                    addResult('💾 Teste de Escrita', 'success', 
+                        `Escrita bem-sucedida. Document ID: ${docRef.id}`);
+                        
+                    // Verificar se foi realmente gravado
+                    const doc = await docRef.get();
+                    if (doc.exists) {
+                        addResult('✅ Verificação de Escrita', 'success', 'Documento confirmado no banco de dados');
+                    } else {
+                        addResult('⚠️ Verificação de Escrita', 'warning', 'Documento não encontrado após gravação');
+                    }
+                    
+                } catch (error) {
+                    addResult('💾 Teste de Escrita', 'error', `Erro na escrita: ${error.message}`,
+                        'Possível causa: Regras de segurança bloqueando escrita');
+                }
+
+                // 8. Verificar configuração
+                addResult('⚙️ Configuração Firebase', 'info', 'Configuração atual:', 
+                    JSON.stringify(firebaseConfig, null, 2));
+
+                // 9. Informações do navegador
+                addResult('🌐 Informações do Navegador', 'info', 
+                    `User Agent: ${navigator.userAgent.substring(0, 100)}...`);
+
+                // 10. Status final
+                const hasAnyErrors = results.some(r => r.status === 'error');
+                addResult('🏁 Status Final', 
+                    hasAnyErrors ? 'warning' : 'success',
+                    hasAnyErrors ? 
+                        'Diagnóstico concluído com problemas encontrados' : 
+                        'Diagnóstico concluído - Firebase funcionando perfeitamente!'
+                );
+
+            } catch (error) {
+                addResult('💥 Erro Fatal', 'error', `Erro inesperado no diagnóstico: ${error.message}`);
+                console.error('Erro completo:', error);
+            }
+        }
+    </script>
+</body>
+</html>

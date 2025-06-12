@@ -44,15 +44,28 @@ document.addEventListener('DOMContentLoaded', function() {
 // Inicializar com Firebase
 async function initializeWithFirebase() {
     try {
+        console.log('🔄 Inicializando Firebase...');
+        
+        // Verificar se FirebaseDB está disponível
+        if (typeof FirebaseDB === 'undefined') {
+            throw new Error('FirebaseDB não carregado');
+        }
+        
+        console.log('🔐 Inicializando autenticação anônima...');
         // Inicializar autenticação anônima
-        await FirebaseDB.initAuth();
+        const user = await FirebaseDB.initAuth();
+        console.log('👤 Usuário autenticado:', user?.uid);
+        
         rifaState.firebaseReady = true;
         
         // Carregar números vendidos em tempo real
-        loadSoldNumbersFromFirebase();
+        console.log('📊 Carregando números vendidos...');
+        await loadSoldNumbersFromFirebase();
         
         // Escutar mudanças em tempo real
+        console.log('🔄 Configurando listener em tempo real...');
         rifaState.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
+            console.log('📥 Atualização em tempo real:', purchases.length, 'compras');
             updateSoldNumbersFromPurchases(purchases);
             updateStatistics();
         });
@@ -60,6 +73,7 @@ async function initializeWithFirebase() {
         console.log('🔥 Firebase conectado com sucesso!');
     } catch (error) {
         console.warn('⚠️ Erro ao conectar Firebase, usando localStorage:', error);
+        console.error('Detalhes do erro:', error);
         rifaState.firebaseReady = false;
         initializeRifa();
     }
@@ -68,13 +82,19 @@ async function initializeWithFirebase() {
 // Carregar números vendidos do Firebase
 async function loadSoldNumbersFromFirebase() {
     try {
+        console.log('📊 Buscando números vendidos no Firebase...');
         const result = await FirebaseDB.getSoldNumbers();
+        console.log('📥 Resultado da busca:', result);
+        
         if (result.success) {
             rifaState.soldNumbers = new Set(result.data);
+            console.log('✅ Números vendidos carregados:', result.data.length);
             updateNumbersDisplay();
+        } else {
+            console.warn('⚠️ Nenhum número vendido encontrado:', result.error);
         }
     } catch (error) {
-        console.warn('Erro ao carregar números vendidos:', error);
+        console.warn('❌ Erro ao carregar números vendidos:', error);
     }
 }
 
@@ -351,6 +371,8 @@ function updateModalSummary() {
 async function handlePurchase(e) {
     e.preventDefault();
     
+    console.log('🛒 Iniciando processo de compra...');
+    
     const formData = new FormData(e.target);
     const purchaseData = {
         name: formData.get('buyer-name') || document.getElementById('buyer-name').value,
@@ -362,8 +384,11 @@ async function handlePurchase(e) {
         status: 'pending' // Para doações, ficará pendente até confirmação admin
     };
     
+    console.log('📋 Dados da compra:', purchaseData);
+    
     // Validar dados
     if (!validatePurchaseData(purchaseData)) {
+        console.error('❌ Validação falhou');
         return;
     }
     
@@ -374,15 +399,28 @@ async function handlePurchase(e) {
         purchaseData.status = 'reserved';
     }
     
+    console.log('🔥 Firebase pronto:', rifaState.firebaseReady);
+    console.log('🔧 Status final:', purchaseData.status);
+    
     try {
+        // Verificar se Firebase está inicializado
+        if (typeof FirebaseDB === 'undefined') {
+            throw new Error('FirebaseDB não está disponível');
+        }
+        
         // Salvar no Firebase se disponível, senão localStorage
         if (rifaState.firebaseReady) {
+            console.log('💾 Salvando no Firebase...');
             const result = await FirebaseDB.savePurchase(purchaseData);
+            
+            console.log('📤 Resultado do Firebase:', result);
+            
             if (!result.success) {
-                throw new Error(result.error);
+                throw new Error(result.error || 'Erro desconhecido do Firebase');
             }
             console.log('✅ Compra salva no Firebase:', result.id);
         } else {
+            console.log('💾 Salvando no localStorage (fallback)...');
             // Fallback para localStorage
             savePurchaseData(purchaseData);
         }
