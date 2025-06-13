@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Firebase Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result-panel {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { 
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Authentication Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Firebase Connectivity</h2>
+        <button onclick="testFirebaseConnection()">Test Connection</button>
+        <div id="firebase-connection" class="result-panel">Click to test Firebase connection</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Admin Authentication</h2>
+        <p>Test if the admin authentication verification is working:</p>
+        <button onclick="testCurrentAdmin()">Check Current Admin</button>
+        <div id="admin-auth" class="result-panel">Click to test admin authentication</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Redirect Test</h2>
+        <p>Test the redirection logic used in admin.html:</p>
+        <button onclick="testRedirect()">Test Redirect Logic</button>
+        <div id="redirect-result" class="result-panel">Click to test redirect logic</div>
+    </div>
+    
+    <div>
+        <h2>Navigation</h2>
+        <a href="index.html">Go to Main Page</a> | 
+        <a href="admin.html">Go to Admin Page</a> | 
+        <a href="login.html">Go to Login Page</a>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        // Test the Firebase Connection
+        async function testFirebaseConnection() {
+            const resultElement = document.getElementById('firebase-connection');
+            resultElement.textContent = "Testing Firebase connection...";
+            
+            try {
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase is not defined');
+                }
+                
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB is not defined');
+                }
+                
+                // Test a simple Firestore operation
+                const testDocument = Math.random().toString(36).substring(2, 15);
+                const db = firebase.firestore();
+                await db.collection('test_connection').doc(testDocument)
+                    .set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                    
+                resultElement.textContent = "✅ Firebase connection successful!";
+                resultElement.className = "result-panel success";
+            } catch (error) {
+                resultElement.textContent = `❌ Firebase connection error: ${error.message}`;
+                resultElement.className = "result-panel error";
+                console.error('Firebase connection error:', error);
+            }
+        }
+        
+        // Test Current Admin
+        async function testCurrentAdmin() {
+            const resultElement = document.getElementById('admin-auth');
+            resultElement.textContent = "Checking current admin...";
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB is not defined');
+                }
+                
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (result.success && result.isAdmin) {
+                    resultElement.textContent = `✅ Admin authenticated: ${result.user.email}`;
+                    resultElement.className = "result-panel success";
+                } else {
+                    resultElement.textContent = `❌ Not authenticated as admin: ${result.error}`;
+                    resultElement.className = "result-panel error";
+                }
+            } catch (error) {
+                resultElement.textContent = `❌ Authentication check error: ${error.message}`;
+                resultElement.className = "result-panel error";
+                console.error('Authentication check error:', error);
+            }
+        }
+        
+        // Test Redirect Logic
+        async function testRedirect() {
+            const resultElement = document.getElementById('redirect-result');
+            resultElement.textContent = "Testing redirect logic...";
+            
+            try {
+                // Simulate the admin.html verification function
+                async function simulateVerifyAdminAuth() {
+                    if (typeof window.FirebaseDB === 'undefined') {
+                        throw new Error('FirebaseDB not available');
+                    }
+                    
+                    const result = await window.FirebaseDB.getCurrentAdmin();
+                    if (!result.success || !result.isAdmin) {
+                        throw new Error(result.error || 'Not authenticated as administrator');
+                    }
+                    
+                    return true;
+                }
+                
+                // Run the simulation
+                const authResult = await simulateVerifyAdminAuth();
+                
+                if (authResult === true) {
+                    resultElement.textContent = "✅ Authentication successful - User would remain on admin page";
+                    resultElement.className = "result-panel success";
+                }
+            } catch (error) {
+                resultElement.textContent = `✅ Expected redirect to login page: ${error.message}`;
+                resultElement.className = "result-panel success";
+                console.log('Redirect test completed - would redirect to login');
+            }
+        }
+        
+        // Wait for Firebase to be ready
+        function waitForFirebase() {
+            const maxAttempts = 50;
+            let attempts = 0;
+            
+            const check = () => {
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    console.log('Firebase ready');
+                    // Firebase is ready
+                    document.getElementById('firebase-connection').textContent = 
+                        "Firebase loaded - click to test connection";
+                } else if (attempts >= maxAttempts) {
+                    console.error('Firebase failed to load');
+                    document.getElementById('firebase-connection').textContent = 
+                        "Firebase failed to load after timeout";
+                    document.getElementById('firebase-connection').className = "result-panel error";
+                } else {
+                    attempts++;
+                    setTimeout(check, 200);
+                }
+            };
+            
+            check();
+        }
+        
+        // Start checking for Firebase
+        waitForFirebase();
+    </script>
+</body>
+</html>

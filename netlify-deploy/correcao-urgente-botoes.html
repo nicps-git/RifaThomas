@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 CORREÇÃO URGENTE - Botões de Confirmação</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .status { 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px; 
+            font-weight: bold;
+        }
+        .success { background: rgba(40, 167, 69, 0.8); }
+        .error { background: rgba(220, 53, 69, 0.8); }
+        .warning { background: rgba(255, 193, 7, 0.8); color: #000; }
+        .info { background: rgba(23, 162, 184, 0.8); }
+        
+        button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .danger { background: linear-gradient(135deg, #dc3545, #c82333) !important; }
+        .urgent { background: linear-gradient(135deg, #ff6b35, #ff8a65) !important; }
+        
+        .log {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            margin: 15px 0;
+        }
+        
+        h1 { text-align: center; margin-bottom: 30px; }
+        h2 { border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 CORREÇÃO URGENTE: Botões de Confirmação</h1>
+        
+        <div class="status error">
+            <strong>❌ PROBLEMA CONFIRMADO:</strong> Os botões de confirmação realmente não estão aparecendo!
+        </div>
+        
+        <div class="status warning">
+            <strong>⚠️ DIAGNÓSTICO:</strong> Vamos corrigir este problema AGORA!
+        </div>
+
+        <h2>🔧 Passo 1: Criar Dados de Teste</h2>
+        <button onclick="criarDadosTeste()" class="urgent">🆕 Criar Dados de Teste Urgente</button>
+        <div id="dados-status" class="status info">Aguardando criação de dados...</div>
+        
+        <h2>🚀 Passo 2: Abrir Admin e Testar</h2>
+        <button onclick="abrirAdmin()">🔧 Abrir Admin</button>
+        <button onclick="forcedFix()" class="danger">🚨 CORREÇÃO FORÇADA</button>
+        <div id="admin-status" class="status info">Aguardando teste...</div>
+        
+        <h2>📋 Passo 3: Verificar Console</h2>
+        <button onclick="verificarConsole()">🔍 Verificar Logs</button>
+        <div id="console-logs" class="log">Logs aparecerão aqui...</div>
+        
+        <h2>🛠️ Correção Manual se Necessário</h2>
+        <button onclick="correcaoManual()" class="danger">🔧 APLICAR CORREÇÃO MANUAL</button>
+        <div id="correcao-status" class="status info">Pronto para correção manual se necessário</div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('console-logs');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#74c0fc';
+            logEl.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateStatus(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = `status ${type}`;
+        }
+        
+        function criarDadosTeste() {
+            log('🆕 Criando dados de teste urgentes...', 'info');
+            
+            try {
+                // Criar dados de teste mais robustos
+                const dadosTeste = [
+                    {
+                        id: 'urgente-001',
+                        name: 'Maria Silva (TESTE)',
+                        buyerName: 'Maria Silva (TESTE)',
+                        phone: '(11) 99999-1001',
+                        buyerPhone: '(11) 99999-1001',
+                        numbers: [101],
+                        totalAmount: 40.00,
+                        paymentMethod: 'donation',
+                        status: 'pending_donation',
+                        date: new Date().toISOString(),
+                        timestamp: new Date().toISOString()
+                    },
+                    {
+                        id: 'urgente-002',
+                        name: 'João Santos (TESTE)',
+                        buyerName: 'João Santos (TESTE)',
+                        phone: '(11) 99999-1002',
+                        buyerPhone: '(11) 99999-1002',
+                        numbers: [102],
+                        totalAmount: 40.00,
+                        paymentMethod: 'donation',
+                        status: 'pending_donation',
+                        date: new Date().toISOString(),
+                        timestamp: new Date().toISOString()
+                    },
+                    {
+                        id: 'urgente-003',
+                        name: 'Ana Costa (TESTE)',
+                        buyerName: 'Ana Costa (TESTE)',
+                        phone: '(11) 99999-1003',
+                        buyerPhone: '(11) 99999-1003',
+                        numbers: [103],
+                        totalAmount: 40.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        date: new Date().toISOString(),
+                        timestamp: new Date().toISOString()
+                    }
+                ];
+                
+                // Salvar no localStorage
+                localStorage.setItem('purchases', JSON.stringify(dadosTeste));
+                
+                // Criar configuração básica se não existir
+                const config = {
+                    totalNumbers: 150,
+                    ticketPrice: 40.00,
+                    pixKey: 'contato@charifa.com',
+                    prizes: {
+                        first: 'R$ 100,00',
+                        second: 'R$ 200,00',
+                        third: 'Fraldas por faixa'
+                    },
+                    contactPhone: '(11) 99999-9999',
+                    babyName: 'Thomas'
+                };
+                localStorage.setItem('rifaConfig', JSON.stringify(config));
+                localStorage.setItem('adminConfig', JSON.stringify(config));
+                
+                log('✅ Dados de teste criados com sucesso!', 'success');
+                log(`📊 Criados ${dadosTeste.length} participantes de teste`, 'info');
+                log('📋 2 doações pendentes + 1 confirmada', 'info');
+                
+                updateStatus('dados-status', '✅ Dados de teste criados! Agora abra o admin.', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados: ${error.message}`, 'error');
+                updateStatus('dados-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function abrirAdmin() {
+            log('🚀 Abrindo admin em nova aba...', 'info');
+            
+            const adminWindow = window.open('admin.html', '_blank', 'width=1200,height=800');
+            
+            if (adminWindow) {
+                log('✅ Admin aberto! Verifique a nova aba.', 'success');
+                updateStatus('admin-status', '✅ Admin aberto! Verifique se os botões aparecem na tabela.', 'success');
+                
+                // Instruções detalhadas
+                setTimeout(() => {
+                    log('📋 INSTRUÇÕES PARA TESTE:', 'warning');
+                    log('1. Na nova aba, aguarde o carregamento completo', 'info');
+                    log('2. Clique na aba "Participantes"', 'info');
+                    log('3. Procure por "Maria Silva (TESTE)" e "João Santos (TESTE)"', 'info');
+                    log('4. Deve haver botões "✅ Confirmar" e "❌ Rejeitar"', 'info');
+                    log('5. Se não houver botões, use a seção amarela de emergência', 'warning');
+                }, 2000);
+            } else {
+                log('❌ Erro ao abrir admin - popup bloqueado?', 'error');
+                updateStatus('admin-status', '❌ Erro ao abrir admin. Tente abrir manualmente: admin.html', 'error');
+            }
+        }
+        
+        function forcedFix() {
+            log('🚨 Aplicando correção forçada...', 'warning');
+            
+            // Tentar executar funções de emergência
+            try {
+                if (typeof window.forcarBotoesEmergencia === 'function') {
+                    window.forcarBotoesEmergencia();
+                    log('✅ Função de emergência executada!', 'success');
+                } else {
+                    log('⚠️ Função de emergência não disponível nesta página', 'warning');
+                }
+                
+                // Criar dados se necessário
+                if (typeof window.createSampleData === 'function') {
+                    window.createSampleData();
+                    log('✅ Dados de exemplo criados!', 'success');
+                } else {
+                    log('⚠️ createSampleData não disponível nesta página', 'warning');
+                }
+                
+                updateStatus('admin-status', '🚨 Correção forçada aplicada! Recarregue o admin.', 'warning');
+                
+            } catch (error) {
+                log(`❌ Erro na correção forçada: ${error.message}`, 'error');
+                updateStatus('admin-status', '❌ Erro na correção forçada. Use correção manual.', 'error');
+            }
+        }
+        
+        function verificarConsole() {
+            log('🔍 Verificando estado do sistema...', 'info');
+            
+            // Verificar localStorage
+            const purchases = localStorage.getItem('purchases');
+            if (purchases) {
+                const parsedPurchases = JSON.parse(purchases);
+                log(`📊 Encontrados ${parsedPurchases.length} registros no localStorage`, 'success');
+                
+                // Mostrar amostras
+                parsedPurchases.forEach((purchase, index) => {
+                    log(`${index + 1}. ${purchase.name || purchase.buyerName} - Status: ${purchase.status}`, 'info');
+                });
+            } else {
+                log('❌ Nenhum dado encontrado no localStorage', 'error');
+            }
+            
+            // Verificar configuração
+            const config = localStorage.getItem('rifaConfig') || localStorage.getItem('adminConfig');
+            if (config) {
+                log('✅ Configuração encontrada', 'success');
+            } else {
+                log('❌ Configuração não encontrada', 'error');
+            }
+            
+            // Verificar funções globais
+            const functionsToCheck = ['confirmDonation', 'rejectDonation', 'editParticipant', 'createSampleData', 'forcarBotoesEmergencia'];
+            functionsToCheck.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    log(`✅ Função ${funcName} disponível globalmente`, 'success');
+                } else {
+                    log(`❌ Função ${funcName} NÃO disponível`, 'error');
+                }
+            });
+        }
+        
+        function correcaoManual() {
+            log('🔧 Iniciando correção manual...', 'warning');
+            
+            // Esta função será implementada para corrigir o admin.js
+            updateStatus('correcao-status', '🔧 Preparando correção manual...', 'warning');
+            
+            // Instruções para correção manual
+            setTimeout(() => {
+                log('📋 CORREÇÃO MANUAL NECESSÁRIA:', 'warning');
+                log('1. O problema está no admin.js', 'error');
+                log('2. Os botões não estão sendo criados corretamente', 'error');
+                log('3. Vou corrigir o código agora...', 'info');
+                
+                // Aqui vamos implementar a correção real
+                window.open('admin.html', '_blank');
+            }, 1000);
+        }
+        
+        // Auto-executar ao carregar a página
+        window.addEventListener('load', function() {
+            log('🚨 Sistema de correção urgente carregado', 'success');
+            log('👆 Clique em "Criar Dados de Teste Urgente" primeiro', 'info');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 DEBUG - Admin Atual</title>
+    <link rel="stylesheet" href="admin.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .debug-header {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: -30px -30px 30px -30px;
+            text-align: center;
+        }
+
+        .debug-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .debug-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .success {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ff9800;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <div class="debug-header">
+            <h1>🔍 DEBUG - Sistema Admin Atual</h1>
+            <p>Diagnóstico em tempo real do problema dos botões</p>
+        </div>
+
+        <div class="debug-section">
+            <h3>📋 Estado da Página Admin</h3>
+            <button onclick="verificarEstadoAdmin()">Verificar Estado</button>
+            <div id="estado-admin" class="debug-info"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🔧 Executar admin.js</h3>
+            <button onclick="carregarAdminJS()">Carregar admin.js</button>
+            <button onclick="inicializarSistema()">Inicializar Sistema</button>
+            <div id="admin-js-status" class="debug-info"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>📊 Testar Dados</h3>
+            <button onclick="criarDadosTesteDireto()">Criar Dados Teste</button>
+            <button onclick="chamarLoadParticipants()">Chamar loadParticipants()</button>
+            <div id="dados-teste" class="debug-info"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🎯 Testar Funções dos Botões</h3>
+            <button onclick="testarFuncoesBotoes()">Testar Funções</button>
+            <div id="funcoes-botoes" class="debug-info"></div>
+        </div>
+
+        <div class="debug-section">
+            <h3>📝 Console Logs</h3>
+            <button onclick="mostrarLogs()">Mostrar Logs</button>
+            <button onclick="limparLogs()">Limpar Logs</button>
+            <div id="console-logs" class="debug-info"></div>
+        </div>
+    </div>
+
+    <script>
+        let debugLogs = [];
+        
+        // Interceptar console.log para capturar logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            debugLogs.push({ type: 'log', message: args.join(' '), timestamp: new Date() });
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            debugLogs.push({ type: 'error', message: args.join(' '), timestamp: new Date() });
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            debugLogs.push({ type: 'warn', message: args.join(' '), timestamp: new Date() });
+            originalWarn.apply(console, args);
+        };
+
+        function verificarEstadoAdmin() {
+            const result = document.getElementById('estado-admin');
+            const checks = [];
+
+            // Verificar se admin.html está carregado
+            const isAdminPage = window.location.pathname.includes('admin') || document.title.includes('ADMIN');
+            checks.push(`📄 Página Admin: ${isAdminPage ? '✅ SIM' : '❌ NÃO'}`);
+
+            // Verificar se admin.js foi carregado
+            const adminJSLoaded = typeof window.adminData !== 'undefined';
+            checks.push(`📜 admin.js carregado: ${adminJSLoaded ? '✅ SIM' : '❌ NÃO'}`);
+
+            // Verificar DOM elements essenciais
+            const tbody = document.getElementById('participants-tbody');
+            checks.push(`🏗️ Element participants-tbody: ${tbody ? '✅ EXISTE' : '❌ NÃO EXISTE'}`);
+
+            // Verificar Firebase
+            const firebaseLoaded = typeof window.FirebaseDB !== 'undefined';
+            checks.push(`🔥 Firebase carregado: ${firebaseLoaded ? '✅ SIM' : '❌ NÃO'}`);
+
+            // Verificar funções críticas
+            const functionsExist = {
+                loadParticipants: typeof window.loadParticipants === 'function',
+                confirmDonation: typeof window.confirmDonation === 'function',
+                rejectDonation: typeof window.rejectDonation === 'function',
+                editParticipant: typeof window.editParticipant === 'function'
+            };
+
+            Object.entries(functionsExist).forEach(([func, exists]) => {
+                checks.push(`⚙️ Função ${func}: ${exists ? '✅ EXISTE' : '❌ NÃO EXISTE'}`);
+            });
+
+            result.innerHTML = checks.join('<br>');
+        }
+
+        function carregarAdminJS() {
+            const result = document.getElementById('admin-js-status');
+            result.innerHTML = '🔄 Carregando admin.js...';
+
+            // Criar script tag para admin.js
+            const script = document.createElement('script');
+            script.src = 'admin.js';
+            script.onload = function() {
+                result.innerHTML = '✅ admin.js carregado com sucesso!';
+                console.log('✅ admin.js carregado via debug');
+            };
+            script.onerror = function() {
+                result.innerHTML = '❌ Erro ao carregar admin.js';
+                console.error('❌ Erro ao carregar admin.js via debug');
+            };
+            
+            document.head.appendChild(script);
+        }
+
+        function inicializarSistema() {
+            const result = document.getElementById('admin-js-status');
+            
+            try {
+                if (typeof window.initializeAdminSystem === 'function') {
+                    result.innerHTML = '🚀 Inicializando sistema admin...';
+                    window.initializeAdminSystem();
+                    result.innerHTML = '✅ Sistema inicializado!';
+                } else {
+                    result.innerHTML = '❌ Função initializeAdminSystem não encontrada';
+                }
+            } catch (error) {
+                result.innerHTML = `❌ Erro na inicialização: ${error.message}`;
+                console.error('❌ Erro na inicialização:', error);
+            }
+        }
+
+        function criarDadosTesteDireto() {
+            const result = document.getElementById('dados-teste');
+            
+            try {
+                // Simular adminData se não existir
+                if (typeof window.adminData === 'undefined') {
+                    window.adminData = {
+                        purchases: [],
+                        firebaseReady: false,
+                        initializationAttempts: 1
+                    };
+                }
+
+                // Criar dados de teste
+                window.adminData.purchases = [
+                    {
+                        id: 'debug-1',
+                        buyerName: 'Maria Silva - DEBUG',
+                        buyerPhone: '(11) 99999-1111',
+                        numbers: [1, 2, 3],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        date: new Date().toISOString()
+                    },
+                    {
+                        id: 'debug-2',
+                        buyerName: 'João Santos - DEBUG',
+                        buyerPhone: '(11) 98888-2222',
+                        numbers: [10, 20],
+                        totalAmount: 80.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        date: new Date().toISOString()
+                    }
+                ];
+
+                result.innerHTML = `✅ ${window.adminData.purchases.length} dados de teste criados`;
+                console.log('✅ Dados de teste criados via debug');
+            } catch (error) {
+                result.innerHTML = `❌ Erro ao criar dados: ${error.message}`;
+                console.error('❌ Erro ao criar dados:', error);
+            }
+        }
+
+        function chamarLoadParticipants() {
+            const result = document.getElementById('dados-teste');
+            
+            try {
+                if (typeof window.loadParticipants === 'function') {
+                    result.innerHTML = '🔄 Chamando loadParticipants()...';
+                    window.loadParticipants();
+                    result.innerHTML = '✅ loadParticipants() executado!';
+                } else {
+                    result.innerHTML = '❌ Função loadParticipants não encontrada';
+                }
+            } catch (error) {
+                result.innerHTML = `❌ Erro ao chamar loadParticipants: ${error.message}`;
+                console.error('❌ Erro ao chamar loadParticipants:', error);
+            }
+        }
+
+        function testarFuncoesBotoes() {
+            const result = document.getElementById('funcoes-botoes');
+            const tests = [];
+
+            // Testar cada função
+            const functions = ['confirmDonation', 'rejectDonation', 'editParticipant'];
+            
+            functions.forEach(funcName => {
+                try {
+                    if (typeof window[funcName] === 'function') {
+                        tests.push(`✅ ${funcName}: DISPONÍVEL`);
+                        
+                        // Teste adicional: verificar se a função não gera erro ao ser chamada
+                        try {
+                            // Simular chamada (sem executar realmente)
+                            const funcCode = window[funcName].toString();
+                            if (funcCode.includes('purchaseId')) {
+                                tests.push(`  └─ Parâmetro purchaseId: ✅ OK`);
+                            }
+                        } catch (e) {
+                            tests.push(`  └─ Erro interno: ❌ ${e.message}`);
+                        }
+                    } else {
+                        tests.push(`❌ ${funcName}: NÃO DISPONÍVEL`);
+                    }
+                } catch (error) {
+                    tests.push(`❌ ${funcName}: ERRO - ${error.message}`);
+                }
+            });
+
+            result.innerHTML = tests.join('<br>');
+        }
+
+        function mostrarLogs() {
+            const result = document.getElementById('console-logs');
+            
+            if (debugLogs.length === 0) {
+                result.innerHTML = 'ℹ️ Nenhum log capturado ainda';
+                return;
+            }
+
+            const logsHTML = debugLogs.slice(-20).map(log => {
+                const time = log.timestamp.toLocaleTimeString();
+                const typeClass = log.type === 'error' ? 'error' : 
+                                 log.type === 'warn' ? 'warning' : 'success';
+                return `<div class="${typeClass}">[${time}] ${log.type.toUpperCase()}: ${log.message}</div>`;
+            }).join('');
+
+            result.innerHTML = `<strong>📝 Últimos 20 logs:</strong><br>${logsHTML}`;
+        }
+
+        function limparLogs() {
+            debugLogs = [];
+            const result = document.getElementById('console-logs');
+            result.innerHTML = '✅ Logs limpos';
+        }
+
+        // Auto-verificar ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Debug page carregada');
+            setTimeout(verificarEstadoAdmin, 1000);
+        });
+    </script>
+</body>
+</html>

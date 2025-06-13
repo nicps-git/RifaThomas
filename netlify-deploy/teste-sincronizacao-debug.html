@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Sincronização Firebase</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .log { background: #f5f5f5; padding: 10px; height: 300px; overflow-y: auto; font-family: monospace; }
+        button { margin: 5px; padding: 10px; }
+        .status { padding: 5px; margin: 5px 0; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Teste de Sincronização Firebase - Admin vs Main Page</h1>
+    
+    <div class="section">
+        <h3>📊 Status da Conexão</h3>
+        <div id="connection-status" class="status info">Verificando conexão...</div>
+        <div id="firebase-status" class="status info">Firebase não inicializado</div>
+    </div>
+
+    <div class="section">
+        <h3>🧪 Testes de Sincronização</h3>
+        <button onclick="testFirebaseConnection()">1. Testar Conexão Firebase</button>
+        <button onclick="testLoadPurchases()">2. Carregar Compras</button>
+        <button onclick="testRealTimeListener()">3. Testar Listener em Tempo Real</button>
+        <button onclick="simulateAdminConfirmation()">4. Simular Confirmação Admin</button>
+        <button onclick="clearLogs()">🗑️ Limpar Logs</button>
+    </div>
+
+    <div class="section">
+        <h3>📋 Dados Atuais</h3>
+        <div>
+            <strong>Compras Carregadas:</strong> <span id="purchases-count">0</span><br>
+            <strong>Números Confirmados:</strong> <span id="confirmed-numbers">[]</span><br>
+            <strong>Números Reservados:</strong> <span id="reserved-numbers">[]</span><br>
+            <strong>Listener Ativo:</strong> <span id="listener-status">Não</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>📝 Log de Eventos</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Firebase v9 compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let currentPurchases = [];
+        let realtimeUnsubscribe = null;
+
+        // Função para adicionar logs
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8';
+            
+            log.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        // Aguardar Firebase estar pronto
+        function waitForFirebase() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const check = () => {
+                    if (typeof window.FirebaseDB !== 'undefined') {
+                        resolve();
+                    } else if (attempts++ > 100) {
+                        reject(new Error('Firebase timeout'));
+                    } else {
+                        setTimeout(check, 100);
+                    }
+                };
+                check();
+            });
+        }
+
+        // 1. Testar conexão Firebase
+        async function testFirebaseConnection() {
+            addLog('🔄 Testando conexão Firebase...');
+            
+            try {
+                await waitForFirebase();
+                addLog('✅ FirebaseDB disponível', 'success');
+                updateStatus('firebase-status', 'Firebase carregado', 'success');
+                
+                // Testar autenticação
+                const user = await window.FirebaseDB.initAuth();
+                addLog(`✅ Autenticação bem-sucedida: ${user.uid}`, 'success');
+                updateStatus('connection-status', 'Conectado e autenticado', 'success');
+                
+            } catch (error) {
+                addLog(`❌ Erro na conexão: ${error.message}`, 'error');
+                updateStatus('connection-status', 'Erro de conexão', 'error');
+                updateStatus('firebase-status', 'Firebase falhou', 'error');
+            }
+        }
+
+        // 2. Carregar compras
+        async function testLoadPurchases() {
+            addLog('📋 Carregando compras do Firebase...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não disponível');
+                }
+                
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (result.success) {
+                    currentPurchases = result.data;
+                    addLog(`✅ ${result.data.length} compras carregadas`, 'success');
+                    document.getElementById('purchases-count').textContent = result.data.length;
+                    
+                    // Processar números
+                    const confirmedNumbers = [];
+                    const reservedNumbers = [];
+                    
+                    result.data.forEach(purchase => {
+                        if (Array.isArray(purchase.numbers)) {
+                            if (purchase.status === 'confirmed') {
+                                confirmedNumbers.push(...purchase.numbers);
+                            } else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
+                                reservedNumbers.push(...purchase.numbers);
+                            }
+                        }
+                    });
+                    
+                    document.getElementById('confirmed-numbers').textContent = `[${confirmedNumbers.sort((a,b) => a-b).join(', ')}]`;
+                    document.getElementById('reserved-numbers').textContent = `[${reservedNumbers.sort((a,b) => a-b).join(', ')}]`;
+                    
+                    addLog(`🔢 Números confirmados: ${confirmedNumbers.length}`, 'info');
+                    addLog(`🔢 Números reservados: ${reservedNumbers.length}`, 'info');
+                    
+                } else {
+                    addLog(`❌ Erro ao carregar: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro ao carregar compras: ${error.message}`, 'error');
+            }
+        }
+
+        // 3. Testar listener em tempo real
+        async function testRealTimeListener() {
+            addLog('👂 Configurando listener em tempo real...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não disponível');
+                }
+                
+                // Parar listener anterior se existir
+                if (realtimeUnsubscribe) {
+                    realtimeUnsubscribe();
+                    addLog('🛑 Listener anterior parado', 'info');
+                }
+                
+                // Configurar novo listener
+                realtimeUnsubscribe = window.FirebaseDB.listenToChanges('purchases', (purchases) => {
+                    addLog(`📥 Listener ativado - ${purchases.length} compras recebidas`, 'success');
+                    
+                    // Comparar com dados anteriores
+                    if (JSON.stringify(purchases) !== JSON.stringify(currentPurchases)) {
+                        addLog('🔄 MUDANÇA DETECTADA!', 'success');
+                        currentPurchases = purchases;
+                        
+                        // Atualizar contadores
+                        document.getElementById('purchases-count').textContent = purchases.length;
+                        
+                        // Processar números novamente
+                        const confirmedNumbers = [];
+                        const reservedNumbers = [];
+                        
+                        purchases.forEach(purchase => {
+                            if (Array.isArray(purchase.numbers)) {
+                                if (purchase.status === 'confirmed') {
+                                    confirmedNumbers.push(...purchase.numbers);
+                                } else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
+                                    reservedNumbers.push(...purchase.numbers);
+                                }
+                            }
+                        });
+                        
+                        document.getElementById('confirmed-numbers').textContent = `[${confirmedNumbers.sort((a,b) => a-b).join(', ')}]`;
+                        document.getElementById('reserved-numbers').textContent = `[${reservedNumbers.sort((a,b) => a-b).join(', ')}]`;
+                        
+                        addLog(`🔢 Atualizado - Confirmados: ${confirmedNumbers.length}, Reservados: ${reservedNumbers.length}`, 'success');
+                    } else {
+                        addLog('📊 Dados inalterados', 'info');
+                    }
+                });
+                
+                if (realtimeUnsubscribe) {
+                    addLog('✅ Listener configurado com sucesso', 'success');
+                    document.getElementById('listener-status').textContent = 'Sim';
+                } else {
+                    addLog('❌ Falha ao configurar listener', 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro no listener: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. Simular confirmação admin
+        async function simulateAdminConfirmation() {
+            addLog('🎭 Simulando confirmação de admin...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não disponível');
+                }
+                
+                // Encontrar uma compra pendente para confirmar
+                const pendingPurchase = currentPurchases.find(p => p.status === 'pending' || p.status === 'reserved');
+                
+                if (!pendingPurchase) {
+                    addLog('⚠️ Nenhuma compra pendente encontrada para confirmar', 'error');
+                    return;
+                }
+                
+                addLog(`🔄 Confirmando compra: ${pendingPurchase.id} (números: ${pendingPurchase.numbers?.join(', ')})`, 'info');
+                
+                const result = await window.FirebaseDB.updatePurchaseStatus(pendingPurchase.id, 'confirmed');
+                
+                if (result.success) {
+                    addLog(`✅ Compra ${pendingPurchase.id} confirmada com sucesso!`, 'success');
+                    addLog('⏳ Aguardando listener detectar mudança...', 'info');
+                } else {
+                    addLog(`❌ Erro ao confirmar: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro na simulação: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicialização automática
+        window.addEventListener('load', () => {
+            addLog('🚀 Página carregada - aguardando Firebase...');
+            
+            // Tentar conexão automática após delay
+            setTimeout(() => {
+                testFirebaseConnection();
+            }, 2000);
+        });
+
+        // Cleanup ao sair
+        window.addEventListener('beforeunload', () => {
+            if (realtimeUnsubscribe) {
+                realtimeUnsubscribe();
+            }
+        });
+    </script>
+</body>
+</html>

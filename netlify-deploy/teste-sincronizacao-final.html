@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Final - Sincronização Admin ↔ Main</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f8f9fa; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .split-view { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: 80vh; }
+        .panel { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .panel h2 { margin-top: 0; text-align: center; padding: 10px; border-radius: 5px; }
+        .admin-panel { border-left: 5px solid #dc3545; }
+        .admin-panel h2 { background: #dc3545; color: white; }
+        .main-panel { border-left: 5px solid #28a745; }
+        .main-panel h2 { background: #28a745; color: white; }
+        .iframe-container { height: calc(100% - 60px); border: 2px solid #ddd; border-radius: 5px; overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .controls { text-align: center; margin-bottom: 20px; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; text-align: center; font-weight: bold; }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .instructions { background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .number-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; margin: 15px 0; }
+        .number { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 5px; font-weight: bold; font-size: 12px; }
+        .available { background: #28a745; color: white; }
+        .reserved { background: #ffc107; color: black; }
+        .sold { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; color: #333;">🔄 Teste Final: Sincronização Admin ↔ Página Principal</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instruções para Teste</h3>
+            <ol>
+                <li><strong>Carregue ambas as páginas</strong> clicando nos botões abaixo</li>
+                <li><strong>Faça uma reserva</strong> na página principal (lado direito)</li>
+                <li><strong>Confirme a compra</strong> no painel admin (lado esquerdo)</li>
+                <li><strong>Observe</strong> se o número fica vermelho (vendido) instantaneamente na página principal</li>
+                <li><strong>Teste múltiplas vezes</strong> para garantir consistência</li>
+            </ol>
+            <div id="sync-status" class="status status-warning">Status: Aguardando teste...</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-danger" onclick="loadAdmin()">👨‍💼 Carregar Admin</button>
+            <button class="btn btn-success" onclick="loadMain()">🏠 Carregar Página Principal</button>
+            <button class="btn" onclick="loadBoth()">🔄 Carregar Ambos</button>
+            <button class="btn" onclick="refreshBoth()">🔄 Atualizar Ambos</button>
+            <button class="btn" onclick="openConsoles()">🔍 Abrir DevTools</button>
+        </div>
+
+        <div class="split-view">
+            <!-- Painel Admin -->
+            <div class="panel admin-panel">
+                <h2>👨‍💼 Painel Admin</h2>
+                <div class="iframe-container">
+                    <iframe id="admin-frame" src="about:blank" title="Painel Admin"></iframe>
+                </div>
+            </div>
+
+            <!-- Página Principal -->
+            <div class="panel main-panel">
+                <h2>🏠 Página Principal</h2>
+                <div class="iframe-container">
+                    <iframe id="main-frame" src="about:blank" title="Página Principal"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log de eventos -->
+        <div style="margin-top: 20px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h3>📝 Log de Eventos</h3>
+            <div id="event-log" style="background: #f8f9fa; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; border-radius: 5px;">
+                <div style="color: #666;">Log de eventos aparecerá aqui...</div>
+            </div>
+            <button class="btn" onclick="clearLog()">🗑️ Limpar Log</button>
+            <button class="btn" onclick="startAutoTest()">🤖 Teste Automático</button>
+        </div>
+    </div>
+
+    <script>
+        let logCount = 0;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('event-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#17a2b8',
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107'
+            };
+            
+            logDiv.innerHTML += `<div style="color: ${colors[type]}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            logCount++;
+
+            // Atualizar status baseado no tipo de log
+            if (type === 'success' && message.includes('sincronização')) {
+                updateStatus('✅ Sincronização funcionando!', 'success');
+            } else if (type === 'error') {
+                updateStatus('❌ Erro detectado!', 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('event-log').innerHTML = '<div style="color: #666;">Log limpo...</div>';
+            logCount = 0;
+        }
+
+        function updateStatus(message, type = 'warning') {
+            const statusDiv = document.getElementById('sync-status');
+            statusDiv.textContent = `Status: ${message}`;
+            statusDiv.className = `status status-${type}`;
+        }
+
+        function loadAdmin() {
+            const adminFrame = document.getElementById('admin-frame');
+            adminFrame.src = 'admin.html';
+            log('🔄 Carregando painel admin...', 'info');
+            
+            adminFrame.onload = () => {
+                log('✅ Painel admin carregado', 'success');
+                updateStatus('Admin carregado', 'warning');
+            };
+        }
+
+        function loadMain() {
+            const mainFrame = document.getElementById('main-frame');
+            mainFrame.src = 'index.html';
+            log('🔄 Carregando página principal...', 'info');
+            
+            mainFrame.onload = () => {
+                log('✅ Página principal carregada', 'success');
+                updateStatus('Página principal carregada', 'warning');
+                
+                // Tentar acessar a página para verificar se carregou corretamente
+                try {
+                    if (mainFrame.contentWindow) {
+                        log('🔍 Verificando acesso à página principal...', 'info');
+                        // Aguardar um pouco para garantir que scripts carregaram
+                        setTimeout(() => {
+                            try {
+                                const mainDoc = mainFrame.contentDocument || mainFrame.contentWindow.document;
+                                if (mainDoc) {
+                                    log('✅ Acesso à página principal confirmado', 'success');
+                                    monitorMainPage();
+                                }
+                            } catch (e) {
+                                log('⚠️ Limitação de acesso cross-frame (normal)', 'warning');
+                            }
+                        }, 2000);
+                    }
+                } catch (e) {
+                    log('⚠️ Limitação de acesso cross-frame (normal)', 'warning');
+                }
+            };
+        }
+
+        function loadBoth() {
+            log('🔄 Carregando admin e página principal...', 'info');
+            loadAdmin();
+            setTimeout(() => loadMain(), 1000);
+        }
+
+        function refreshBoth() {
+            log('🔄 Atualizando ambas as páginas...', 'info');
+            const adminFrame = document.getElementById('admin-frame');
+            const mainFrame = document.getElementById('main-frame');
+            
+            if (adminFrame.src && adminFrame.src !== 'about:blank') {
+                adminFrame.src = adminFrame.src;
+            }
+            if (mainFrame.src && mainFrame.src !== 'about:blank') {
+                mainFrame.src = mainFrame.src;
+            }
+        }
+
+        function openConsoles() {
+            log('🔍 Instrução: Abra DevTools (F12) em ambos os frames para ver logs detalhados', 'info');
+            alert('Para ver logs detalhados:\n\n1. Clique com botão direito em cada frame\n2. Selecione "Inspecionar elemento"\n3. Vá para aba "Console"\n4. Monitore logs durante os testes');
+        }
+
+        function monitorMainPage() {
+            // Tentar detectar mudanças na página principal
+            log('👀 Iniciando monitoramento da página principal...', 'info');
+            
+            // Simular monitoramento (já que cross-frame é limitado)
+            setInterval(() => {
+                // Este é apenas um placeholder - o monitoramento real acontecerá nos logs do navegador
+                if (logCount > 0 && logCount % 10 === 0) {
+                    log('📊 Monitoramento ativo - verifique logs do console da página principal', 'info');
+                }
+            }, 30000); // A cada 30 segundos
+        }
+
+        function startAutoTest() {
+            log('🤖 Iniciando teste automático...', 'warning');
+            
+            // Primeiro, carregar ambas as páginas
+            loadBoth();
+            
+            setTimeout(() => {
+                log('🎯 INSTRUÇÕES PARA TESTE MANUAL:', 'warning');
+                log('1. Vá para a página principal (lado direito)', 'info');
+                log('2. Selecione um número e faça uma reserva', 'info');
+                log('3. Vá para o admin (lado esquerdo)', 'info');
+                log('4. Confirme a compra que acabou de fazer', 'info');
+                log('5. Observe se o número fica vermelho instantaneamente na página principal', 'info');
+                log('6. Se a sincronização funcionar, verá logs de sucesso no console', 'success');
+                
+                updateStatus('Teste automático preparado - siga instruções do log', 'warning');
+            }, 3000);
+        }
+
+        // Inicialização
+        window.addEventListener('load', () => {
+            log('🚀 Teste de sincronização carregado', 'success');
+            log('📋 Clique em "Carregar Ambos" para começar', 'info');
+        });
+
+        // Detectar mudanças de foco nos frames (indicativo de interação)
+        document.addEventListener('focusin', (e) => {
+            if (e.target.tagName === 'IFRAME') {
+                const isAdmin = e.target.id === 'admin-frame';
+                log(`👁️ Foco em: ${isAdmin ? 'Admin' : 'Página Principal'}`, 'info');
+            }
+        });
+
+        // Simular detecção de sincronização (placeholder para demonstração)
+        let syncTestCount = 0;
+        setInterval(() => {
+            // Este é apenas um placeholder para mostrar como seria detectada a sincronização
+            // A detecção real acontece nos logs do console das páginas carregadas
+            syncTestCount++;
+            
+            if (syncTestCount === 5) {
+                log('💡 Dica: Use F12 para abrir DevTools e monitorar logs detalhados', 'info');
+            }
+            
+            if (syncTestCount === 10) {
+                log('💡 Para teste real: faça uma reserva e confirme no admin', 'info');
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

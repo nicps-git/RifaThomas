@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Teste Carregamento Admin - Dados Corrigidos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 300px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Teste de Carregamento de Dados Admin</h1>
+        <p>Testando a versão corrigida do admin.js para verificar se os dados dos participantes estão carregando corretamente.</p>
+        
+        <div class="test-section">
+            <h3>🧪 Controles de Teste</h3>
+            <button onclick="testFirebaseConnection()">🔥 Testar Firebase</button>
+            <button onclick="testLoadPurchases()">📊 Testar Carregamento de Compras</button>
+            <button onclick="testAdminSystem()">🔧 Testar Sistema Admin</button>
+            <button onclick="createTestData()">📝 Criar Dados de Teste</button>
+            <button onclick="clearResults()">🧹 Limpar Resultados</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        let testResults = [];
+
+        function addResult(type, title, message, details = null) {
+            const result = { type, title, message, details, timestamp: new Date() };
+            testResults.push(result);
+            displayResults();
+        }
+
+        function displayResults() {
+            const container = document.getElementById('results');
+            container.innerHTML = testResults.map(result => `
+                <div class="status ${result.type}">
+                    <strong>${result.title}</strong><br>
+                    ${result.message}
+                    ${result.details ? `<pre>${JSON.stringify(result.details, null, 2)}</pre>` : ''}
+                    <small>⏰ ${result.timestamp.toLocaleTimeString()}</small>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearResults() {
+            testResults = [];
+            displayResults();
+        }
+
+        async function testFirebaseConnection() {
+            addResult('info', '🔥 Testando Conexão Firebase', 'Verificando se Firebase está disponível...');
+            
+            try {
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK não carregado');
+                }
+                
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não está disponível');
+                }
+                
+                // Teste básico de conectividade
+                const testDoc = firebase.firestore().collection('test').doc('connection');
+                await testDoc.get();
+                
+                addResult('success', '✅ Firebase Conectado', 'Firebase está funcionando corretamente');
+                
+            } catch (error) {
+                addResult('error', '❌ Erro no Firebase', `Falha: ${error.message}`, { error: error.message, stack: error.stack });
+            }
+        }
+
+        async function testLoadPurchases() {
+            addResult('info', '📊 Testando Carregamento de Compras', 'Verificando função loadPurchases...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (result.success) {
+                    const count = result.data ? result.data.length : 0;
+                    addResult('success', '✅ Compras Carregadas', `${count} compras encontradas`, { count, sampleData: result.data?.slice(0, 2) });
+                } else {
+                    addResult('warning', '⚠️ Nenhuma Compra', `Resultado: ${result.error || 'Sem dados'}`, result);
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Erro ao Carregar', `Falha: ${error.message}`, { error: error.message });
+            }
+        }
+
+        async function testAdminSystem() {
+            addResult('info', '🔧 Testando Sistema Admin', 'Verificando se o admin.js está funcionando...');
+            
+            try {
+                // Verificar se variáveis globais existem
+                if (typeof adminData === 'undefined') {
+                    throw new Error('adminData não está definido');
+                }
+                
+                if (typeof window.adminDebug === 'undefined') {
+                    throw new Error('adminDebug não está disponível');
+                }
+                
+                // Testar carregamento de dados
+                addResult('info', '📊 Testando Carregamento', 'Executando loadPurchaseData...');
+                await window.adminDebug.loadPurchaseData();
+                
+                // Verificar resultado
+                const purchasesCount = adminData.purchases ? adminData.purchases.length : 0;
+                addResult('success', '✅ Sistema Admin OK', `${purchasesCount} compras carregadas`, {
+                    purchasesCount,
+                    firebaseReady: adminData.firebaseReady,
+                    initAttempts: adminData.initializationAttempts,
+                    samplePurchases: adminData.purchases?.slice(0, 2)
+                });
+                
+                // Testar atualização da interface
+                if (typeof window.adminDebug.updateDashboard === 'function') {
+                    window.adminDebug.updateDashboard();
+                    addResult('success', '📊 Dashboard Atualizado', 'Dashboard foi atualizado com sucesso');
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Erro no Sistema Admin', `Falha: ${error.message}`, { error: error.message });
+            }
+        }
+
+        async function createTestData() {
+            addResult('info', '📝 Criando Dados de Teste', 'Adicionando dados de exemplo...');
+            
+            try {
+                const testPurchases = [
+                    {
+                        buyerName: 'Teste Usuário 1',
+                        buyerPhone: '(11) 99999-0001',
+                        buyerEmail: 'teste1@demo.com',
+                        numbers: [1, 2, 3],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        buyerName: 'Teste Usuário 2',
+                        buyerPhone: '(11) 99999-0002',
+                        buyerEmail: 'teste2@demo.com',
+                        numbers: [10, 11, 12],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString()
+                    }
+                ];
+
+                if (typeof window.FirebaseDB !== 'undefined' && window.FirebaseDB.savePurchase) {
+                    // Tentar salvar no Firebase
+                    for (let purchase of testPurchases) {
+                        try {
+                            const result = await window.FirebaseDB.savePurchase(purchase);
+                            if (result.success) {
+                                addResult('success', '✅ Dados Salvos', `Compra de ${purchase.buyerName} salva no Firebase`);
+                            } else {
+                                addResult('warning', '⚠️ Falha ao Salvar', `Erro: ${result.error}`);
+                            }
+                        } catch (error) {
+                            addResult('error', '❌ Erro ao Salvar', `Falha: ${error.message}`);
+                        }
+                    }
+                } else {
+                    // Salvar apenas localmente
+                    const existingData = JSON.parse(localStorage.getItem('purchases') || '[]');
+                    const newData = [...existingData, ...testPurchases.map((p, i) => ({ ...p, id: `test-${Date.now()}-${i}` }))];
+                    localStorage.setItem('purchases', JSON.stringify(newData));
+                    addResult('success', '💾 Dados Locais', `${testPurchases.length} compras salvas no localStorage`);
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Erro Criar Dados', `Falha: ${error.message}`, { error: error.message });
+            }
+        }
+
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            addResult('success', '🔥 Firebase Pronto', 'Firebase foi carregado e está disponível');
+        });
+
+        // Verificar status inicial
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                addResult('info', '📄 Sistema Carregado', 'Página de teste carregada, pronto para testes');
+                
+                // Status inicial
+                const status = {
+                    firebase: typeof firebase !== 'undefined',
+                    firebaseDB: typeof window.FirebaseDB !== 'undefined',
+                    adminData: typeof adminData !== 'undefined',
+                    adminDebug: typeof window.adminDebug !== 'undefined'
+                };
+                
+                addResult('info', '📊 Status Inicial', 'Verificação de disponibilidade dos componentes', status);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

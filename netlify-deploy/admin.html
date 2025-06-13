@@ -140,6 +140,60 @@
                         </button>
                     </div>
                     
+                    <!-- Controles de Atualização de Dados -->
+                    <div style="margin: 15px 0; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <strong>🔄 ATUALIZAÇÃO DE DADOS:</strong>
+                                <span id="last-update-time" style="font-size: 12px; color: #666;">Carregando...</span>
+                                <span id="auto-sync-status" style="font-size: 12px; padding: 2px 8px; border-radius: 12px; background: #28a745; color: white;">🟢 Auto-sync Ativo</span>
+                            </div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="refreshData()" 
+                                        style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    🔄 Atualizar Agora
+                                </button>
+                                <button onclick="toggleAutoSync()" id="auto-sync-btn"
+                                        style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    ⏸️ Pausar Auto-sync
+                                </button>
+                                <button onclick="forceFullRefresh()" 
+                                        style="background: #ffc107; color: #000; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    🔃 Recarregar Completo
+                                </button>
+                                <button onclick="showDataStats()" 
+                                        style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    📊 Estatísticas
+                                </button>
+                            </div>
+                        </div>
+                        <div id="sync-progress" style="margin-top: 10px; display: none;">
+                            <div style="background: #f8f9fa; border-radius: 10px; overflow: hidden; height: 6px;">
+                                <div id="sync-progress-bar" style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <div id="sync-status-text" style="font-size: 12px; margin-top: 5px; color: #666;">Atualizando dados...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões de Emergência para Corrigir Botões -->
+                    <div style="margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ff9800;">
+                        <strong>🚨 CORREÇÃO DE EMERGÊNCIA:</strong> Se os botões não aparecerem, use:
+                        <div style="margin-top: 10px;">
+                            <button onclick="window.forcarBotoesEmergencia?.()" 
+                                    style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                                🚨 Forçar Botões
+                            </button>
+                            <button onclick="window.createSampleData?.(); window.loadParticipants?.()" 
+                                    style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                                📊 Criar Dados Teste
+                            </button>
+                            <button onclick="window.location.reload()" 
+                                    style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                                🔄 Recarregar Página
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div class="participants-table-container">
                         <table class="participants-table">
                             <thead>
@@ -372,15 +426,61 @@
         window.adminSystemReady = false;
         window.firebaseLoaded = false;
         
+        // Função para verificar autenticação antes de qualquer carregamento
+        async function verifyAdminAuth() {
+            console.log('🔐 Verificando autenticação de administrador...');
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Adicionar pequeno delay para garantir que Firebase Auth esteja pronto
+                await new Promise(resolve => setTimeout(resolve, 1200));
+                
+                const result = await window.FirebaseDB.getCurrentAdmin();
+                if (!result.success || !result.isAdmin) {
+                    throw new Error(result.error || 'Não autenticado como administrador');
+                }
+                
+                // Dupla verificação com isAdmin
+                if (typeof window.FirebaseDB.isAdmin === 'function' && firebase.auth().currentUser) {
+                    const adminCheck = await window.FirebaseDB.isAdmin(firebase.auth().currentUser.uid);
+                    if (!adminCheck) {
+                        throw new Error('Permissões de administrador não verificadas');
+                    }
+                }
+                
+                // Se chegou aqui, está autenticado como admin
+                window.updateAdminStatus('Autenticado como administrador');
+                console.log('✅ Autenticação de administrador confirmada');
+                // Continuar carregamento normal
+                document.querySelector('.admin-main').style.display = 'block';
+                document.querySelector('.admin-loader').style.display = 'none';
+            } catch (error) {
+                console.error('❌ Falha na verificação de admin:', error);
+                window.showAdminError(error.message || 'Acesso não autorizado');
+                return false;
+            }
+        }
+        
         // Aguardar Firebase estar pronto
         if (typeof window.FirebaseDB !== 'undefined') {
             window.firebaseLoaded = true;
             console.log('🔥 Firebase já disponível no carregamento');
+            verifyAdminAuth(); // Verificar imediatamente
         } else {
             window.addEventListener('firebaseReady', () => {
                 window.firebaseLoaded = true;
                 console.log('🔥 Firebase carregado via evento');
+                verifyAdminAuth(); // Verificar quando Firebase estiver pronto
             });
+            
+            // Timeout de segurança
+            setTimeout(() => {
+                if (!window.firebaseLoaded) {
+                    window.showAdminError('Timeout na conexão com Firebase. Verifique sua conexão e tente novamente.');
+                }
+            }, 10000);
         }
         
         // Controle para evitar múltiplas inicializações

@@ -136,13 +136,21 @@ waitForFirebase().then(() => {
         
         const purchases = [];
         snapshot.forEach(doc => {
+          const docData = doc.data();
           purchases.push({
             id: doc.id,
-            ...doc.data()
+            ...docData
+          });
+          
+          // Log detalhado para debug inicial
+          console.log(`📋 Compra carregada ${doc.id}:`, {
+            status: docData.status,
+            numbers: docData.numbers,
+            buyerName: docData.buyerName
           });
         });
         
-        console.log(`✅ ${purchases.length} compras carregadas`);
+        console.log(`✅ ${purchases.length} compras carregadas com ordenação`);
         return { success: true, data: purchases };
       } catch (error) {
         console.error('❌ Erro ao carregar compras:', error);
@@ -191,18 +199,38 @@ waitForFirebase().then(() => {
         console.log(`👂 Escutando mudanças em: ${collection}`);
         const unsubscribe = firebase.firestore()
           .collection(collection)
+          .orderBy('timestamp', 'desc') // Ordenar por timestamp para consistência
           .onSnapshot(snapshot => {
+            console.log(`📥 Snapshot recebido: ${snapshot.size} documentos`);
             const data = [];
+            
             snapshot.forEach(doc => {
+              const docData = doc.data();
               data.push({
                 id: doc.id,
-                ...doc.data()
+                ...docData
+              });
+              
+              // Log detalhado para debug
+              console.log(`📋 Doc ${doc.id}:`, {
+                status: docData.status,
+                numbers: docData.numbers,
+                buyerName: docData.buyerName
               });
             });
+            
+            console.log(`🔄 Chamando callback com ${data.length} itens`);
             callback(data);
+          }, error => {
+            console.error('❌ Erro no listener:', error);
+            // Tentar reconectar em caso de erro
+            setTimeout(() => {
+              console.log('🔄 Tentando reconectar listener...');
+              this.listenToChanges(collection, callback);
+            }, 5000);
           });
         
-        console.log('✅ Listener configurado');
+        console.log('✅ Listener configurado com ordenação e error handling');
         return unsubscribe;
       } catch (error) {
         console.error('❌ Erro ao configurar listener:', error);
@@ -452,24 +480,41 @@ waitForFirebase().then(() => {
       try {
         console.log('🔍 Verificando admin atual...');
         
-        // Aguardar o estado de autenticação ser resolvido
-        const user = await new Promise((resolve) => {
-          const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
-            unsubscribe();
-            resolve(user);
-          });
+        // Verificar se Auth está inicializado
+        if (!firebase.auth()) {
+          console.error('❌ Firebase Auth não inicializado');
+          return { success: false, error: 'Firebase Auth não está disponível' };
+        }
+        
+        // Aguardar o estado de autenticação ser resolvido com timeout
+        const user = await Promise.race([
+          new Promise((resolve) => {
+            const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+              unsubscribe();
+              resolve(user);
+            });
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout na verificação de autenticação')), 5000))
+        ]).catch(error => {
+          console.error('⏱️ Timeout ou erro na verificação de auth:', error);
+          return null;
         });
         
         if (user) {
           console.log(`✓ Usuário encontrado: ${user.email} (${user.uid})`);
-          const isAdmin = await this.isAdmin(user.uid);
-          
-          if (isAdmin) {
-            console.log('✓ Usuário confirmado como admin');
-            return { success: true, user: user, isAdmin: true };
-          } else {
-            console.log('✗ Usuário não tem permissões de admin');
-            return { success: false, error: 'Usuário não tem permissões de administrador' };
+          try {
+            const isAdmin = await this.isAdmin(user.uid);
+            
+            if (isAdmin) {
+              console.log('✓ Usuário confirmado como admin');
+              return { success: true, user: user, isAdmin: true };
+            } else {
+              console.log('✗ Usuário não tem permissões de admin');
+              return { success: false, error: 'Usuário não tem permissões de administrador' };
+            }
+          } catch (adminError) {
+            console.error('❌ Erro ao verificar permissões de admin:', adminError);
+            return { success: false, error: 'Falha ao verificar permissões de admin: ' + adminError.message };
           }
         } else {
           console.log('✗ Nenhum usuário autenticado');

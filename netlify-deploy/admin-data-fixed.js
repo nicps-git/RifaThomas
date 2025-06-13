@@ -192,31 +192,31 @@ function createSampleData() {
     adminData.purchases = [
         {
             id: 'demo-1',
-            buyerName: 'Maria Silva (TESTE)',
+            buyerName: 'Maria Silva',
             buyerPhone: '(11) 99999-1111',
             buyerEmail: 'maria@demo.com',
             numbers: [1, 2, 3],
             totalAmount: 120.00,
-            paymentMethod: 'donation',
+            paymentMethod: 'doacao',
             status: 'pending_donation',
             date: new Date().toISOString(),
             timestamp: new Date()
         },
         {
             id: 'demo-2',
-            buyerName: 'João Santos (TESTE)',
+            buyerName: 'João Santos',
             buyerPhone: '(11) 98888-2222',
             buyerEmail: 'joao@demo.com',
             numbers: [10, 20, 30],
             totalAmount: 120.00,
-            paymentMethod: 'donation',
-            status: 'pending_donation',
+            paymentMethod: 'pix',
+            status: 'confirmed',
             date: new Date().toISOString(),
             timestamp: new Date()
         },
         {
             id: 'demo-3',
-            buyerName: 'Ana Costa (CONFIRMADA)',
+            buyerName: 'Ana Costa',
             buyerPhone: '(11) 97777-3333',
             buyerEmail: 'ana@demo.com',
             numbers: [50, 51, 52],
@@ -232,19 +232,6 @@ function createSampleData() {
     try {
         localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
         console.log(`🎭 ${adminData.purchases.length} dados de exemplo criados e salvos`);
-        
-        // Log detalhado dos dados criados
-        adminData.purchases.forEach((purchase, index) => {
-            console.log(`${index + 1}. ${purchase.buyerName} - Status: ${purchase.status} - PaymentMethod: ${purchase.paymentMethod}`);
-        });
-        
-        // Forçar atualização da interface
-        setTimeout(() => {
-            console.log('🔄 Forçando atualização da interface após criar dados...');
-            loadParticipants();
-            updateDashboard();
-        }, 500);
-        
     } catch (error) {
         console.error('❌ Erro ao salvar dados de exemplo:', error);
     }
@@ -315,29 +302,10 @@ function updateInterface() {
     try {
         updateDashboard();
         loadParticipants();
-        
-        // Verificação adicional: se não há dados após carregar, criar dados de teste
-        setTimeout(() => {
-            if (!adminData.purchases || adminData.purchases.length === 0) {
-                console.log('⚠️ Nenhum dado encontrado, criando dados de teste automaticamente...');
-                createSampleData();
-                loadParticipants();
-            }
-        }, 1000);
-        
         console.log('✅ Interface atualizada com sucesso');
     } catch (error) {
         console.error('❌ Erro ao atualizar interface:', error);
         showError(`Erro ao atualizar interface: ${error.message}`);
-        
-        // Em caso de erro, tentar criar dados de teste
-        try {
-            console.log('🔄 Tentando recuperar com dados de teste...');
-            createSampleData();
-            loadParticipants();
-        } catch (recoveryError) {
-            console.error('❌ Falha na recuperação:', recoveryError);
-        }
     }
 }
 
@@ -469,39 +437,26 @@ function createParticipantRow(purchase) {
 
 // Criar botões de ação baseados no status
 function createActionButtons(purchase) {
-    console.log(`🔧 Criando botões para compra ${purchase.id}, status: ${purchase.status}`);
-    
     const buttons = [];
     
-    // Sempre mostrar todos os botões para debug
-    if (purchase.status === 'pending_donation' || purchase.paymentMethod === 'doacao' || purchase.paymentMethod === 'donation') {
+    if (purchase.status === 'pending_donation') {
         buttons.push(`
-            <button class="btn-confirm" data-action="confirm-donation" data-purchase-id="${purchase.id}" title="Confirmar Doação" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+            <button class="btn-confirm" data-action="confirm-donation" data-purchase-id="${purchase.id}" title="Confirmar Doação">
                 ✅ Confirmar
             </button>
-            <button class="btn-reject" data-action="reject-donation" data-purchase-id="${purchase.id}" title="Rejeitar Doação" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+            <button class="btn-reject" data-action="reject-donation" data-purchase-id="${purchase.id}" title="Rejeitar Doação">
                 ❌ Rejeitar
             </button>
         `);
     }
     
-    // Botão editar sempre disponível
     buttons.push(`
-        <button class="btn-edit" data-action="edit-participant" data-purchase-id="${purchase.id}" title="Editar" style="background: #007bff; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+        <button class="btn-edit" data-action="edit-participant" data-purchase-id="${purchase.id}" title="Editar">
             ✏️ Editar
         </button>
     `);
     
-    // Botão de debug
-    buttons.push(`
-        <button onclick="console.log('Debug:', ${JSON.stringify(purchase).replace(/"/g, '&quot;')})" title="Debug" style="background: #6c757d; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
-            🔍 Debug
-        </button>
-    `);
-    
-    const result = buttons.join('');
-    console.log(`✅ Botões criados para ${purchase.id}:`, result);
-    return result;
+    return buttons.join('');
 }
 
 // Funções auxiliares de formatação
@@ -576,68 +531,24 @@ function showError(message) {
 async function confirmDonation(purchaseId) {
     console.log(`✅ Confirmando doação: ${purchaseId}`);
     
-    const purchase = adminData.purchases.find(p => p.id === purchaseId);
-    if (!purchase) {
-        alert('❌ Compra não encontrada!');
-        return;
-    }
-    
-    // Preparar dados para confirmação
-    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
-    const numbers = purchase.numbers || [];
-    const total = purchase.totalAmount || 0;
-    
-    const confirmMessage = `✅ CONFIRMAR DOAÇÃO\n\n` +
-        `👤 Cliente: ${buyerName}\n` +
-        `🎯 Números: ${numbers.join(', ')}\n` +
-        `💰 Valor: R$ ${total.toFixed(2)}\n\n` +
-        `⚠️ Esta ação não pode ser desfeita.\n` +
-        `Confirmar doação?`;
-    
-    if (!confirm(confirmMessage)) {
-        console.log('❌ Confirmação cancelada pelo usuário');
-        return;
-    }
-    
     try {
-        // Atualizar status localmente primeiro
-        purchase.status = 'confirmed';
-        purchase.confirmedAt = new Date().toISOString();
-        purchase.confirmedBy = 'admin';
-        
-        // Salvar no localStorage
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        console.log('💾 Dados salvos no localStorage');
-        
-        // Tentar atualizar no Firebase se disponível
         if (typeof window.FirebaseDB !== 'undefined') {
-            try {
-                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed', {
-                    confirmedAt: purchase.confirmedAt,
-                    confirmedBy: purchase.confirmedBy
-                });
-                
-                if (result.success) {
-                    console.log('✅ Status atualizado no Firebase');
-                } else {
-                    console.warn('⚠️ Erro no Firebase:', result.error);
-                }
-            } catch (firebaseError) {
-                console.warn('⚠️ Firebase indisponível:', firebaseError);
+            const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed');
+            if (result.success) {
+                console.log('✅ Status atualizado no Firebase');
             }
         }
         
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
-        
-        // Notificação de sucesso
-        alert('✅ DOAÇÃO CONFIRMADA!\n\nNúmeros foram marcados como vendidos.');
-        console.log('✅ CONFIRMAÇÃO CONCLUÍDA COM SUCESSO!');
+        // Atualizar localmente
+        const purchase = adminData.purchases.find(p => p.id === purchaseId);
+        if (purchase) {
+            purchase.status = 'confirmed';
+            loadParticipants(); // Recarregar tabela
+            updateDashboard(); // Atualizar estatísticas
+        }
         
     } catch (error) {
         console.error('❌ Erro ao confirmar doação:', error);
-        alert(`❌ Erro ao confirmar: ${error.message}`);
         showError(`Erro ao confirmar: ${error.message}`);
     }
 }
@@ -645,262 +556,41 @@ async function confirmDonation(purchaseId) {
 async function rejectDonation(purchaseId) {
     console.log(`❌ Rejeitando doação: ${purchaseId}`);
     
-    const purchase = adminData.purchases.find(p => p.id === purchaseId);
-    if (!purchase) {
-        alert('❌ Compra não encontrada!');
-        return;
-    }
-    
-    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
-    const reason = prompt(`❌ REJEITAR DOAÇÃO\n\nCliente: ${buyerName}\n\nMotivo da rejeição (opcional):`);
-    
-    if (reason === null) {
-        console.log('❌ Rejeição cancelada pelo usuário');
-        return;
-    }
-    
     try {
-        // Atualizar status localmente primeiro
-        purchase.status = 'rejected';
-        purchase.rejectedAt = new Date().toISOString();
-        purchase.rejectionReason = reason || 'Sem motivo especificado';
-        purchase.rejectedBy = 'admin';
-        
-        // Salvar no localStorage
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        console.log('💾 Dados salvos no localStorage');
-        
-        // Tentar atualizar no Firebase se disponível
         if (typeof window.FirebaseDB !== 'undefined') {
-            try {
-                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected', {
-                    rejectedAt: purchase.rejectedAt,
-                    rejectionReason: purchase.rejectionReason,
-                    rejectedBy: purchase.rejectedBy
-                });
-                
-                if (result.success) {
-                    console.log('✅ Status atualizado no Firebase');
-                } else {
-                    console.warn('⚠️ Erro no Firebase:', result.error);
-                }
-            } catch (firebaseError) {
-                console.warn('⚠️ Firebase indisponível:', firebaseError);
+            const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected');
+            if (result.success) {
+                console.log('✅ Status atualizado no Firebase');
             }
         }
         
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
-        
-        // Notificação de rejeição
-        alert('❌ DOAÇÃO REJEITADA!\n\nNúmeros foram liberados para venda.');
-        console.log('✅ REJEIÇÃO CONCLUÍDA COM SUCESSO!');
+        // Atualizar localmente
+        const purchase = adminData.purchases.find(p => p.id === purchaseId);
+        if (purchase) {
+            purchase.status = 'rejected';
+            loadParticipants(); // Recarregar tabela
+            updateDashboard(); // Atualizar estatísticas
+        }
         
     } catch (error) {
         console.error('❌ Erro ao rejeitar doação:', error);
-        alert(`❌ Erro ao rejeitar: ${error.message}`);
         showError(`Erro ao rejeitar: ${error.message}`);
     }
 }
 
 function editParticipant(purchaseId) {
     console.log(`✏️ Editando participante: ${purchaseId}`);
-    
-    const purchase = adminData.purchases.find(p => p.id === purchaseId);
-    if (!purchase) {
-        alert('❌ Participante não encontrado!');
-        return;
-    }
-    
-    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
-    const buyerPhone = purchase.buyerPhone || purchase.phone || '';
-    
-    const newName = prompt(`Editar nome do participante:\n\nNome atual: ${buyerName}`, buyerName);
-    if (newName && newName.trim() !== '') {
-        const newPhone = prompt(`Editar telefone do participante:\n\nTelefone atual: ${buyerPhone}`, buyerPhone);
-        if (newPhone && newPhone.trim() !== '') {
-            // Atualizar dados
-            purchase.buyerName = newName.trim();
-            purchase.name = newName.trim(); // Para compatibilidade
-            purchase.buyerPhone = newPhone.trim();
-            purchase.phone = newPhone.trim(); // Para compatibilidade
-            
-            // Salvar no localStorage
-            localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-            
-            // Atualizar interface
-            loadParticipants();
-            updateDashboard();
-            
-            alert('✅ Dados do participante atualizados com sucesso!');
-            console.log('✅ Edição concluída com sucesso');
-        }
-    }
+    // Implementar modal de edição se necessário
+    alert(`Função de edição para ${purchaseId} será implementada em breve.`);
 }
 
-// Adicionar função para criar dados de teste
-function createSampleData() {
-    console.log('🎭 Criando dados de exemplo...');
-    
-    adminData.purchases = [
-        {
-            id: 'demo-1',
-            buyerName: 'Maria Silva',
-            name: 'Maria Silva', // Para compatibilidade
-            buyerPhone: '(11) 99999-1111',
-            phone: '(11) 99999-1111', // Para compatibilidade
-            buyerEmail: 'maria@demo.com',
-            numbers: [1, 2, 3],
-            totalAmount: 120.00,
-            paymentMethod: 'doacao',
-            status: 'pending_donation',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 'demo-2',
-            buyerName: 'João Santos',
-            name: 'João Santos', // Para compatibilidade
-            buyerPhone: '(11) 98888-2222',
-            phone: '(11) 98888-2222', // Para compatibilidade
-            buyerEmail: 'joao@demo.com',
-            numbers: [10, 20, 30],
-            totalAmount: 120.00,
-            paymentMethod: 'pix',
-            status: 'confirmed',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 'demo-3',
-            buyerName: 'Ana Costa',
-            name: 'Ana Costa', // Para compatibilidade
-            buyerPhone: '(11) 97777-3333',
-            phone: '(11) 97777-3333', // Para compatibilidade
-            buyerEmail: 'ana@demo.com',
-            numbers: [50, 51, 52],
-            totalAmount: 120.00,
-            paymentMethod: 'doacao',
-            status: 'pending_donation',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 'demo-4',
-            buyerName: 'Carlos Oliveira',
-            name: 'Carlos Oliveira', // Para compatibilidade
-            buyerPhone: '(11) 96666-4444',
-            phone: '(11) 96666-4444', // Para compatibilidade
-            buyerEmail: 'carlos@demo.com',
-            numbers: [75, 76, 77],
-            totalAmount: 120.00,
-            paymentMethod: 'doacao',
-            status: 'rejected',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString(),
-            rejectedAt: new Date().toISOString(),
-            rejectionReason: 'Teste de rejeição'
-        }
-    ];
-    
-    // Salvar os dados de exemplo
-    try {
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        console.log(`🎭 ${adminData.purchases.length} dados de exemplo criados e salvos`);
-        
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
-        
-        alert(`✅ Dados de teste criados com sucesso!\n\n📊 Total: ${adminData.purchases.length} compras\n🍼 Pendentes: 2 doações\n✅ Confirmados: 1 compra\n❌ Rejeitados: 1 compra\n\nTeste os botões de confirmação agora!`);
-        
-    } catch (error) {
-        console.error('❌ Erro ao salvar dados de exemplo:', error);
-        alert('❌ Erro ao criar dados de teste: ' + error.message);
-    }
-}
-
-// Expor funções globais para debug e compatibilidade
+// Expor funções globais para debug
 window.adminDebug = {
     adminData,
     loadPurchaseData,
     loadParticipants,
     updateDashboard,
-    createSampleData,
-    confirmDonation,
-    rejectDonation,
-    editParticipant
+    createSampleData
 };
 
-// Expor funções essenciais globalmente para os botões
-window.confirmDonation = confirmDonation;
-window.rejectDonation = rejectDonation;
-window.editParticipant = editParticipant;
-window.createSampleData = createSampleData;
-window.loadParticipants = loadParticipants;
-window.updateDashboard = updateDashboard;
-
-// Função de emergência para forçar botões aparecerem
-window.forcarBotoesEmergencia = function() {
-    console.log('🚨 FUNÇÃO DE EMERGÊNCIA: Forçando aparição dos botões...');
-    
-    // Garantir que adminData existe
-    if (!window.adminData) {
-        window.adminData = { purchases: [], firebaseReady: false, initializationAttempts: 1 };
-    }
-    
-    // Criar dados de teste se não existirem
-    if (adminData.purchases.length === 0) {
-        console.log('📊 Nenhum dado encontrado, criando dados de teste...');
-        createSampleData();
-    }
-    
-    // Forçar carregamento da tabela
-    setTimeout(() => {
-        console.log('🔄 Forçando reload da tabela...');
-        loadParticipants();
-        console.log('🚨 EMERGÊNCIA: Botões forçados!');
-        
-        // Verificar se os botões apareceram
-        setTimeout(() => {
-            const buttons = document.querySelectorAll('[data-action]');
-            console.log(`🔍 Verificação pós-emergência: ${buttons.length} botões encontrados`);
-            if (buttons.length > 0) {
-                console.log('✅ SUCESSO: Botões apareceram após emergência!');
-                alert(`✅ EMERGÊNCIA RESOLVIDA!\n\n${buttons.length} botões de ação foram criados.\nVerifique a tabela de participantes.`);
-            } else {
-                console.log('❌ FALHA: Botões ainda não apareceram');
-                alert('❌ Emergência falhou. Verifique o console (F12) para mais detalhes.');
-            }
-        }, 1000);
-    }, 500);
-};
-
-// Verificação automática após carregamento COMPLETO da página
-setTimeout(() => {
-    console.log('🔍 Verificação automática pós-carregamento...');
-    
-    const tbody = document.getElementById('participants-tbody');
-    if (tbody) {
-        const buttons = tbody.querySelectorAll('[data-action]');
-        console.log(`📊 Status atual: ${buttons.length} botões encontrados na tabela`);
-        
-        if (buttons.length === 0 && tbody.innerHTML.includes('Carregando dados')) {
-            console.log('🚨 DETECTADO: Tabela ainda está carregando após 10 segundos, ativando emergência');
-            window.forcarBotoesEmergencia();
-        } else if (buttons.length === 0) {
-            console.log('⚠️ DETECTADO: Tabela carregada mas sem botões, ativando emergência');
-            window.forcarBotoesEmergencia();
-        } else {
-            console.log('✅ VERIFICAÇÃO: Botões estão presentes, sistema funcionando normalmente');
-        }
-    } else {
-        console.log('❌ ERRO: Tabela de participantes não encontrada');
-    }
-}, 10000); // 10 segundos para dar tempo da página carregar completamente
-
-console.log('✅ Admin.js carregado completamente - versão corrigida para confirmação de botões');
-console.log('🎯 Event delegation ativo e funções expostas globalmente');
-console.log('🧪 Use createSampleData() para criar dados de teste');
-console.log('🚨 EMERGÊNCIA: Use forcarBotoesEmergencia() se botões não aparecerem');
+console.log('✅ Admin.js carregado completamente - versão corrigida para dados');

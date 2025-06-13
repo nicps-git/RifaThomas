@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 TESTE DIRETO DOS BOTÕES</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #1a1a2e;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+        }
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .success { border-left-color: #28a745; }
+        .warning { border-left-color: #ffc107; }
+        .error { border-left-color: #dc3545; }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover { transform: translateY(-2px); }
+        .btn-confirm { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        .btn-reject { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-edit { background: linear-gradient(135deg, #007bff, #0056b3); }
+        
+        table {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th {
+            background: rgba(255,255,255,0.2);
+            font-weight: bold;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        #logs {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 TESTE DIRETO DOS BOTÕES DE CONFIRMAÇÃO</h1>
+        
+        <div class="test-section">
+            <h2>📊 Passo 1: Criar Dados de Teste</h2>
+            <button onclick="criarDadosForte()">🆕 CRIAR DADOS FORTES</button>
+            <button onclick="limparDados()">🗑️ Limpar Tudo</button>
+            <button onclick="verificarDados()">🔍 Verificar Dados</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📋 Passo 2: Tabela de Teste Direto</h2>
+            <p>Esta tabela usa o mesmo código do admin.js:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Números</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="test-tbody">
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px;">
+                            📋 Clique em "CRIAR DADOS FORTES" primeiro
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 Logs de Debug</h2>
+            <div id="logs">Logs aparecerão aqui...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🚨 Testes Manuais</h2>
+            <button onclick="testeManualBotoes()">🧪 TESTE MANUAL DOS BOTÕES</button>
+            <button onclick="abrirAdminReal()">🔧 ABRIR ADMIN REAL</button>
+        </div>
+    </div>
+
+    <script>
+        // Dados globais para teste
+        let testData = [];
+        
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('logs');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#74c0fc';
+            logEl.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+        
+        function criarDadosForte() {
+            log('🆕 Criando dados de teste FORTES...', 'info');
+            
+            // Dados muito claros e diretos
+            testData = [
+                {
+                    id: 'teste-pendente-1',
+                    buyerName: '🔴 Maria Silva - PENDENTE',
+                    buyerPhone: '(11) 99999-0001',
+                    numbers: [1, 2],
+                    totalAmount: 80.00,
+                    paymentMethod: 'donation',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                },
+                {
+                    id: 'teste-pendente-2',
+                    buyerName: '🔴 João Santos - PENDENTE',
+                    buyerPhone: '(11) 99999-0002',
+                    numbers: [10, 20],
+                    totalAmount: 80.00,
+                    paymentMethod: 'donation',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                },
+                {
+                    id: 'teste-confirmado-1',
+                    buyerName: '🟢 Ana Costa - CONFIRMADA',
+                    buyerPhone: '(11) 99999-0003',
+                    numbers: [50],
+                    totalAmount: 40.00,
+                    paymentMethod: 'pix',
+                    status: 'confirmed',
+                    date: new Date().toISOString()
+                }
+            ];
+            
+            // Salvar no localStorage
+            localStorage.setItem('purchases', JSON.stringify(testData));
+            log(`✅ ${testData.length} dados salvos no localStorage`, 'success');
+            
+            // Atualizar tabela de teste
+            atualizarTabelaTeste();
+        }
+        
+        function atualizarTabelaTeste() {
+            log('🔄 Atualizando tabela de teste...', 'info');
+            
+            const tbody = document.getElementById('test-tbody');
+            tbody.innerHTML = '';
+            
+            if (testData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">📭 Nenhum dado de teste</td></tr>';
+                return;
+            }
+            
+            testData.forEach(purchase => {
+                const row = document.createElement('tr');
+                
+                // Usar a mesma função do admin.js
+                const actionButtons = createActionButtons(purchase);
+                
+                row.innerHTML = `
+                    <td>${purchase.buyerName}</td>
+                    <td>${purchase.buyerPhone}</td>
+                    <td>${purchase.numbers.join(', ')}</td>
+                    <td><strong>${purchase.status}</strong></td>
+                    <td>
+                        <div class="action-buttons">
+                            ${actionButtons}
+                        </div>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            log(`✅ Tabela atualizada com ${testData.length} registros`, 'success');
+        }
+        
+        // COPIAR A FUNÇÃO EXATA DO admin.js
+        function createActionButtons(purchase) {
+            console.log(`🔧 Criando botões para compra ${purchase.id}, status: ${purchase.status}`);
+            
+            const buttons = [];
+            
+            // Sempre mostrar todos os botões para debug
+            if (purchase.status === 'pending_donation' || purchase.paymentMethod === 'doacao' || purchase.paymentMethod === 'donation') {
+                buttons.push(`
+                    <button class="btn-confirm" data-action="confirm-donation" data-purchase-id="${purchase.id}" title="Confirmar Doação" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                        ✅ Confirmar
+                    </button>
+                    <button class="btn-reject" data-action="reject-donation" data-purchase-id="${purchase.id}" title="Rejeitar Doação" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                        ❌ Rejeitar
+                    </button>
+                `);
+            }
+            
+            // Botão editar sempre disponível
+            buttons.push(`
+                <button class="btn-edit" data-action="edit-participant" data-purchase-id="${purchase.id}" title="Editar" style="background: #007bff; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                    ✏️ Editar
+                </button>
+            `);
+            
+            // Botão de debug
+            buttons.push(`
+                <button onclick="console.log('Debug:', ${JSON.stringify(purchase).replace(/"/g, '&quot;')})" title="Debug" style="background: #6c757d; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                    🔍 Debug
+                </button>
+            `);
+            
+            const result = buttons.join('');
+            console.log(`✅ Botões criados para ${purchase.id}:`, result);
+            return result;
+        }
+        
+        // Event delegation
+        document.addEventListener('click', function(event) {
+            const target = event.target;
+            const button = target.closest('button');
+            
+            if (!button) return;
+            
+            const action = button.getAttribute('data-action');
+            const purchaseId = button.getAttribute('data-purchase-id');
+            
+            if (!action) return;
+            
+            event.preventDefault();
+            event.stopPropagation();
+            
+            log(`🎯 BOTÃO CLICADO: ${action} para compra ${purchaseId}`, 'success');
+            
+            switch (action) {
+                case 'confirm-donation':
+                    log(`✅ CONFIRMAR doação ${purchaseId}`, 'success');
+                    alert(`✅ FUNCIONOU! Confirmar doação: ${purchaseId}`);
+                    break;
+                case 'reject-donation':
+                    log(`❌ REJEITAR doação ${purchaseId}`, 'warning');
+                    alert(`❌ FUNCIONOU! Rejeitar doação: ${purchaseId}`);
+                    break;
+                case 'edit-participant':
+                    log(`✏️ EDITAR participante ${purchaseId}`, 'info');
+                    alert(`✏️ FUNCIONOU! Editar participante: ${purchaseId}`);
+                    break;
+                default:
+                    log(`❓ Ação desconhecida: ${action}`, 'error');
+            }
+        });
+        
+        function limparDados() {
+            localStorage.clear();
+            testData = [];
+            atualizarTabelaTeste();
+            log('🗑️ Todos os dados limpos', 'warning');
+        }
+        
+        function verificarDados() {
+            const stored = localStorage.getItem('purchases');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                log(`📊 Encontrados ${parsed.length} registros no localStorage`, 'success');
+                parsed.forEach((item, index) => {
+                    log(`${index + 1}. ${item.buyerName} - ${item.status}`, 'info');
+                });
+            } else {
+                log('❌ Nenhum dado no localStorage', 'error');
+            }
+        }
+        
+        function testeManualBotoes() {
+            log('🧪 Executando teste manual dos botões...', 'warning');
+            
+            // Simular clique nos botões
+            const buttons = document.querySelectorAll('[data-action]');
+            log(`🔍 Encontrados ${buttons.length} botões com data-action`, 'info');
+            
+            if (buttons.length === 0) {
+                log('❌ NENHUM BOTÃO ENCONTRADO! Crie dados primeiro.', 'error');
+                return;
+            }
+            
+            buttons.forEach((btn, index) => {
+                const action = btn.getAttribute('data-action');
+                const id = btn.getAttribute('data-purchase-id');
+                log(`${index + 1}. Botão: ${action} - ID: ${id}`, 'info');
+            });
+        }
+        
+        function abrirAdminReal() {
+            log('🔧 Abrindo admin real...', 'info');
+            window.open('admin.html', '_blank', 'width=1200,height=800');
+        }
+        
+        // Auto-carregar ao iniciar
+        window.addEventListener('load', function() {
+            log('🚀 Página de teste carregada', 'success');
+            verificarDados();
+        });
+    </script>
+</body>
+</html>

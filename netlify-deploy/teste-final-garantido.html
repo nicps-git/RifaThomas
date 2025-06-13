@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 TESTE FINAL - BOTÕES FUNCIONANDO</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .step {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #28a745;
+        }
+        .step.warning { border-left-color: #ffc107; }
+        .step.error { border-left-color: #dc3545; }
+        
+        button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+        }
+        .urgent { background: linear-gradient(135deg, #dc3545, #c82333) !important; }
+        .warning-btn { background: linear-gradient(135deg, #ffc107, #e0a800) !important; color: #000 !important; }
+        
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success { background: rgba(40, 167, 69, 0.8); }
+        .error { background: rgba(220, 53, 69, 0.8); }
+        .warning { background: rgba(255, 193, 7, 0.8); color: #000; }
+        .info { background: rgba(23, 162, 184, 0.8); }
+        
+        h1 { text-align: center; margin-bottom: 30px; }
+        .countdown {
+            font-size: 48px;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 TESTE FINAL DOS BOTÕES DE CONFIRMAÇÃO</h1>
+        
+        <div class="status warning">
+            <strong>🎯 OBJETIVO:</strong> Provar que os botões de confirmação estão funcionando perfeitamente!
+        </div>
+        
+        <div class="step">
+            <h2>📊 Etapa 1: Preparar Dados</h2>
+            <p>Criar dados de teste garantidos para funcionamento:</p>
+            <button onclick="prepararDadosGarantidos()">🆕 PREPARAR DADOS GARANTIDOS</button>
+            <div id="dados-status" class="status info">Aguardando preparação...</div>
+        </div>
+        
+        <div class="step">
+            <h2>🚀 Etapa 2: Abrir Admin</h2>
+            <p>Abrir o painel admin com dados já preparados:</p>
+            <button onclick="abrirAdminComDados()">🔧 ABRIR ADMIN COM DADOS</button>
+            <div id="admin-status" class="status info">Aguardando abertura...</div>
+        </div>
+        
+        <div class="step warning">
+            <h2>⚠️ Etapa 3: Teste Manual</h2>
+            <p>Na página admin que abriu, siga estas instruções:</p>
+            <ol>
+                <li><strong>Procure a aba "Participantes"</strong></li>
+                <li><strong>Deve haver registros com nomes "TESTE"</strong></li>
+                <li><strong>Status "pending_donation" deve ter botões ✅ Confirmar e ❌ Rejeitar</strong></li>
+                <li><strong>Clique em um botão para testar</strong></li>
+            </ol>
+            <div id="instrucoes-status" class="status info">Aguardando teste manual...</div>
+        </div>
+        
+        <div class="step">
+            <h2>🚨 Etapa 4: Emergência (se necessário)</h2>
+            <p>Se os botões não aparecerem, use estas opções:</p>
+            <button onclick="ativarEmergencia()" class="urgent">🚨 ATIVAR EMERGÊNCIA</button>
+            <button onclick="forcarBotoesConsole()" class="warning-btn">💻 FORÇAR VIA CONSOLE</button>
+            <div id="emergencia-status" class="status info">Pronto para emergência se necessário</div>
+        </div>
+        
+        <div class="step">
+            <h2>✅ Resultado Esperado</h2>
+            <div class="countdown" id="countdown">✅ BOTÕES FUNCIONANDO!</div>
+            <p><strong>Se tudo estiver certo, você deve ver:</strong></p>
+            <ul>
+                <li>✅ Botões "Confirmar" e "Rejeitar" visíveis</li>
+                <li>✅ Botões respondem ao clique</li>
+                <li>✅ Popups de confirmação aparecem</li>
+                <li>✅ Status dos registros muda</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            console.log(`[${time}] ${type.toUpperCase()}: ${message}`);
+        }
+        
+        function updateStatus(id, message, type = 'info') {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = message;
+                el.className = `status ${type}`;
+            }
+        }
+        
+        function prepararDadosGarantidos() {
+            log('🆕 Preparando dados garantidos...', 'info');
+            
+            try {
+                // Dados super explícitos para teste
+                const dadosGarantidos = [
+                    {
+                        id: 'teste-garantido-1',
+                        buyerName: '🔴 MARIA SILVA - TESTE DOAÇÃO PENDENTE',
+                        buyerPhone: '(11) 91111-1111',
+                        buyerEmail: 'maria.teste@email.com',
+                        numbers: [1, 2, 3],
+                        totalAmount: 120.00,
+                        paymentMethod: 'donation',
+                        status: 'pending_donation',
+                        date: new Date().toISOString(),
+                        timestamp: new Date().toISOString(),
+                        notes: 'TESTE - Doação de fraldas'
+                    },
+                    {
+                        id: 'teste-garantido-2',
+                        buyerName: '🔴 JOÃO SANTOS - TESTE DOAÇÃO PENDENTE',
+                        buyerPhone: '(11) 92222-2222',
+                        buyerEmail: 'joao.teste@email.com',
+                        numbers: [10, 20, 30],
+                        totalAmount: 120.00,
+                        paymentMethod: 'donation',
+                        status: 'pending_donation',
+                        date: new Date().toISOString(),
+                        timestamp: new Date().toISOString(),
+                        notes: 'TESTE - Doação de fraldas'
+                    },
+                    {
+                        id: 'teste-garantido-3',
+                        buyerName: '🟢 ANA COSTA - TESTE JÁ CONFIRMADA',
+                        buyerPhone: '(11) 93333-3333',
+                        buyerEmail: 'ana.teste@email.com',
+                        numbers: [100],
+                        totalAmount: 40.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        date: new Date().toISOString(),
+                        timestamp: new Date().toISOString(),
+                        notes: 'TESTE - Pagamento PIX confirmado'
+                    }
+                ];
+                
+                // Limpar dados antigos
+                localStorage.removeItem('purchases');
+                localStorage.removeItem('admin_purchases_backup');
+                
+                // Salvar dados garantidos
+                localStorage.setItem('purchases', JSON.stringify(dadosGarantidos));
+                localStorage.setItem('admin_purchases_backup', JSON.stringify(dadosGarantidos));
+                
+                // Configuração básica
+                const config = {
+                    totalNumbers: 150,
+                    ticketPrice: 40.00,
+                    pixKey: 'teste@rifathomas.com',
+                    prizes: {
+                        first: 'R$ 1.000,00',
+                        second: 'R$ 500,00',
+                        third: 'Fraldas Pampers'
+                    },
+                    contactPhone: '(11) 99999-9999',
+                    babyName: 'Thomas'
+                };
+                localStorage.setItem('rifaConfig', JSON.stringify(config));
+                localStorage.setItem('adminConfig', JSON.stringify(config));
+                
+                log(`✅ ${dadosGarantidos.length} dados garantidos criados e salvos`, 'success');
+                updateStatus('dados-status', '✅ Dados garantidos criados! 2 doações pendentes + 1 confirmada', 'success');
+                
+                // Mostrar resumo
+                setTimeout(() => {
+                    log('📊 RESUMO DOS DADOS CRIADOS:', 'info');
+                    dadosGarantidos.forEach((item, index) => {
+                        log(`${index + 1}. ${item.buyerName} - Status: ${item.status}`, 'info');
+                    });
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ Erro ao preparar dados: ${error.message}`, 'error');
+                updateStatus('dados-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function abrirAdminComDados() {
+            log('🚀 Abrindo admin com dados preparados...', 'info');
+            
+            // Verificar se dados existem
+            const purchases = localStorage.getItem('purchases');
+            if (!purchases) {
+                updateStatus('admin-status', '❌ Dados não encontrados! Prepare os dados primeiro.', 'error');
+                return;
+            }
+            
+            const parsed = JSON.parse(purchases);
+            log(`📊 Dados encontrados: ${parsed.length} registros`, 'success');
+            
+            // Abrir admin
+            const adminWindow = window.open('admin.html', '_blank', 'width=1200,height=800,toolbar=yes,location=yes,status=yes,menubar=yes,scrollbars=yes,resizable=yes');
+            
+            if (adminWindow) {
+                updateStatus('admin-status', '✅ Admin aberto! Verifique a nova aba agora.', 'success');
+                
+                // Instruções detalhadas
+                setTimeout(() => {
+                    updateStatus('instrucoes-status', '👆 AGORA: Vá para a nova aba do admin e teste os botões!', 'warning');
+                    
+                    log('📋 INSTRUÇÕES PARA A NOVA ABA:', 'warning');
+                    log('1. Aguarde o carregamento completo (até 10 segundos)', 'info');
+                    log('2. Clique na aba "Participantes" se não estiver visível', 'info');
+                    log('3. Procure por "MARIA SILVA - TESTE" e "JOÃO SANTOS - TESTE"', 'info');
+                    log('4. Verifique se há botões "✅ Confirmar" e "❌ Rejeitar"', 'info');
+                    log('5. Clique em um botão para testar', 'info');
+                    log('6. Se não houver botões, use a seção amarela "CORREÇÃO DE EMERGÊNCIA"', 'warning');
+                }, 2000);
+            } else {
+                updateStatus('admin-status', '❌ Erro ao abrir admin - popup bloqueado?', 'error');
+                log('❌ Popup pode estar bloqueado. Abra manualmente: admin.html', 'error');
+            }
+        }
+        
+        function ativarEmergencia() {
+            log('🚨 Ativando emergência...', 'warning');
+            
+            // Tentar executar função de emergência se estiver na mesma página
+            try {
+                if (typeof window.forcarBotoesEmergencia === 'function') {
+                    window.forcarBotoesEmergencia();
+                    updateStatus('emergencia-status', '✅ Emergência ativada nesta página!', 'success');
+                } else {
+                    updateStatus('emergencia-status', '⚠️ Abra o console na aba do admin e execute: window.forcarBotoesEmergencia()', 'warning');
+                }
+            } catch (error) {
+                log(`❌ Erro na emergência: ${error.message}`, 'error');
+                updateStatus('emergencia-status', '❌ Erro na emergência. Use o console manual.', 'error');
+            }
+        }
+        
+        function forcarBotoesConsole() {
+            log('💻 Instruções para console...', 'info');
+            
+            const instrucoes = `
+1. Abra o Console no admin (pressione F12)
+2. Clique na aba "Console"
+3. Digite este comando:
+   window.forcarBotoesEmergencia()
+4. Pressione Enter
+5. Aguarde a mensagem de sucesso
+            `;
+            
+            alert(`💻 INSTRUÇÕES PARA O CONSOLE:\n${instrucoes}`);
+            updateStatus('emergencia-status', '💻 Instruções de console exibidas. Use na aba do admin.', 'info');
+        }
+        
+        // Auto-executar verificação
+        window.addEventListener('load', function() {
+            log('🎯 Teste final carregado', 'success');
+            
+            // Verificar se já existem dados
+            const existing = localStorage.getItem('purchases');
+            if (existing) {
+                const parsed = JSON.parse(existing);
+                log(`📊 Dados existentes encontrados: ${parsed.length} registros`, 'info');
+                updateStatus('dados-status', `📊 Dados já existem (${parsed.length} registros). Pode abrir o admin.`, 'warning');
+            }
+        });
+    </script>
+</body>
+</html>

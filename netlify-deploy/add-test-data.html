@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Adicionar Dados de Teste</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+        }
+        .result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Adicionar Dados de Teste para Admin</h1>
+        <p>Este utilitário adiciona dados de exemplo no Firebase para testar o painel administrativo.</p>
+        
+        <div id="results"></div>
+        
+        <button onclick="addTestData()">📝 Adicionar Dados de Teste</button>
+        <button onclick="listCurrentData()">📋 Listar Dados Atuais</button>
+        <button onclick="clearAllData()">🗑️ Limpar Todos os Dados</button>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        function addResult(type, message, details = null) {
+            const container = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `
+                ${message}
+                ${details ? `<pre>${details}</pre>` : ''}
+                <small>⏰ ${new Date().toLocaleTimeString()}</small>
+            `;
+            container.appendChild(resultDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function addTestData() {
+            addResult('info', '🚀 Iniciando adição de dados de teste...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+
+                const testPurchases = [
+                    {
+                        buyerName: 'Maria da Silva',
+                        buyerPhone: '(11) 99999-1111',
+                        buyerEmail: 'maria@email.com',
+                        numbers: [1, 2, 3],
+                        totalAmount: 120.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        buyerName: 'João Santos',
+                        buyerPhone: '(11) 98888-2222',
+                        buyerEmail: 'joao@email.com',
+                        numbers: [10, 20, 30],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        buyerName: 'Ana Oliveira',
+                        buyerPhone: '(11) 97777-3333',
+                        buyerEmail: 'ana@email.com',
+                        numbers: [50, 51, 52, 53, 54],
+                        totalAmount: 200.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        buyerName: 'Carlos Lima',
+                        buyerPhone: '(11) 96666-4444',
+                        buyerEmail: 'carlos@email.com',
+                        numbers: [100, 101],
+                        totalAmount: 80.00,
+                        paymentMethod: 'doacao',
+                        status: 'pending_donation',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString()
+                    },
+                    {
+                        buyerName: 'Fernanda Costa',
+                        buyerPhone: '(11) 95555-5555',
+                        buyerEmail: 'fernanda@email.com',
+                        numbers: [25, 26, 27, 28],
+                        totalAmount: 160.00,
+                        paymentMethod: 'pix',
+                        status: 'pending',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString()
+                    }
+                ];
+
+                addResult('info', `📝 Adicionando ${testPurchases.length} compras de teste...`);
+
+                for (let i = 0; i < testPurchases.length; i++) {
+                    const purchase = testPurchases[i];
+                    try {
+                        const result = await window.FirebaseDB.savePurchase(purchase);
+                        if (result.success) {
+                            addResult('success', `✅ Compra ${i + 1} adicionada: ${purchase.buyerName}`);
+                        } else {
+                            addResult('error', `❌ Erro na compra ${i + 1}: ${result.error}`);
+                        }
+                    } catch (error) {
+                        addResult('error', `❌ Erro na compra ${i + 1}: ${error.message}`);
+                    }
+                    
+                    // Pequena pausa entre as inserções
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                addResult('success', '🎉 Todos os dados de teste foram adicionados!');
+                
+            } catch (error) {
+                addResult('error', `❌ Erro geral: ${error.message}`, error.stack);
+            }
+        }
+
+        async function listCurrentData() {
+            addResult('info', '📋 Listando dados atuais no Firebase...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (result.success) {
+                    const purchases = result.data || [];
+                    addResult('success', `📊 ${purchases.length} compras encontradas`, JSON.stringify(purchases, null, 2));
+                    
+                    // Estatísticas resumidas
+                    const confirmed = purchases.filter(p => p.status === 'confirmed').length;
+                    const pending = purchases.filter(p => p.status === 'pending').length;
+                    const pendingDonation = purchases.filter(p => p.status === 'pending_donation').length;
+                    
+                    addResult('info', `📈 Estatísticas: ${confirmed} confirmadas, ${pending} pendentes, ${pendingDonation} doações pendentes`);
+                } else {
+                    addResult('error', `❌ Erro ao listar: ${result.error}`);
+                }
+                
+            } catch (error) {
+                addResult('error', `❌ Erro ao listar dados: ${error.message}`, error.stack);
+            }
+        }
+
+        async function clearAllData() {
+            if (!confirm('⚠️ ATENÇÃO: Isso irá apagar TODOS os dados de compras. Tem certeza?')) {
+                return;
+            }
+            
+            addResult('info', '🗑️ Limpando todos os dados...');
+            
+            try {
+                const snapshot = await firebase.firestore().collection('purchases').get();
+                const batch = firebase.firestore().batch();
+                
+                snapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                
+                await batch.commit();
+                addResult('success', `🗑️ ${snapshot.docs.length} registros removidos com sucesso`);
+                
+            } catch (error) {
+                addResult('error', `❌ Erro ao limpar dados: ${error.message}`, error.stack);
+            }
+        }
+
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            addResult('success', '🔥 Firebase carregado e pronto!');
+        });
+
+        // Verificar se Firebase já está disponível
+        if (typeof window.FirebaseDB !== 'undefined') {
+            addResult('success', '🔥 Firebase já estava disponível no carregamento');
+        }
+    </script>
+</body>
+</html>

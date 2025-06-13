@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Status dos Números - Rifa Thomas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 5px;
+            margin: 15px 0;
+        }
+        .status-number {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 12px;
+            border: 2px solid transparent;
+        }
+        .status-number.available {
+            background: #ff6b35;
+            color: white;
+            border-color: #ff6b35;
+        }
+        .status-number.sold {
+            background: #64748b;
+            color: white;
+            border-color: #64748b;
+            opacity: 0.8;
+        }
+        .status-number.reserved {
+            background: #f59e0b;
+            color: white;
+            border-color: #f59e0b;
+        }
+        .status-number.selected {
+            background: #ffd700;
+            color: #1a237e;
+            border-color: #ffd700;
+        }
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .warning-box {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .success-box {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+        .error-box {
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #dc3545;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px 10px 5px 0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Status dos Números - Rifa Thomas</h1>
+        <p><strong>Objetivo:</strong> Verificar se os números estão exibindo corretamente os status (disponível, vendido, reservado, selecionado).</p>
+    </div>
+
+    <div class="container">
+        <div class="test-section">
+            <h3>📊 Status do LocalStorage</h3>
+            <div id="localStorage-status"></div>
+            <button class="btn-info" onclick="checkLocalStorage()">🔍 Verificar LocalStorage</button>
+            <button class="btn-warning" onclick="clearLocalStorage()">🗑️ Limpar LocalStorage</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="test-section">
+            <h3>🎲 Criar Dados de Teste</h3>
+            <div class="info-box">
+                <strong>Instruções:</strong> Clique nos botões abaixo para criar dados de teste e simular diferentes status de números.
+            </div>
+            <button class="btn-success" onclick="createTestData()">✅ Criar Dados de Teste</button>
+            <button class="btn-primary" onclick="markSoldNumbers()">🔴 Marcar Números Vendidos</button>
+            <button class="btn-warning" onclick="markReservedNumbers()">🟡 Marcar Números Reservados</button>
+            <button class="btn-info" onclick="selectRandomNumbers()">🔵 Selecionar Números Aleatórios</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="test-section">
+            <h3>🎯 Teste Visual dos Status</h3>
+            <p>Grade simulando como os números devem aparecer na página principal:</p>
+            <div class="status-grid" id="test-grid">
+                <!-- Números serão gerados via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="test-section">
+            <h3>🔗 Ações</h3>
+            <button class="btn-primary" onclick="openMainPage()">🚀 Abrir Página Principal</button>
+            <button class="btn-success" onclick="syncWithMainPage()">🔄 Sincronizar com Página Principal</button>
+            <button class="btn-info" onclick="runDiagnostic()">🔧 Executar Diagnóstico</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="test-section">
+            <h3>📝 Log de Atividades</h3>
+            <div class="log-area" id="log-area"></div>
+            <button class="btn-info" onclick="clearLog()">🗑️ Limpar Log</button>
+        </div>
+    </div>
+
+    <script>
+        // Configurações da Rifa
+        const TOTAL_NUMBERS = 150;
+        
+        // Função de log
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('log-area');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logArea.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        // Verificar LocalStorage
+        function checkLocalStorage() {
+            log('Verificando dados do localStorage...', 'info');
+            
+            const rifaData = localStorage.getItem('rifaData');
+            const purchases = localStorage.getItem('purchases');
+            
+            const statusDiv = document.getElementById('localStorage-status');
+            let statusHTML = '<div class="info-box">';
+            
+            if (rifaData) {
+                try {
+                    const data = JSON.parse(rifaData);
+                    const soldCount = data.soldNumbers ? data.soldNumbers.length : 0;
+                    const reservedCount = data.reservedNumbers ? data.reservedNumbers.length : 0;
+                    
+                    statusHTML += `<strong>📊 rifaData encontrado:</strong><br>`;
+                    statusHTML += `- Números vendidos: ${soldCount}<br>`;
+                    statusHTML += `- Números reservados: ${reservedCount}<br>`;
+                    statusHTML += `- Última atualização: ${data.lastUpdate || 'N/A'}<br><br>`;
+                    
+                    log(`rifaData: ${soldCount} vendidos, ${reservedCount} reservados`, 'success');
+                } catch (error) {
+                    statusHTML += `<strong>❌ Erro ao ler rifaData:</strong> ${error.message}<br><br>`;
+                    log(`Erro ao ler rifaData: ${error.message}`, 'error');
+                }
+            } else {
+                statusHTML += `<strong>⚠️ rifaData não encontrado</strong><br><br>`;
+                log('rifaData não encontrado no localStorage', 'warning');
+            }
+            
+            if (purchases) {
+                try {
+                    const purchaseData = JSON.parse(purchases);
+                    const confirmedPurchases = purchaseData.filter(p => p.status === 'confirmed').length;
+                    const pendingPurchases = purchaseData.filter(p => p.status === 'pending_donation').length;
+                    
+                    statusHTML += `<strong>🛒 purchases encontrado:</strong><br>`;
+                    statusHTML += `- Total de compras: ${purchaseData.length}<br>`;
+                    statusHTML += `- Confirmadas: ${confirmedPurchases}<br>`;
+                    statusHTML += `- Pendentes: ${pendingPurchases}<br>`;
+                    
+                    log(`purchases: ${purchaseData.length} total, ${confirmedPurchases} confirmadas`, 'success');
+                } catch (error) {
+                    statusHTML += `<strong>❌ Erro ao ler purchases:</strong> ${error.message}<br>`;
+                    log(`Erro ao ler purchases: ${error.message}`, 'error');
+                }
+            } else {
+                statusHTML += `<strong>⚠️ purchases não encontrado</strong><br>`;
+                log('purchases não encontrado no localStorage', 'warning');
+            }
+            
+            statusHTML += '</div>';
+            statusDiv.innerHTML = statusHTML;
+        }
+
+        // Limpar LocalStorage
+        function clearLocalStorage() {
+            if (confirm('⚠️ Tem certeza que deseja limpar TODOS os dados do localStorage?\n\nEsta ação não pode ser desfeita!')) {
+                localStorage.removeItem('rifaData');
+                localStorage.removeItem('purchases');
+                log('LocalStorage limpo com sucesso', 'success');
+                checkLocalStorage();
+                generateTestGrid();
+            }
+        }
+
+        // Criar dados de teste
+        function createTestData() {
+            log('Criando dados de teste...', 'info');
+            
+            // Criar algumas compras confirmadas
+            const testPurchases = [
+                {
+                    id: 'test_1',
+                    name: 'João Silva',
+                    phone: '(11) 99999-9999',
+                    numbers: [5, 15, 25],
+                    status: 'confirmed',
+                    totalAmount: 120.00,
+                    paymentMethod: 'pix',
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 'test_2',
+                    name: 'Maria Santos',
+                    phone: '(11) 88888-8888',
+                    numbers: [10, 20, 30],
+                    status: 'pending_donation',
+                    totalAmount: 120.00,
+                    paymentMethod: 'doacao',
+                    createdAt: new Date().toISOString()
+                }
+            ];
+            
+            localStorage.setItem('purchases', JSON.stringify(testPurchases));
+            
+            // Criar rifaData correspondente
+            const rifaData = {
+                soldNumbers: [5, 15, 25], // Números confirmados
+                reservedNumbers: [10, 20, 30], // Números pendentes
+                lastUpdate: new Date().toISOString()
+            };
+            
+            localStorage.setItem('rifaData', JSON.stringify(rifaData));
+            
+            log('Dados de teste criados com sucesso!', 'success');
+            log('- Números vendidos: 5, 15, 25', 'success');
+            log('- Números reservados: 10, 20, 30', 'success');
+            
+            checkLocalStorage();
+            generateTestGrid();
+        }
+
+        // Marcar números vendidos
+        function markSoldNumbers() {
+            const numbers = prompt('Digite os números a serem marcados como vendidos (separados por vírgula):');
+            if (!numbers) return;
+            
+            try {
+                const numberList = numbers.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= TOTAL_NUMBERS);
+                
+                if (numberList.length === 0) {
+                    log('Nenhum número válido fornecido', 'warning');
+                    return;
+                }
+                
+                const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{"soldNumbers": [], "reservedNumbers": []}');
+                
+                numberList.forEach(num => {
+                    if (!rifaData.soldNumbers.includes(num)) {
+                        rifaData.soldNumbers.push(num);
+                    }
+                    // Remover dos reservados se estiver lá
+                    rifaData.reservedNumbers = rifaData.reservedNumbers.filter(n => n !== num);
+                });
+                
+                rifaData.lastUpdate = new Date().toISOString();
+                localStorage.setItem('rifaData', JSON.stringify(rifaData));
+                
+                log(`Números marcados como vendidos: ${numberList.join(', ')}`, 'success');
+                generateTestGrid();
+                
+            } catch (error) {
+                log(`Erro ao marcar números vendidos: ${error.message}`, 'error');
+            }
+        }
+
+        // Marcar números reservados
+        function markReservedNumbers() {
+            const numbers = prompt('Digite os números a serem marcados como reservados (separados por vírgula):');
+            if (!numbers) return;
+            
+            try {
+                const numberList = numbers.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n) && n >= 1 && n <= TOTAL_NUMBERS);
+                
+                if (numberList.length === 0) {
+                    log('Nenhum número válido fornecido', 'warning');
+                    return;
+                }
+                
+                const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{"soldNumbers": [], "reservedNumbers": []}');
+                
+                numberList.forEach(num => {
+                    if (!rifaData.reservedNumbers.includes(num) && !rifaData.soldNumbers.includes(num)) {
+                        rifaData.reservedNumbers.push(num);
+                    }
+                });
+                
+                rifaData.lastUpdate = new Date().toISOString();
+                localStorage.setItem('rifaData', JSON.stringify(rifaData));
+                
+                log(`Números marcados como reservados: ${numberList.join(', ')}`, 'success');
+                generateTestGrid();
+                
+            } catch (error) {
+                log(`Erro ao marcar números reservados: ${error.message}`, 'error');
+            }
+        }
+
+        // Selecionar números aleatórios
+        function selectRandomNumbers() {
+            const count = parseInt(prompt('Quantos números deseja selecionar aleatoriamente?') || '5');
+            
+            if (isNaN(count) || count < 1 || count > 20) {
+                log('Número inválido. Escolha entre 1 e 20.', 'warning');
+                return;
+            }
+            
+            const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{"soldNumbers": [], "reservedNumbers": []}');
+            const unavailableNumbers = [...rifaData.soldNumbers, ...rifaData.reservedNumbers];
+            const availableNumbers = [];
+            
+            for (let i = 1; i <= TOTAL_NUMBERS; i++) {
+                if (!unavailableNumbers.includes(i)) {
+                    availableNumbers.push(i);
+                }
+            }
+            
+            if (availableNumbers.length < count) {
+                log(`Apenas ${availableNumbers.length} números disponíveis para seleção`, 'warning');
+                return;
+            }
+            
+            const selectedNumbers = [];
+            for (let i = 0; i < count; i++) {
+                const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+                selectedNumbers.push(availableNumbers.splice(randomIndex, 1)[0]);
+            }
+            
+            log(`Números selecionados aleatoriamente: ${selectedNumbers.join(', ')}`, 'info');
+            log('💡 Estes números aparecerão como "selecionados" na simulação', 'info');
+            
+            // Salvar no sessionStorage para simular seleção atual
+            sessionStorage.setItem('testSelectedNumbers', JSON.stringify(selectedNumbers));
+            generateTestGrid();
+        }
+
+        // Gerar grade de teste
+        function generateTestGrid() {
+            const grid = document.getElementById('test-grid');
+            grid.innerHTML = '';
+            
+            const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{"soldNumbers": [], "reservedNumbers": []}');
+            const selectedNumbers = JSON.parse(sessionStorage.getItem('testSelectedNumbers') || '[]');
+            
+            for (let i = 1; i <= Math.min(30, TOTAL_NUMBERS); i++) {
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'status-number';
+                numberDiv.textContent = i.toString().padStart(2, '0');
+                numberDiv.title = `Número ${i}`;
+                
+                if (rifaData.soldNumbers.includes(i)) {
+                    numberDiv.classList.add('sold');
+                    numberDiv.title += ' - VENDIDO';
+                } else if (rifaData.reservedNumbers.includes(i)) {
+                    numberDiv.classList.add('reserved');
+                    numberDiv.title += ' - RESERVADO';
+                } else if (selectedNumbers.includes(i)) {
+                    numberDiv.classList.add('selected');
+                    numberDiv.title += ' - SELECIONADO';
+                } else {
+                    numberDiv.classList.add('available');
+                    numberDiv.title += ' - DISPONÍVEL';
+                }
+                
+                grid.appendChild(numberDiv);
+            }
+            
+            log(`Grade de teste atualizada (números 1-30). Total configurado: ${TOTAL_NUMBERS}`, 'info');
+        }
+
+        // Abrir página principal
+        function openMainPage() {
+            window.open('index.html', '_blank');
+            log('Página principal aberta em nova aba', 'info');
+            log('💡 Compare os números exibidos aqui com os da página principal', 'info');
+        }
+
+        // Sincronizar com página principal
+        function syncWithMainPage() {
+            log('Simulando sincronização com página principal...', 'info');
+            
+            // Verificar se há dados para sincronizar
+            const rifaData = localStorage.getItem('rifaData');
+            const purchases = localStorage.getItem('purchases');
+            
+            if (!rifaData && !purchases) {
+                log('⚠️ Nenhum dado encontrado para sincronizar', 'warning');
+                return;
+            }
+            
+            log('✅ Dados sincronizados! Página principal deve refletir as mudanças', 'success');
+            log('💡 Atualize a página principal se ela já estiver aberta', 'info');
+        }
+
+        // Executar diagnóstico
+        function runDiagnostic() {
+            log('🔧 Executando diagnóstico completo...', 'info');
+            
+            // Verificar estrutura dos dados
+            const rifaData = localStorage.getItem('rifaData');
+            const purchases = localStorage.getItem('purchases');
+            
+            let issues = 0;
+            
+            if (!rifaData) {
+                log('❌ rifaData não encontrado no localStorage', 'error');
+                issues++;
+            } else {
+                try {
+                    const data = JSON.parse(rifaData);
+                    if (!Array.isArray(data.soldNumbers)) {
+                        log('❌ rifaData.soldNumbers não é um array válido', 'error');
+                        issues++;
+                    }
+                    if (!Array.isArray(data.reservedNumbers)) {
+                        log('❌ rifaData.reservedNumbers não é um array válido', 'error');
+                        issues++;
+                    }
+                } catch (error) {
+                    log(`❌ rifaData contém JSON inválido: ${error.message}`, 'error');
+                    issues++;
+                }
+            }
+            
+            if (!purchases) {
+                log('⚠️ purchases não encontrado (pode ser normal)', 'warning');
+            } else {
+                try {
+                    const data = JSON.parse(purchases);
+                    if (!Array.isArray(data)) {
+                        log('❌ purchases não é um array válido', 'error');
+                        issues++;
+                    }
+                } catch (error) {
+                    log(`❌ purchases contém JSON inválido: ${error.message}`, 'error');
+                    issues++;
+                }
+            }
+            
+            if (issues === 0) {
+                log('✅ Diagnóstico concluído: Nenhum problema encontrado!', 'success');
+            } else {
+                log(`❌ Diagnóstico concluído: ${issues} problema(s) encontrado(s)`, 'error');
+            }
+        }
+
+        // Limpar log
+        function clearLog() {
+            document.getElementById('log-area').textContent = '';
+        }
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🧪 Página de teste carregada', 'info');
+            checkLocalStorage();
+            generateTestGrid();
+        });
+    </script>
+</body>
+</html>

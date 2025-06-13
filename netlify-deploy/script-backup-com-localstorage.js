@@ -110,45 +110,25 @@ async function loadSoldNumbersFromFirebase() {
             let soldNumbersArray = [];
             let reservedNumbersArray = [];
             
-            console.log(`📋 Processando ${result.data.length} compras do Firebase...`);
-            
             // Extrair números de todas as compras por status
-            result.data.forEach((purchase, index) => {
-                console.log(`📋 Compra ${index + 1}:`, {
-                    id: purchase.id,
-                    status: purchase.status,
-                    numbers: purchase.numbers,
-                    buyerName: purchase.buyerName
-                });
-                
+            result.data.forEach(purchase => {
                 if (Array.isArray(purchase.numbers)) {
-                    // Status confirmados vão para números vendidos (vermelhos)
+                    // Status confirmados vão para números vendidos
                     if (purchase.status === 'confirmed') {
                         soldNumbersArray = soldNumbersArray.concat(purchase.numbers);
-                        console.log(`✅ Números ${purchase.numbers.join(', ')} confirmados como VENDIDOS`);
                     } 
-                    // Status pendentes ou reservados vão para números reservados (amarelos)
+                    // Status pendentes ou reservados vão para números reservados
                     else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
                         reservedNumbersArray = reservedNumbersArray.concat(purchase.numbers);
-                        console.log(`⏳ Números ${purchase.numbers.join(', ')} marcados como RESERVADOS`);
                     }
-                    // Log de status não reconhecidos
-                    else {
-                        console.warn(`⚠️ Status não reconhecido: ${purchase.status} para números ${purchase.numbers.join(', ')}`);
-                    }
-                } else {
-                    console.warn('⚠️ Compra sem números válidos:', purchase);
                 }
             });
             
             rifaState.soldNumbers = new Set(soldNumbersArray);
             rifaState.reservedNumbers = new Set(reservedNumbersArray);
             
-            console.log('📊 CARREGAMENTO INICIAL CONCLUÍDO:');
-            console.log(`  ✅ ${soldNumbersArray.length} números vendidos carregados`);
-            console.log(`  ⏳ ${reservedNumbersArray.length} números reservados carregados`);
-            console.log(`  🔢 Números vendidos: [${soldNumbersArray.sort((a,b) => a-b).join(', ')}]`);
-            console.log(`  🔢 Números reservados: [${reservedNumbersArray.sort((a,b) => a-b).join(', ')}]`);
+            console.log('✅ Números vendidos carregados:', soldNumbersArray.length);
+            console.log('✅ Números reservados carregados:', reservedNumbersArray.length);
             
             // Forçar atualização da exibição
             updateNumbersDisplay();
@@ -180,69 +160,29 @@ async function loadSoldNumbersFromFirebase() {
 
 // Atualizar números vendidos a partir das compras
 function updateSoldNumbersFromPurchases(purchases) {
-    console.log('🔄 Processando atualização em tempo real...', purchases.length, 'compras recebidas');
-    
     const soldNumbers = new Set();
     const reservedNumbers = new Set();
     
-    // Log detalhado para debug
-    let confirmedCount = 0;
-    let pendingCount = 0;
-    
-    purchases.forEach((purchase, index) => {
-        console.log(`📋 Compra ${index + 1}:`, {
-            id: purchase.id,
-            status: purchase.status,
-            numbers: purchase.numbers,
-            buyerName: purchase.buyerName
-        });
-        
+    purchases.forEach(purchase => {
         if (purchase.numbers && Array.isArray(purchase.numbers)) {
-            // Status confirmados vão para números vendidos (vermelhos)
+            // Status confirmados vão para números vendidos
             if (purchase.status === 'confirmed') {
-                purchase.numbers.forEach(number => {
-                    soldNumbers.add(number);
-                    console.log(`✅ Número ${number} marcado como VENDIDO`);
-                });
-                confirmedCount++;
+                purchase.numbers.forEach(number => soldNumbers.add(number));
             } 
-            // Status pendentes ou reservados vão para números reservados (amarelos)
+            // Status pendentes ou reservados vão para números reservados
             else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
-                purchase.numbers.forEach(number => {
-                    reservedNumbers.add(number);
-                    console.log(`⏳ Número ${number} marcado como RESERVADO`);
-                });
-                pendingCount++;
+                purchase.numbers.forEach(number => reservedNumbers.add(number));
             }
-            // Log de status não reconhecidos
-            else {
-                console.warn(`⚠️ Status não reconhecido: ${purchase.status} para números ${purchase.numbers.join(', ')}`);
-            }
-        } else {
-            console.warn('⚠️ Compra sem números válidos:', purchase);
         }
     });
-    
-    // Atualizar estado
-    const prevSoldCount = rifaState.soldNumbers.size;
-    const prevReservedCount = rifaState.reservedNumbers.size;
     
     rifaState.soldNumbers = soldNumbers;
     rifaState.reservedNumbers = reservedNumbers;
     
-    console.log('📊 RESUMO DA ATUALIZAÇÃO:');
-    console.log(`  📈 Vendidos: ${prevSoldCount} → ${soldNumbers.size} (${soldNumbers.size - prevSoldCount >= 0 ? '+' : ''}${soldNumbers.size - prevSoldCount})`);
-    console.log(`  📈 Reservados: ${prevReservedCount} → ${reservedNumbers.size} (${reservedNumbers.size - prevReservedCount >= 0 ? '+' : ''}${reservedNumbers.size - prevReservedCount})`);
-    console.log(`  🔢 Números vendidos: [${Array.from(soldNumbers).sort((a,b) => a-b).join(', ')}]`);
-    console.log(`  🔢 Números reservados: [${Array.from(reservedNumbers).sort((a,b) => a-b).join(', ')}]`);
-    console.log(`  📋 Compras processadas: ${confirmedCount} confirmadas, ${pendingCount} pendentes`);
+    console.log('🔄 Atualizados em tempo real - Vendidos:', soldNumbers.size, 'Reservados:', reservedNumbers.size);
     
-    // Forçar atualização da UI
-    console.log('🎨 Atualizando interface...');
+    // Atualizar UI
     updateNumbersDisplay();
-    updateStatistics();
-    
-    console.log('✅ Sincronização em tempo real concluída!');
 }
 
 // Inicializar configurações da rifa (APENAS FIREBASE)
@@ -332,7 +272,7 @@ function generateNumbers() {
 function createNumberCard(number) {
     const card = document.createElement('div');
     card.className = 'number-card';
-    card.id = `number-${number}`;
+    card.id = `number-${number}`; // Adicionar ID para permitir busca na updateNumbersDisplay
     card.textContent = number.toString().padStart(3, '0');
     card.dataset.number = number;
     
@@ -515,7 +455,8 @@ function updateModalSummary() {
     document.getElementById('modal-total-amount').textContent = totalAmount.toFixed(2);
 }
 
-// Processar compra - APENAS FIREBASE
+// Processar compra
+// Função de compra atualizada para Firebase
 async function handlePurchase(e) {
     e.preventDefault();
     
@@ -529,7 +470,7 @@ async function handlePurchase(e) {
         numbers: Array.from(rifaState.selectedNumbers),
         totalAmount: rifaState.selectedNumbers.size * RIFA_CONFIG.ticketPrice,
         date: new Date().toISOString(),
-        status: 'pending'
+        status: 'pending' // Para doações, ficará pendente até confirmação admin
     };
     
     console.log('📋 Dados da compra:', purchaseData);
@@ -620,10 +561,107 @@ function validatePurchaseData(data) {
     return true;
 }
 
+// Carregar números do localStorage como fallback
+function loadNumbersFromLocalStorage() {
+    try {
+        // Tentar carregar de rifaData primeiro
+        const savedData = localStorage.getItem('rifaData');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            if (data.soldNumbers && Array.isArray(data.soldNumbers)) {
+                rifaState.soldNumbers = new Set(data.soldNumbers);
+                console.log('📦 Números vendidos carregados do rifaData:', data.soldNumbers.length);
+            }
+            if (data.reservedNumbers && Array.isArray(data.reservedNumbers)) {
+                rifaState.reservedNumbers = new Set(data.reservedNumbers);
+                console.log('📦 Números reservados carregados do rifaData:', data.reservedNumbers.length);
+            }
+            updateNumbersDisplay();
+            return true;
+        }
+        
+        // Se não há rifaData, tentar carregar das compras diretamente
+        console.log('📦 rifaData não encontrado, carregando das compras...');
+        return loadSoldNumbersFromLocalStorage();
+        
+    } catch (error) {
+        console.warn('⚠️ Erro ao carregar números do localStorage:', error);
+        // Fallback final: tentar carregar das compras
+        return loadSoldNumbersFromLocalStorage();
+    }
+}
+
+// Salvar números no localStorage como fallback
+function saveNumbersToLocalStorage() {
+    try {
+        const data = {
+            soldNumbers: [...rifaState.soldNumbers],
+            reservedNumbers: [...rifaState.reservedNumbers],
+            lastUpdate: new Date().toISOString()
+        };
+        localStorage.setItem('rifaData', JSON.stringify(data));
+        console.log('💾 Números salvos no localStorage');
+    } catch (error) {
+        console.warn('⚠️ Erro ao salvar números no localStorage:', error);
+    }
+}
+
+// Carregar números vendidos do localStorage (processar compras confirmadas)
+function loadSoldNumbersFromLocalStorage() {
+    console.log('📦 Carregando números das compras confirmadas no localStorage...');
+    
+    try {
+        const purchasesData = localStorage.getItem('purchases');
+        if (purchasesData) {
+            const purchases = JSON.parse(purchasesData);
+            const soldNumbers = new Set();
+            const reservedNumbers = new Set();
+            
+            console.log(`📊 Processando ${purchases.length} compras do localStorage...`);
+            
+            purchases.forEach(purchase => {
+                if (purchase.numbers && Array.isArray(purchase.numbers)) {
+                    // Status confirmados vão para números vendidos (vermelhos)
+                    if (purchase.status === 'confirmed') {
+                        purchase.numbers.forEach(number => soldNumbers.add(number));
+                        console.log(`✅ Número ${purchase.numbers.join(', ')} confirmado como vendido`);
+                    } 
+                    // Status pendentes vão para números reservados (amarelos)
+                    else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
+                        purchase.numbers.forEach(number => reservedNumbers.add(number));
+                        console.log(`⏳ Número ${purchase.numbers.join(', ')} marcado como reservado`);
+                    }
+                }
+            });
+            
+            rifaState.soldNumbers = soldNumbers;
+            rifaState.reservedNumbers = reservedNumbers;
+            
+            console.log(`🔢 LocalStorage: ${soldNumbers.size} vendidos, ${reservedNumbers.size} reservados`);
+            console.log(`📋 Números vendidos: [${Array.from(soldNumbers).sort((a,b) => a-b).join(', ')}]`);
+            console.log(`📋 Números reservados: [${Array.from(reservedNumbers).sort((a,b) => a-b).join(', ')}]`);
+            
+            // Salvar no rifaData para backup
+            saveNumbersToLocalStorage();
+            
+            return true;
+        } else {
+            console.log('📦 Nenhuma compra encontrada no localStorage');
+            rifaState.soldNumbers = new Set();
+            rifaState.reservedNumbers = new Set();
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar números do localStorage:', error);
+        rifaState.soldNumbers = new Set();
+        rifaState.reservedNumbers = new Set();
+        return false;
+    }
+}
+
 // Atualizar display de todos os números
 function updateNumbersDisplay() {
     console.log('🔄 Atualizando exibição de números...');
-    console.log(`📊 Estado atual: ${rifaState.soldNumbers.size} vendidos, ${rifaState.reservedNumbers.size} reservados, ${rifaState.selectedNumbers.size} selecionados`);
     
     // Verificar se há grid na página
     const grid = document.getElementById('numbers-grid');
@@ -639,33 +677,21 @@ function updateNumbersDisplay() {
     }
     
     // Mostrar loader temporário
-    const container = document.querySelector('.numbers-container');
-    if (container) {
-        container.classList.add('loading');
-    }
+    document.querySelector('.numbers-container').classList.add('loading');
     
-    // Configurar timeout para garantir que algo seja exibido
+    // Configurar timeout para garantir que algo seja exibido mesmo se FirebaseDB falhar
     const displayTimeout = setTimeout(() => {
-        if (container && container.classList.contains('loading')) {
+        if (document.querySelector('.numbers-container').classList.contains('loading')) {
             console.log('⏱️ Timeout na atualização de números, removendo status de loading...');
-            container.classList.remove('loading');
+            document.querySelector('.numbers-container').classList.remove('loading');
         }
     }, 3000);
     
     try {
-        let updatedCount = 0;
-        let soldCount = 0;
-        let reservedCount = 0;
-        let availableCount = 0;
-        let selectedCount = 0;
-        
         // Atualizar visibilidade de cada número com base no estado atual
         for (let i = 1; i <= RIFA_CONFIG.totalNumbers; i++) {
             const element = document.getElementById(`number-${i}`);
-            if (!element) {
-                console.warn(`⚠️ Elemento number-${i} não encontrado`);
-                continue;
-            }
+            if (!element) continue;
             
             // Remover todas as classes de status
             element.classList.remove('sold', 'selected', 'reserved', 'available');
@@ -673,56 +699,23 @@ function updateNumbersDisplay() {
             // Aplicar classe apropriada baseada no estado
             if (rifaState.soldNumbers.has(i)) {
                 element.classList.add('sold');
-                soldCount++;
-                // Log detalhado para números vendidos
-                if (soldCount <= 5) { // Apenas primeiros 5 para não poluir log
-                    console.log(`🔴 Número ${i} marcado como VENDIDO`);
-                }
             } else if (rifaState.reservedNumbers.has(i)) {
                 element.classList.add('reserved');
-                reservedCount++;
-                // Log detalhado para números reservados
-                if (reservedCount <= 5) { // Apenas primeiros 5 para não poluir log
-                    console.log(`🟡 Número ${i} marcado como RESERVADO`);
-                }
             } else if (rifaState.selectedNumbers.has(i)) {
                 element.classList.add('selected');
-                selectedCount++;
             } else {
                 element.classList.add('available');
-                availableCount++;
             }
-            
-            updatedCount++;
         }
         
         // Remover loader quando terminar
-        if (container) {
-            container.classList.remove('loading');
-        }
+        document.querySelector('.numbers-container').classList.remove('loading');
         clearTimeout(displayTimeout);
-        
-        console.log('📊 ATUALIZAÇÃO DE DISPLAY CONCLUÍDA:');
-        console.log(`  🔴 ${soldCount} números marcados como vendidos`);
-        console.log(`  🟡 ${reservedCount} números marcados como reservados`);
-        console.log(`  🔵 ${selectedCount} números selecionados pelo usuário`);
-        console.log(`  ⚪ ${availableCount} números disponíveis`);
-        console.log(`  📈 Total atualizado: ${updatedCount}/${RIFA_CONFIG.totalNumbers}`);
-        
-        if (soldCount > 0) {
-            console.log(`  🔢 Números vendidos: [${Array.from(rifaState.soldNumbers).sort((a,b) => a-b).join(', ')}]`);
-        }
-        if (reservedCount > 0) {
-            console.log(`  🔢 Números reservados: [${Array.from(rifaState.reservedNumbers).sort((a,b) => a-b).join(', ')}]`);
-        }
-        
         console.log('✅ Exibição de números atualizada com sucesso');
     } catch (error) {
         console.error('❌ Erro ao atualizar exibição:', error);
         // Garantir que o loader seja removido mesmo em caso de erro
-        if (container) {
-            container.classList.remove('loading');
-        }
+        document.querySelector('.numbers-container').classList.remove('loading');
         clearTimeout(displayTimeout);
     }
 }
@@ -799,6 +792,16 @@ function updateStatistics() {
         const percentage = (soldCount / RIFA_CONFIG.totalNumbers) * 100;
         progressBar.style.width = `${percentage}%`;
     }
+}
+
+// Salvar dados da rifa
+function saveRifaData() {
+    const data = {
+        soldNumbers: Array.from(rifaState.soldNumbers),
+        reservedNumbers: Array.from(rifaState.reservedNumbers),
+        lastUpdate: new Date().toISOString()
+    };
+    localStorage.setItem('rifaData', JSON.stringify(data));
 }
 
 // Funções utilitárias
@@ -888,6 +891,93 @@ function togglePaymentInfo() {
     }
 }
 
+// Função de debug para recarregar números
+function debugRifaNumbers() {
+    console.log('🔧 Debug: Recarregando números da rifa...');
+    
+    // Mostrar notificação
+    const notification = document.getElementById('notification-area');
+    if (notification) {
+        notification.innerHTML = `
+            <div style="background: #d1ecf1; color: #0c5460; padding: 10px; border-radius: 5px; border-left: 4px solid #17a2b8;">
+                🔧 Debug: Recarregando dados... Verifique o console para logs detalhados.
+            </div>
+        `;
+        notification.style.display = 'block';
+    }
+    
+    // Log do estado atual
+    console.log('📊 Estado atual da rifa:', {
+        firebaseReady: rifaState.firebaseReady,
+        soldNumbers: [...rifaState.soldNumbers],
+        reservedNumbers: [...rifaState.reservedNumbers],
+        selectedNumbers: [...rifaState.selectedNumbers]
+    });
+    
+    // Tentar recarregar do Firebase
+    if (typeof window.FirebaseDB !== 'undefined') {
+        console.log('🔥 Tentando recarregar do Firebase...');
+        loadSoldNumbersFromFirebase().then(() => {
+            console.log('✅ Recarga do Firebase concluída');
+            updateNotification('✅ Dados recarregados do Firebase', 'success');
+        }).catch(error => {
+            console.error('❌ Erro na recarga do Firebase:', error);
+            // Tentar localStorage
+            const loaded = loadNumbersFromLocalStorage();
+            if (loaded) {
+                updateNotification('⚠️ Dados carregados do localStorage (Firebase falhou)', 'warning');
+            } else {
+                updateNotification('❌ Falha ao carregar dados', 'error');
+            }
+        });
+    } else {
+        console.log('📦 Firebase não disponível, tentando localStorage...');
+        const loaded = loadNumbersFromLocalStorage();
+        if (loaded) {
+            updateNotification('📦 Dados carregados do localStorage', 'info');
+        } else {
+            updateNotification('❌ Nenhum dado encontrado', 'error');
+        }
+    }
+    
+    // Forçar atualização da exibição
+    setTimeout(() => {
+        updateNumbersDisplay();
+        updateStatistics();
+        console.log('🔄 Exibição atualizada forçadamente');
+    }, 1000);
+}
+
+// Função auxiliar para atualizar notificações
+function updateNotification(message, type = 'info') {
+    const notification = document.getElementById('notification-area');
+    if (!notification) return;
+    
+    const colors = {
+        success: { bg: '#d4edda', border: '#28a745', text: '#155724' },
+        error: { bg: '#f8d7da', border: '#dc3545', text: '#721c24' },
+        warning: { bg: '#fff3cd', border: '#ffc107', text: '#856404' },
+        info: { bg: '#d1ecf1', border: '#17a2b8', text: '#0c5460' }
+    };
+    
+    const color = colors[type] || colors.info;
+    
+    notification.innerHTML = `
+        <div style="background: ${color.bg}; color: ${color.text}; padding: 10px; border-radius: 5px; border-left: 4px solid ${color.border};">
+            ${message}
+            <button onclick="this.parentElement.parentElement.style.display='none'" style="float: right; background: none; border: none; font-size: 16px; cursor: pointer;">×</button>
+        </div>
+    `;
+    notification.style.display = 'block';
+    
+    // Auto-hide após 5 segundos
+    setTimeout(() => {
+        if (notification.style.display !== 'none') {
+            notification.style.display = 'none';
+        }
+    }, 5000);
+}
+
 // Mostrar erro de Firebase
 function showFirebaseError() {
     const numbersContainer = document.querySelector('.numbers-container');
@@ -896,7 +986,7 @@ function showFirebaseError() {
             <div style="text-align: center; padding: 40px; color: #dc3545;">
                 <h3>❌ Erro de Conexão</h3>
                 <p>Não foi possível conectar ao Firebase.</p>
-                <p>A aplicação não funcionará sem conexão com o servidor.</p>
+                <p>Recarregue a página ou tente novamente em alguns minutos.</p>
                 <button onclick="location.reload()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
                     🔄 Recarregar Página
                 </button>
@@ -904,150 +994,3 @@ function showFirebaseError() {
         `;
     }
 }
-
-// ========================================
-// FUNÇÕES DE DEBUG PARA SINCRONIZAÇÃO
-// ========================================
-
-// Função global para debug da sincronização
-window.debugRifaSync = async function() {
-    console.log('🔧 INICIANDO DEBUG DA SINCRONIZAÇÃO');
-    console.log('=====================================');
-    
-    try {
-        // 1. Verificar estado atual
-        console.log('📊 ESTADO ATUAL:');
-        console.log('  Firebase Ready:', rifaState.firebaseReady);
-        console.log('  Números vendidos:', Array.from(rifaState.soldNumbers).sort((a,b) => a-b));
-        console.log('  Números reservados:', Array.from(rifaState.reservedNumbers).sort((a,b) => a-b));
-        console.log('  Listener ativo:', rifaState.unsubscribe ? 'Sim' : 'Não');
-        
-        // 2. Recarregar dados do Firebase
-        console.log('\n🔄 RECARREGANDO DADOS DO FIREBASE...');
-        if (typeof window.FirebaseDB !== 'undefined') {
-            await loadSoldNumbersFromFirebase();
-        } else {
-            console.error('❌ FirebaseDB não disponível');
-        }
-        
-        // 3. Forçar atualização visual
-        console.log('\n🎨 FORÇANDO ATUALIZAÇÃO VISUAL...');
-        updateNumbersDisplay();
-        updateStatistics();
-        
-        console.log('\n✅ DEBUG CONCLUÍDO');
-        console.log('=====================================');
-        
-        return {
-            firebaseReady: rifaState.firebaseReady,
-            soldNumbers: Array.from(rifaState.soldNumbers),
-            reservedNumbers: Array.from(rifaState.reservedNumbers),
-            hasListener: !!rifaState.unsubscribe
-        };
-        
-    } catch (error) {
-        console.error('❌ ERRO NO DEBUG:', error);
-        return { error: error.message };
-    }
-};
-
-// Função para simular mudança do admin (para teste)
-window.simulateAdminUpdate = async function(purchaseId, newStatus = 'confirmed') {
-    console.log(`🎭 SIMULANDO ATUALIZAÇÃO ADMIN: ${purchaseId} → ${newStatus}`);
-    
-    try {
-        if (typeof window.FirebaseDB === 'undefined') {
-            throw new Error('Firebase não disponível');
-        }
-        
-        const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, newStatus);
-        
-        if (result.success) {
-            console.log('✅ Simulação bem-sucedida - aguardando listener...');
-            return { success: true };
-        } else {
-            console.error('❌ Falha na simulação:', result.error);
-            return { success: false, error: result.error };
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro na simulação:', error);
-        return { success: false, error: error.message };
-    }
-};
-
-// Função para comparar dados entre recarregamento e listener
-window.compareDataSources = async function() {
-    console.log('🔍 COMPARANDO FONTES DE DADOS');
-    console.log('==============================');
-    
-    try {
-        // Dados atuais do estado
-        const currentSold = Array.from(rifaState.soldNumbers).sort((a,b) => a-b);
-        const currentReserved = Array.from(rifaState.reservedNumbers).sort((a,b) => a-b);
-        
-        console.log('📊 DADOS ATUAIS (do listener):');
-        console.log('  Vendidos:', currentSold);
-        console.log('  Reservados:', currentReserved);
-        
-        // Carregar dados direto do Firebase
-        console.log('\n📡 CARREGANDO DIRETO DO FIREBASE...');
-        const result = await window.FirebaseDB.loadPurchases();
-        
-        if (result.success) {
-            const freshSold = [];
-            const freshReserved = [];
-            
-            result.data.forEach(purchase => {
-                if (Array.isArray(purchase.numbers)) {
-                    if (purchase.status === 'confirmed') {
-                        freshSold.push(...purchase.numbers);
-                    } else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
-                        freshReserved.push(...purchase.numbers);
-                    }
-                }
-            });
-            
-            freshSold.sort((a,b) => a-b);
-            freshReserved.sort((a,b) => a-b);
-            
-            console.log('\n📡 DADOS FRESCOS (direto do Firebase):');
-            console.log('  Vendidos:', freshSold);
-            console.log('  Reservados:', freshReserved);
-            
-            // Comparar
-            const soldMatch = JSON.stringify(currentSold) === JSON.stringify(freshSold);
-            const reservedMatch = JSON.stringify(currentReserved) === JSON.stringify(freshReserved);
-            
-            console.log('\n🔍 COMPARAÇÃO:');
-            console.log('  Vendidos sincronizados:', soldMatch ? '✅' : '❌');
-            console.log('  Reservados sincronizados:', reservedMatch ? '✅' : '❌');
-            
-            if (!soldMatch) {
-                console.log('  Diferença vendidos - Atual:', currentSold, 'Fresh:', freshSold);
-            }
-            if (!reservedMatch) {
-                console.log('  Diferença reservados - Atual:', currentReserved, 'Fresh:', freshReserved);
-            }
-            
-            return {
-                synchronized: soldMatch && reservedMatch,
-                current: { sold: currentSold, reserved: currentReserved },
-                fresh: { sold: freshSold, reserved: freshReserved }
-            };
-            
-        } else {
-            console.error('❌ Erro ao carregar dados frescos:', result.error);
-            return { error: result.error };
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro na comparação:', error);
-        return { error: error.message };
-    }
-};
-
-console.log('🔧 Funções de debug carregadas:');
-console.log('  - window.debugRifaSync() - Debug completo');
-console.log('  - window.simulateAdminUpdate(id, status) - Simular mudança admin');
-console.log('  - window.compareDataSources() - Comparar dados listener vs Firebase');

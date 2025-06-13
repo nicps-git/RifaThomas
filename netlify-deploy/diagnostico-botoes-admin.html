@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 DIAGNÓSTICO - Botões de Confirmação</title>
+    <link rel="stylesheet" href="admin.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .diagnostic-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .diagnostic-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: -30px -30px 30px -30px;
+            text-align: center;
+        }
+
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .step h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+        }
+
+        .debug-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .success {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ff9800;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .participants-table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .participants-table th,
+        .participants-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .participants-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .btn-confirm {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-edit {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending-donation {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="diagnostic-container">
+        <div class="diagnostic-header">
+            <h1>🔍 DIAGNÓSTICO DE BOTÕES DE CONFIRMAÇÃO</h1>
+            <p>Ferramenta para diagnosticar problemas com botões na página admin</p>
+        </div>
+
+        <div class="step">
+            <h3>📋 Passo 1: Verificar Estrutura HTML</h3>
+            <button onclick="checkHTMLStructure()">Verificar Estrutura</button>
+            <div id="html-check" class="debug-info"></div>
+        </div>
+
+        <div class="step">
+            <h3>📊 Passo 2: Verificar Dados de Teste</h3>
+            <button onclick="createTestData()">Criar Dados de Teste</button>
+            <button onclick="checkDataStructure()">Verificar Dados</button>
+            <div id="data-check" class="debug-info"></div>
+        </div>
+
+        <div class="step">
+            <h3>🔧 Passo 3: Testar Funções de Criação</h3>
+            <button onclick="testParticipantRowCreation()">Testar Criação de Linha</button>
+            <button onclick="testButtonCreation()">Testar Criação de Botões</button>
+            <div id="function-check" class="debug-info"></div>
+        </div>
+
+        <div class="step">
+            <h3>📋 Passo 4: Testar Tabela Completa</h3>
+            <button onclick="loadTestParticipants()">Carregar Participantes de Teste</button>
+            <button onclick="clearTable()">Limpar Tabela</button>
+            
+            <div class="participants-table-container">
+                <table class="participants-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>WhatsApp</th>
+                            <th>Números</th>
+                            <th>Valor</th>
+                            <th>Método</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="participants-tbody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                🔍 Aguardando testes...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>🎯 Passo 5: Testar Event Delegation</h3>
+            <button onclick="testEventDelegation()">Testar Event Delegation</button>
+            <button onclick="testDirectOnClick()">Testar onClick Direto</button>
+            <div id="event-check" class="debug-info"></div>
+        </div>
+
+        <div class="step">
+            <h3>📝 Passo 6: Logs e Resultados</h3>
+            <button onclick="showLogs()">Mostrar Logs</button>
+            <button onclick="clearLogs()">Limpar Logs</button>
+            <div id="logs" class="debug-info"></div>
+        </div>
+    </div>
+
+    <script>
+        // Objeto global para simular adminData
+        window.adminData = {
+            purchases: [],
+            firebaseReady: false,
+            initializationAttempts: 0
+        };
+
+        let diagnosticLogs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            diagnosticLogs.push({ timestamp, message, type });
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function checkHTMLStructure() {
+            log('🔍 Verificando estrutura HTML...', 'info');
+            
+            const tbody = document.getElementById('participants-tbody');
+            const result = document.getElementById('html-check');
+            
+            if (tbody) {
+                result.innerHTML = `<span class="success">✅ Elemento 'participants-tbody' encontrado!</span>`;
+                log('✅ Estrutura HTML OK', 'success');
+            } else {
+                result.innerHTML = `<span class="error">❌ Elemento 'participants-tbody' NÃO encontrado!</span>`;
+                log('❌ Estrutura HTML com problemas', 'error');
+            }
+        }
+
+        function createTestData() {
+            log('📊 Criando dados de teste...', 'info');
+            
+            adminData.purchases = [
+                {
+                    id: 'test-1',
+                    buyerName: 'Maria Silva - TESTE',
+                    buyerPhone: '(11) 99999-1111',
+                    numbers: [1, 2, 3],
+                    totalAmount: 120.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                },
+                {
+                    id: 'test-2',
+                    buyerName: 'João Santos - TESTE',
+                    buyerPhone: '(11) 98888-2222',
+                    numbers: [10, 20],
+                    totalAmount: 80.00,
+                    paymentMethod: 'pix',
+                    status: 'confirmed',
+                    date: new Date().toISOString()
+                },
+                {
+                    id: 'test-3',
+                    buyerName: 'Ana Costa - TESTE',
+                    buyerPhone: '(11) 97777-3333',
+                    numbers: [50],
+                    totalAmount: 40.00,
+                    paymentMethod: 'doacao',
+                    status: 'rejected',
+                    date: new Date().toISOString()
+                }
+            ];
+
+            const result = document.getElementById('data-check');
+            result.innerHTML = `<span class="success">✅ ${adminData.purchases.length} dados de teste criados!</span>`;
+            log(`✅ ${adminData.purchases.length} dados de teste criados`, 'success');
+        }
+
+        function checkDataStructure() {
+            log('🔍 Verificando estrutura dos dados...', 'info');
+            
+            const result = document.getElementById('data-check');
+            
+            if (adminData.purchases.length === 0) {
+                result.innerHTML = `<span class="warning">⚠️ Nenhum dado disponível. Execute 'Criar Dados de Teste' primeiro.</span>`;
+                return;
+            }
+
+            const sample = adminData.purchases[0];
+            const requiredFields = ['id', 'buyerName', 'buyerPhone', 'numbers', 'totalAmount', 'paymentMethod', 'status', 'date'];
+            const missingFields = requiredFields.filter(field => !sample.hasOwnProperty(field));
+
+            if (missingFields.length === 0) {
+                result.innerHTML = `<span class="success">✅ Estrutura de dados OK! Total: ${adminData.purchases.length} registros</span>`;
+                log('✅ Estrutura de dados verificada', 'success');
+            } else {
+                result.innerHTML = `<span class="error">❌ Campos faltando: ${missingFields.join(', ')}</span>`;
+                log(`❌ Campos faltando: ${missingFields.join(', ')}`, 'error');
+            }
+        }
+
+        function createParticipantRow(purchase) {
+            const row = document.createElement('tr');
+            
+            const statusClass = getStatusClass(purchase.status);
+            const statusText = getStatusText(purchase.status);
+            const numbersText = purchase.numbers ? purchase.numbers.join(', ') : 'N/A';
+            const paymentText = getPaymentMethodText(purchase.paymentMethod);
+            
+            row.innerHTML = `
+                <td>${purchase.buyerName || 'N/A'}</td>
+                <td>${purchase.buyerPhone || 'N/A'}</td>
+                <td>${numbersText}</td>
+                <td>${formatCurrency(purchase.totalAmount)}</td>
+                <td>${paymentText}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${formatDate(purchase.date)}</td>
+                <td>
+                    <div class="action-buttons">
+                        ${createActionButtons(purchase)}
+                    </div>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        function createActionButtons(purchase) {
+            const buttons = [];
+            
+            if (purchase.status === 'pending_donation') {
+                buttons.push(`
+                    <button class="btn-confirm" data-action="confirm-donation" data-purchase-id="${purchase.id}" title="Confirmar Doação">
+                        ✅ Confirmar
+                    </button>
+                    <button class="btn-reject" data-action="reject-donation" data-purchase-id="${purchase.id}" title="Rejeitar Doação">
+                        ❌ Rejeitar
+                    </button>
+                `);
+            }
+            
+            buttons.push(`
+                <button class="btn-edit" data-action="edit-participant" data-purchase-id="${purchase.id}" title="Editar">
+                    ✏️ Editar
+                </button>
+            `);
+            
+            return buttons.join('');
+        }
+
+        function getStatusClass(status) {
+            const classes = {
+                'confirmed': 'status-confirmed',
+                'pending': 'status-pending',
+                'pending_donation': 'status-pending-donation',
+                'rejected': 'status-rejected'
+            };
+            return classes[status] || 'status-unknown';
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                'confirmed': 'Confirmado',
+                'pending': 'Pendente',
+                'pending_donation': 'Doação Pendente',
+                'rejected': 'Rejeitado'
+            };
+            return texts[status] || 'Desconhecido';
+        }
+
+        function getPaymentMethodText(method) {
+            const methods = {
+                'pix': '💳 PIX',
+                'doacao': '🍼 Doação',
+                'money': '💰 Dinheiro'
+            };
+            return methods[method] || '❓ Outro';
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value || 0);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function testParticipantRowCreation() {
+            log('🔧 Testando criação de linha de participante...', 'info');
+            
+            if (adminData.purchases.length === 0) {
+                createTestData();
+            }
+
+            try {
+                const purchase = adminData.purchases[0];
+                const row = createParticipantRow(purchase);
+                
+                const result = document.getElementById('function-check');
+                result.innerHTML = `<span class="success">✅ Linha criada com sucesso!</span><br>
+                    <strong>HTML gerado:</strong><br>
+                    <div style="font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+                        ${row.outerHTML.substring(0, 200)}...
+                    </div>`;
+                
+                log('✅ Linha de participante criada com sucesso', 'success');
+            } catch (error) {
+                const result = document.getElementById('function-check');
+                result.innerHTML = `<span class="error">❌ Erro ao criar linha: ${error.message}</span>`;
+                log(`❌ Erro ao criar linha: ${error.message}`, 'error');
+            }
+        }
+
+        function testButtonCreation() {
+            log('🔧 Testando criação de botões...', 'info');
+            
+            if (adminData.purchases.length === 0) {
+                createTestData();
+            }
+
+            try {
+                const purchase = adminData.purchases[0]; // Doação pendente
+                const buttons = createActionButtons(purchase);
+                
+                const result = document.getElementById('function-check');
+                result.innerHTML = `<span class="success">✅ Botões criados com sucesso!</span><br>
+                    <strong>HTML dos botões:</strong><br>
+                    <div style="font-size: 12px; background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 5px;">
+                        ${buttons}
+                    </div>`;
+                
+                log('✅ Botões criados com sucesso', 'success');
+            } catch (error) {
+                const result = document.getElementById('function-check');
+                result.innerHTML = `<span class="error">❌ Erro ao criar botões: ${error.message}</span>`;
+                log(`❌ Erro ao criar botões: ${error.message}`, 'error');
+            }
+        }
+
+        function loadTestParticipants() {
+            log('📋 Carregando participantes de teste na tabela...', 'info');
+            
+            if (adminData.purchases.length === 0) {
+                createTestData();
+            }
+
+            try {
+                const tbody = document.getElementById('participants-tbody');
+                tbody.innerHTML = '';
+
+                adminData.purchases.forEach(purchase => {
+                    const row = createParticipantRow(purchase);
+                    tbody.appendChild(row);
+                });
+
+                log(`✅ ${adminData.purchases.length} participantes carregados na tabela`, 'success');
+            } catch (error) {
+                log(`❌ Erro ao carregar participantes: ${error.message}`, 'error');
+            }
+        }
+
+        function clearTable() {
+            log('🧹 Limpando tabela...', 'info');
+            
+            const tbody = document.getElementById('participants-tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                        🔍 Tabela limpa - pronta para novos testes
+                    </td>
+                </tr>
+            `;
+            
+            log('✅ Tabela limpa', 'success');
+        }
+
+        function testEventDelegation() {
+            log('🎯 Testando event delegation...', 'info');
+            
+            // Configurar event delegation
+            document.addEventListener('click', function(event) {
+                const target = event.target;
+                const action = target.getAttribute('data-action');
+                const purchaseId = target.getAttribute('data-purchase-id');
+                
+                if (action && purchaseId) {
+                    log(`🎯 Event delegation capturou: ${action} para ${purchaseId}`, 'success');
+                    
+                    const result = document.getElementById('event-check');
+                    result.innerHTML = `<span class="success">✅ Event delegation funcionando!</span><br>
+                        Ação: ${action}<br>
+                        Purchase ID: ${purchaseId}`;
+                }
+            });
+
+            const result = document.getElementById('event-check');
+            result.innerHTML = `<span class="info">ℹ️ Event delegation configurado. Clique nos botões da tabela para testar.</span>`;
+            
+            log('✅ Event delegation configurado', 'success');
+        }
+
+        function testDirectOnClick() {
+            log('🎯 Testando onClick direto...', 'info');
+            
+            // Expor funções globalmente
+            window.confirmDonation = function(purchaseId) {
+                log(`✅ confirmDonation chamada com ID: ${purchaseId}`, 'success');
+                alert(`Confirmação para ${purchaseId} - FUNCIONANDO!`);
+            };
+
+            window.rejectDonation = function(purchaseId) {
+                log(`✅ rejectDonation chamada com ID: ${purchaseId}`, 'success');
+                alert(`Rejeição para ${purchaseId} - FUNCIONANDO!`);
+            };
+
+            window.editParticipant = function(purchaseId) {
+                log(`✅ editParticipant chamada com ID: ${purchaseId}`, 'success');
+                alert(`Edição para ${purchaseId} - FUNCIONANDO!`);
+            };
+
+            const result = document.getElementById('event-check');
+            result.innerHTML = `<span class="success">✅ Funções onClick expostas globalmente!</span>`;
+            
+            log('✅ Funções onClick expostas', 'success');
+        }
+
+        function showLogs() {
+            const result = document.getElementById('logs');
+            const logsHTML = diagnosticLogs.map(log => 
+                `<div class="${log.type}">[${log.timestamp}] ${log.message}</div>`
+            ).join('');
+            
+            result.innerHTML = logsHTML || '<span class="info">Nenhum log disponível</span>';
+        }
+
+        function clearLogs() {
+            diagnosticLogs = [];
+            const result = document.getElementById('logs');
+            result.innerHTML = '<span class="info">Logs limpos</span>';
+        }
+
+        // Auto-inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de diagnóstico carregada', 'info');
+        });
+    </script>
+</body>
+</html>

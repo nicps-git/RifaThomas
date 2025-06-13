@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Teste de Carregamento de Dados Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico de Dados Admin</h1>
+        <p>Este teste verifica se os dados dos participantes estão sendo carregados corretamente no painel administrativo.</p>
+        
+        <div id="results"></div>
+        
+        <button onclick="runTest()">🧪 Executar Teste</button>
+        <button onclick="testFirebaseConnection()">🔥 Testar Conexão Firebase</button>
+        <button onclick="testLoadPurchases()">📋 Testar Carregamento de Compras</button>
+        <button onclick="testLocalStorage()">💾 Testar LocalStorage</button>
+        <button onclick="clearResults()">🧹 Limpar Resultados</button>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let testResults = [];
+
+        function addResult(type, title, message, details = null) {
+            const result = { type, title, message, details, timestamp: new Date() };
+            testResults.push(result);
+            displayResults();
+        }
+
+        function displayResults() {
+            const container = document.getElementById('results');
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result ${result.type}">
+                    <strong>${result.title}</strong><br>
+                    ${result.message}
+                    ${result.details ? `<pre>${result.details}</pre>` : ''}
+                    <small>⏰ ${result.timestamp.toLocaleTimeString()}</small>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearResults() {
+            testResults = [];
+            displayResults();
+        }
+
+        async function runTest() {
+            clearResults();
+            addResult('info', '🚀 Iniciando Teste Completo', 'Executando todos os testes de diagnóstico...');
+            
+            await testFirebaseConnection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testLoadPurchases();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testLocalStorage();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testAdminFunctions();
+            
+            addResult('success', '✅ Teste Completo Finalizado', 'Todos os testes foram executados. Verifique os resultados acima.');
+        }
+
+        async function testFirebaseConnection() {
+            addResult('info', '🔥 Testando Conexão Firebase', '<div class="loader"></div>Verificando se Firebase está disponível...');
+            
+            try {
+                // Verificar se Firebase está carregado
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK não carregado');
+                }
+                
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não está disponível');
+                }
+                
+                // Testar conexão básica
+                const testDoc = await firebase.firestore().collection('test').doc('ping').get();
+                
+                addResult('success', '✅ Firebase Conectado', 'Firebase está funcionando corretamente');
+                
+            } catch (error) {
+                addResult('error', '❌ Erro no Firebase', `Falha na conexão: ${error.message}`, error.stack);
+            }
+        }
+
+        async function testLoadPurchases() {
+            addResult('info', '📋 Testando Carregamento de Compras', '<div class="loader"></div>Tentando carregar dados das compras...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (result.success) {
+                    const purchasesCount = result.data ? result.data.length : 0;
+                    addResult('success', '✅ Compras Carregadas', `${purchasesCount} compras encontradas no Firebase`, JSON.stringify(result.data?.slice(0, 2), null, 2));
+                } else {
+                    addResult('warning', '⚠️ Nenhuma Compra Encontrada', `Resultado: ${result.error || 'Sem dados'}`, JSON.stringify(result, null, 2));
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Erro ao Carregar Compras', `Falha: ${error.message}`, error.stack);
+            }
+        }
+
+        async function testLocalStorage() {
+            addResult('info', '💾 Testando LocalStorage', 'Verificando dados salvos localmente...');
+            
+            try {
+                const purchases = localStorage.getItem('purchases');
+                const rifaData = localStorage.getItem('rifaData');
+                
+                if (purchases) {
+                    const parsedPurchases = JSON.parse(purchases);
+                    addResult('info', '📦 LocalStorage - Compras', `${parsedPurchases.length} compras no localStorage`, JSON.stringify(parsedPurchases.slice(0, 2), null, 2));
+                } else {
+                    addResult('warning', '📦 LocalStorage - Compras', 'Nenhuma compra salva no localStorage');
+                }
+                
+                if (rifaData) {
+                    const parsedRifaData = JSON.parse(rifaData);
+                    addResult('info', '📦 LocalStorage - Rifa', 'Dados da rifa encontrados no localStorage', JSON.stringify(parsedRifaData, null, 2));
+                } else {
+                    addResult('warning', '📦 LocalStorage - Rifa', 'Nenhum dado da rifa no localStorage');
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Erro no LocalStorage', `Falha ao ler dados: ${error.message}`, error.stack);
+            }
+        }
+
+        async function testAdminFunctions() {
+            addResult('info', '🔧 Testando Funções de Admin', 'Verificando funções específicas do painel administrativo...');
+            
+            try {
+                // Simular carregamento como no admin.js
+                let adminData = { purchases: [] };
+                
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    const result = await window.FirebaseDB.loadPurchases();
+                    if (result.success && Array.isArray(result.data)) {
+                        adminData.purchases = result.data;
+                        addResult('success', '🎯 Admin - Firebase', `Dados carregados: ${result.data.length} compras`);
+                    } else {
+                        // Fallback para localStorage
+                        const storedPurchases = localStorage.getItem('purchases');
+                        if (storedPurchases) {
+                            adminData.purchases = JSON.parse(storedPurchases);
+                            addResult('warning', '🎯 Admin - Fallback', `Usando localStorage: ${adminData.purchases.length} compras`);
+                        } else {
+                            addResult('error', '🎯 Admin - Sem Dados', 'Nem Firebase nem localStorage têm dados');
+                        }
+                    }
+                } else {
+                    addResult('error', '🎯 Admin - Firebase Indisponível', 'FirebaseDB não está carregado');
+                }
+                
+                // Testar estatísticas
+                const confirmedPurchases = adminData.purchases.filter(p => p.status === 'confirmed');
+                const totalRevenue = confirmedPurchases.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+                
+                addResult('info', '📊 Admin - Estatísticas', 
+                    `Total: ${adminData.purchases.length} | Confirmadas: ${confirmedPurchases.length} | Receita: R$ ${totalRevenue.toFixed(2)}`,
+                    JSON.stringify({ total: adminData.purchases.length, confirmed: confirmedPurchases.length, revenue: totalRevenue }, null, 2)
+                );
+                
+            } catch (error) {
+                addResult('error', '❌ Erro nas Funções Admin', `Falha: ${error.message}`, error.stack);
+            }
+        }
+
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            addResult('success', '🔥 Firebase Pronto', 'Firebase foi carregado e está pronto para uso');
+        });
+
+        // Verificar se Firebase já está disponível
+        if (typeof window.FirebaseDB !== 'undefined') {
+            addResult('success', '🔥 Firebase Já Disponível', 'Firebase estava disponível no carregamento da página');
+        }
+    </script>
+</body>
+</html>

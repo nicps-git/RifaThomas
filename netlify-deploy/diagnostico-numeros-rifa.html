@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnóstico - Números da Rifa</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 200px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .grid-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .number-box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .number-available {
+            background: #28a745;
+            color: white;
+        }
+        .number-sold {
+            background: #dc3545;
+            color: white;
+        }
+        .number-reserved {
+            background: #ffc107;
+            color: #212529;
+        }
+        .number-selected {
+            background: #17a2b8;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico - Números da Rifa</h1>
+        <p>Verificando o carregamento e exibição dos números vendidos/reservados na página principal.</p>
+        
+        <div>
+            <button onclick="runDiagnostic()">🧪 Executar Diagnóstico</button>
+            <button onclick="testFirebase()">🔥 Testar Firebase</button>
+            <button onclick="testLocalStorage()">💾 Testar LocalStorage</button>
+            <button onclick="testNumbersDisplay()">🔢 Testar Exibição</button>
+            <button onclick="clearResults()">🧹 Limpar</button>
+        </div>
+        
+        <div id="results"></div>
+        
+        <div id="numbers-preview" style="display: none;">
+            <h3>Preview dos Números:</h3>
+            <div class="grid-preview" id="preview-grid"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        let testResults = [];
+
+        function addResult(type, title, message, details = null) {
+            const result = { type, title, message, details, timestamp: new Date() };
+            testResults.push(result);
+            displayResults();
+        }
+
+        function displayResults() {
+            const container = document.getElementById('results');
+            container.innerHTML = testResults.map(result => `
+                <div class="status ${result.type}">
+                    <strong>${result.title}</strong><br>
+                    ${result.message}
+                    ${result.details ? `<pre>${JSON.stringify(result.details, null, 2)}</pre>` : ''}
+                    <small>⏰ ${result.timestamp.toLocaleTimeString()}</small>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearResults() {
+            testResults = [];
+            displayResults();
+        }
+
+        async function runDiagnostic() {
+            clearResults();
+            addResult('info', '🚀 Iniciando Diagnóstico', 'Verificando todos os aspectos do carregamento de números...');
+            
+            await testFirebase();
+            await new Promise(r => setTimeout(r, 1000));
+            await testLocalStorage();
+            await new Promise(r => setTimeout(r, 1000));
+            await testNumbersDisplay();
+            await new Promise(r => setTimeout(r, 1000));
+            await testRifaState();
+            
+            addResult('success', '✅ Diagnóstico Completo', 'Todos os testes foram executados');
+        }
+
+        async function testFirebase() {
+            addResult('info', '🔥 Testando Firebase', 'Verificando conexão e dados...');
+            
+            try {
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK não carregado');
+                }
+                
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (result.success) {
+                    const purchases = result.data || [];
+                    const soldNumbers = [];
+                    const reservedNumbers = [];
+                    
+                    purchases.forEach(purchase => {
+                        if (Array.isArray(purchase.numbers)) {
+                            if (purchase.status === 'confirmed') {
+                                soldNumbers.push(...purchase.numbers);
+                            } else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
+                                reservedNumbers.push(...purchase.numbers);
+                            }
+                        }
+                    });
+                    
+                    addResult('success', '✅ Firebase OK', 
+                        `${purchases.length} compras encontradas. ${soldNumbers.length} vendidos, ${reservedNumbers.length} reservados`,
+                        { totalPurchases: purchases.length, soldNumbers, reservedNumbers, samplePurchases: purchases.slice(0, 2) }
+                    );
+                } else {
+                    addResult('warning', '⚠️ Firebase Sem Dados', `Erro: ${result.error}`);
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Erro Firebase', `Falha: ${error.message}`, { error: error.message });
+            }
+        }
+
+        async function testLocalStorage() {
+            addResult('info', '💾 Testando LocalStorage', 'Verificando dados salvos localmente...');
+            
+            try {
+                // Verificar rifaData
+                const rifaData = localStorage.getItem('rifaData');
+                if (rifaData) {
+                    const parsed = JSON.parse(rifaData);
+                    addResult('success', '📦 rifaData Encontrado', 
+                        `Vendidos: ${parsed.soldNumbers?.length || 0}, Reservados: ${parsed.reservedNumbers?.length || 0}`,
+                        parsed
+                    );
+                } else {
+                    addResult('warning', '📦 rifaData Vazio', 'Nenhum dado encontrado em rifaData');
+                }
+                
+                // Verificar purchases
+                const purchases = localStorage.getItem('purchases');
+                if (purchases) {
+                    const parsed = JSON.parse(purchases);
+                    addResult('info', '📦 purchases Encontrado', `${parsed.length} compras no localStorage`);
+                } else {
+                    addResult('warning', '📦 purchases Vazio', 'Nenhuma compra no localStorage');
+                }
+                
+                // Verificar admin_purchases_backup
+                const adminBackup = localStorage.getItem('admin_purchases_backup');
+                if (adminBackup) {
+                    const parsed = JSON.parse(adminBackup);
+                    addResult('info', '📦 admin backup Encontrado', `${parsed.length} compras no backup`);
+                } else {
+                    addResult('info', '📦 admin backup Vazio', 'Nenhum backup admin');
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Erro LocalStorage', `Falha: ${error.message}`);
+            }
+        }
+
+        async function testNumbersDisplay() {
+            addResult('info', '🔢 Testando Exibição', 'Verificando se os números estão sendo exibidos corretamente...');
+            
+            try {
+                // Verificar se a grade existe
+                const grid = document.getElementById('numbers-grid');
+                if (!grid) {
+                    addResult('error', '❌ Grid Não Encontrada', 'Elemento numbers-grid não existe no DOM');
+                    return;
+                }
+                
+                addResult('success', '✅ Grid Encontrada', `Grid existe com ${grid.children.length} elementos`);
+                
+                // Verificar estado da rifa
+                if (typeof rifaState === 'undefined') {
+                    addResult('error', '❌ rifaState Indefinido', 'Variável rifaState não está disponível');
+                    return;
+                }
+                
+                const soldCount = rifaState.soldNumbers ? rifaState.soldNumbers.size : 0;
+                const reservedCount = rifaState.reservedNumbers ? rifaState.reservedNumbers.size : 0;
+                const selectedCount = rifaState.selectedNumbers ? rifaState.selectedNumbers.size : 0;
+                
+                addResult('success', '✅ rifaState OK', 
+                    `Vendidos: ${soldCount}, Reservados: ${reservedCount}, Selecionados: ${selectedCount}`,
+                    {
+                        sold: [...(rifaState.soldNumbers || [])],
+                        reserved: [...(rifaState.reservedNumbers || [])],
+                        selected: [...(rifaState.selectedNumbers || [])]
+                    }
+                );
+                
+                // Testar se updateNumbersDisplay funciona
+                if (typeof updateNumbersDisplay === 'function') {
+                    updateNumbersDisplay();
+                    addResult('success', '✅ updateNumbersDisplay', 'Função executada com sucesso');
+                } else {
+                    addResult('error', '❌ updateNumbersDisplay', 'Função não encontrada');
+                }
+                
+                // Criar preview visual
+                createNumbersPreview();
+                
+            } catch (error) {
+                addResult('error', '❌ Erro Exibição', `Falha: ${error.message}`, { error: error.message });
+            }
+        }
+
+        async function testRifaState() {
+            addResult('info', '🎯 Testando Estado da Rifa', 'Verificando variáveis globais...');
+            
+            try {
+                const state = {
+                    rifaStateExists: typeof rifaState !== 'undefined',
+                    firebaseReady: rifaState?.firebaseReady || false,
+                    soldNumbers: rifaState?.soldNumbers ? [...rifaState.soldNumbers] : [],
+                    reservedNumbers: rifaState?.reservedNumbers ? [...rifaState.reservedNumbers] : [],
+                    selectedNumbers: rifaState?.selectedNumbers ? [...rifaState.selectedNumbers] : [],
+                    functionsAvailable: {
+                        loadSoldNumbersFromFirebase: typeof loadSoldNumbersFromFirebase === 'function',
+                        updateNumbersDisplay: typeof updateNumbersDisplay === 'function',
+                        loadNumbersFromLocalStorage: typeof loadNumbersFromLocalStorage === 'function',
+                        saveNumbersToLocalStorage: typeof saveNumbersToLocalStorage === 'function'
+                    }
+                };
+                
+                addResult('success', '✅ Estado da Rifa', 'Todas as verificações completas', state);
+                
+            } catch (error) {
+                addResult('error', '❌ Erro Estado', `Falha: ${error.message}`);
+            }
+        }
+
+        function createNumbersPreview() {
+            const preview = document.getElementById('numbers-preview');
+            const grid = document.getElementById('preview-grid');
+            
+            preview.style.display = 'block';
+            grid.innerHTML = '';
+            
+            for (let i = 1; i <= 50; i++) { // Mostrar apenas os primeiros 50 para não sobrecarregar
+                const numberBox = document.createElement('div');
+                numberBox.className = 'number-box';
+                numberBox.textContent = i;
+                
+                if (rifaState?.soldNumbers?.has(i)) {
+                    numberBox.className += ' number-sold';
+                } else if (rifaState?.reservedNumbers?.has(i)) {
+                    numberBox.className += ' number-reserved';
+                } else if (rifaState?.selectedNumbers?.has(i)) {
+                    numberBox.className += ' number-selected';
+                } else {
+                    numberBox.className += ' number-available';
+                }
+                
+                grid.appendChild(numberBox);
+            }
+        }
+
+        // Aguardar carregamento
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('info', '📄 Página Carregada', 'Diagnóstico pronto para execução');
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

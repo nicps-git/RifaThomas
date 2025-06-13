@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Rápido - IDs dos Números</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        .number-card {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .number-card.available {
+            background: #ff6b35;
+            color: white;
+            border-color: #ff6b35;
+        }
+        .number-card.sold {
+            background: #64748b;
+            color: white;
+            border-color: #64748b;
+            opacity: 0.8;
+        }
+        .number-card.reserved {
+            background: #f59e0b;
+            color: white;
+            border-color: #f59e0b;
+        }
+        .number-card.selected {
+            background: #ffd700;
+            color: #1a237e;
+            border-color: #ffd700;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        .status-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .status-box {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .status-available {
+            background: #ff6b35;
+            color: white;
+        }
+        .status-sold {
+            background: #64748b;
+            color: white;
+        }
+        .status-reserved {
+            background: #f59e0b;
+            color: white;
+        }
+        .status-selected {
+            background: #ffd700;
+            color: #1a237e;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            background: #007bff;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Rápido - Verificação de IDs e Status dos Números</h1>
+        <p><strong>Objetivo:</strong> Verificar se os números têm IDs corretos e se os status são aplicados adequadamente.</p>
+        
+        <div class="status-info">
+            <div class="status-box status-available">
+                <h3>DISPONÍVEL</h3>
+                <p>Cor laranja (#ff6b35)</p>
+            </div>
+            <div class="status-box status-sold">
+                <h3>VENDIDO</h3>
+                <p>Cor cinza (#64748b)</p>
+            </div>
+            <div class="status-box status-reserved">
+                <h3>RESERVADO</h3>
+                <p>Cor amarelo (#f59e0b)</p>
+            </div>
+            <div class="status-box status-selected">
+                <h3>SELECIONADO</h3>
+                <p>Cor dourado (#ffd700)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>🎯 Ações de Teste</h3>
+        <button onclick="testIDsExist()">🔍 Verificar IDs dos Números</button>
+        <button onclick="testStatusClasses()">🎨 Testar Classes de Status</button>
+        <button onclick="simulateMainPageBehavior()">📱 Simular Comportamento da Página Principal</button>
+        <button onclick="testDebugFunction()">🔧 Testar Função Debug</button>
+        <button onclick="clearAllTests()">🗑️ Limpar Testes</button>
+    </div>
+
+    <div class="container">
+        <h3>🎲 Grade de Teste (Números 1-20)</h3>
+        <div class="test-grid" id="test-grid">
+            <!-- Números serão gerados via JavaScript -->
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>📊 Resultados</h3>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        // Configurações similares à página principal
+        const RIFA_CONFIG = {
+            totalNumbers: 150,
+            ticketPrice: 40.00
+        };
+
+        let rifaState = {
+            selectedNumbers: new Set(),
+            soldNumbers: new Set(),
+            reservedNumbers: new Set()
+        };
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logEl.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // Função idêntica à da página principal
+        function createNumberCard(number) {
+            const card = document.createElement('div');
+            card.className = 'number-card';
+            card.id = `number-${number}`; // Esta linha é crucial - verifica se está sendo aplicada
+            card.textContent = number.toString().padStart(3, '0');
+            card.dataset.number = number;
+            
+            updateNumberStatus(card, number);
+            
+            card.addEventListener('click', function() {
+                if (!rifaState.soldNumbers.has(number) && !rifaState.reservedNumbers.has(number)) {
+                    toggleNumberSelection(number);
+                }
+            });
+            
+            return card;
+        }
+
+        // Função idêntica à da página principal
+        function updateNumberStatus(card, number) {
+            card.classList.remove('available', 'selected', 'sold', 'reserved');
+            
+            if (rifaState.soldNumbers.has(number)) {
+                card.classList.add('sold');
+            } else if (rifaState.reservedNumbers.has(number)) {
+                card.classList.add('reserved');
+            } else if (rifaState.selectedNumbers.has(number)) {
+                card.classList.add('selected');
+            } else {
+                card.classList.add('available');
+            }
+        }
+
+        function toggleNumberSelection(number) {
+            if (rifaState.selectedNumbers.has(number)) {
+                rifaState.selectedNumbers.delete(number);
+            } else {
+                rifaState.selectedNumbers.add(number);
+            }
+            
+            updateNumberDisplay(number);
+        }
+
+        function updateNumberDisplay(number) {
+            const card = document.getElementById(`number-${number}`);
+            if (card) {
+                updateNumberStatus(card, number);
+                log(`Número ${number} atualizado com sucesso`, 'success');
+            } else {
+                log(`ERRO: Elemento com ID number-${number} NÃO ENCONTRADO!`, 'error');
+            }
+        }
+
+        // Função simulando a updateNumbersDisplay da página principal
+        function updateNumbersDisplay() {
+            log('Iniciando atualização de números (simulando página principal)...', 'info');
+            
+            try {
+                for (let i = 1; i <= 20; i++) { // Teste com os primeiros 20 números
+                    const element = document.getElementById(`number-${i}`);
+                    if (!element) {
+                        log(`PROBLEMA: Elemento number-${i} não encontrado!`, 'error');
+                        continue;
+                    }
+                    
+                    // Remover todas as classes de status
+                    element.classList.remove('sold', 'selected', 'reserved', 'available');
+                    
+                    // Aplicar classe apropriada baseada no estado
+                    if (rifaState.soldNumbers.has(i)) {
+                        element.classList.add('sold');
+                    } else if (rifaState.reservedNumbers.has(i)) {
+                        element.classList.add('reserved');
+                    } else if (rifaState.selectedNumbers.has(i)) {
+                        element.classList.add('selected');
+                    } else {
+                        element.classList.add('available');
+                    }
+                }
+                
+                log('✅ Atualização de números concluída com sucesso', 'success');
+            } catch (error) {
+                log(`❌ Erro na atualização: ${error.message}`, 'error');
+            }
+        }
+
+        // Gerar grade de teste
+        function generateTestGrid() {
+            const grid = document.getElementById('test-grid');
+            grid.innerHTML = '';
+            
+            log('Gerando grade de teste...', 'info');
+            
+            for (let i = 1; i <= 20; i++) {
+                const numberCard = createNumberCard(i);
+                grid.appendChild(numberCard);
+            }
+            
+            log('Grade de teste gerada com 20 números', 'success');
+        }
+
+        // Testes
+        function testIDsExist() {
+            log('🔍 TESTE: Verificando se todos os IDs existem...', 'info');
+            
+            let idsEncontrados = 0;
+            let idsNaoEncontrados = [];
+            
+            for (let i = 1; i <= 20; i++) {
+                const element = document.getElementById(`number-${i}`);
+                if (element) {
+                    idsEncontrados++;
+                } else {
+                    idsNaoEncontrados.push(i);
+                }
+            }
+            
+            if (idsNaoEncontrados.length === 0) {
+                log(`✅ SUCESSO: Todos os 20 IDs foram encontrados!`, 'success');
+            } else {
+                log(`❌ PROBLEMA: ${idsNaoEncontrados.length} IDs não encontrados: ${idsNaoEncontrados.join(', ')}`, 'error');
+            }
+            
+            log(`📊 Resultado: ${idsEncontrados}/20 IDs encontrados`, 'info');
+        }
+
+        function testStatusClasses() {
+            log('🎨 TESTE: Verificando aplicação de classes de status...', 'info');
+            
+            // Definir alguns números com status específicos
+            rifaState.soldNumbers = new Set([1, 5, 10]);
+            rifaState.reservedNumbers = new Set([2, 6, 11]);
+            rifaState.selectedNumbers = new Set([3, 7, 12]);
+            
+            // Aplicar atualizações
+            updateNumbersDisplay();
+            
+            // Verificar se as classes foram aplicadas corretamente
+            let sucessos = 0;
+            let problemas = [];
+            
+            // Verificar vendidos
+            [1, 5, 10].forEach(num => {
+                const el = document.getElementById(`number-${num}`);
+                if (el && el.classList.contains('sold')) {
+                    sucessos++;
+                } else {
+                    problemas.push(`Número ${num} deveria estar 'sold'`);
+                }
+            });
+            
+            // Verificar reservados
+            [2, 6, 11].forEach(num => {
+                const el = document.getElementById(`number-${num}`);
+                if (el && el.classList.contains('reserved')) {
+                    sucessos++;
+                } else {
+                    problemas.push(`Número ${num} deveria estar 'reserved'`);
+                }
+            });
+            
+            // Verificar selecionados
+            [3, 7, 12].forEach(num => {
+                const el = document.getElementById(`number-${num}`);
+                if (el && el.classList.contains('selected')) {
+                    sucessos++;
+                } else {
+                    problemas.push(`Número ${num} deveria estar 'selected'`);
+                }
+            });
+            
+            if (problemas.length === 0) {
+                log(`✅ SUCESSO: Todas as classes de status aplicadas corretamente!`, 'success');
+            } else {
+                log(`❌ PROBLEMAS encontrados:`, 'error');
+                problemas.forEach(p => log(`  - ${p}`, 'error'));
+            }
+            
+            log(`📊 Resultado: ${sucessos}/9 status aplicados corretamente`, 'info');
+        }
+
+        function simulateMainPageBehavior() {
+            log('📱 TESTE: Simulando comportamento da página principal...', 'info');
+            
+            // Simular dados salvos no localStorage
+            const testRifaData = {
+                soldNumbers: [4, 8, 15],
+                reservedNumbers: [9, 16, 20],
+                lastUpdate: new Date().toISOString()
+            };
+            
+            localStorage.setItem('rifaData', JSON.stringify(testRifaData));
+            log('Dados salvos no localStorage', 'info');
+            
+            // Simular carregamento dos dados (como na página principal)
+            const savedData = localStorage.getItem('rifaData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    rifaState.soldNumbers = new Set(data.soldNumbers || []);
+                    rifaState.reservedNumbers = new Set(data.reservedNumbers || []);
+                    rifaState.selectedNumbers = new Set(); // Limpar seleções
+                    
+                    log('Dados carregados do localStorage', 'success');
+                    log(`Vendidos: ${data.soldNumbers.join(', ')}`, 'info');
+                    log(`Reservados: ${data.reservedNumbers.join(', ')}`, 'info');
+                    
+                    // Atualizar exibição
+                    updateNumbersDisplay();
+                    
+                } catch (error) {
+                    log(`Erro ao carregar dados: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        function testDebugFunction() {
+            log('🔧 TESTE: Testando função debug...', 'info');
+            
+            // Função debug similar à da página principal
+            function debugRifaNumbers() {
+                log('🔧 Debug: Recarregando números da rifa...', 'info');
+                
+                // Log do estado atual
+                log('📊 Estado atual da rifa:', 'info');
+                log(`- Números vendidos: [${Array.from(rifaState.soldNumbers).join(', ')}]`, 'info');
+                log(`- Números reservados: [${Array.from(rifaState.reservedNumbers).join(', ')}]`, 'info');
+                log(`- Números selecionados: [${Array.from(rifaState.selectedNumbers).join(', ')}]`, 'info');
+                
+                // Verificar IDs
+                let idsOk = 0;
+                for (let i = 1; i <= 20; i++) {
+                    const element = document.getElementById(`number-${i}`);
+                    if (element) idsOk++;
+                }
+                
+                log(`🔍 Verificação de IDs: ${idsOk}/20 elementos encontrados`, idsOk === 20 ? 'success' : 'error');
+                
+                // Atualizar exibição
+                updateNumbersDisplay();
+                
+                log('🔧 Debug concluído', 'success');
+            }
+            
+            debugRifaNumbers();
+        }
+
+        function clearAllTests() {
+            log('🗑️ Limpando todos os testes...', 'info');
+            
+            // Limpar estado
+            rifaState.soldNumbers.clear();
+            rifaState.reservedNumbers.clear();
+            rifaState.selectedNumbers.clear();
+            
+            // Limpar localStorage
+            localStorage.removeItem('rifaData');
+            
+            // Regenerar grade
+            generateTestGrid();
+            
+            log('✅ Testes limpos, estado resetado', 'success');
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Teste de IDs e Status iniciado', 'info');
+            generateTestGrid();
+            
+            // Executar teste inicial automático
+            setTimeout(() => {
+                log('⚡ Executando teste automático inicial...', 'info');
+                testIDsExist();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 TESTE ISOLADO - Botões Admin</title>
+    <link rel="stylesheet" href="admin.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc3545, #b52d3c);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: -30px -30px 30px -30px;
+            text-align: center;
+        }
+
+        .participants-table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .participants-table th,
+        .participants-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .participants-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .btn-confirm {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-reject {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-edit {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending-donation {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .test-controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .test-btn:hover {
+            background: #0056b3;
+        }
+
+        .debug-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 TESTE ISOLADO - Botões de Confirmação</h1>
+            <p>Teste direto dos botões sem dependências externas</p>
+        </div>
+
+        <div class="test-controls">
+            <button class="test-btn" onclick="criarDadosTeste()">📊 Criar Dados de Teste</button>
+            <button class="test-btn" onclick="carregarTabela()">📋 Carregar Tabela</button>
+            <button class="test-btn" onclick="limparTabela()">🧹 Limpar Tabela</button>
+            <button class="test-btn" onclick="mostrarDebug()">🔍 Debug</button>
+        </div>
+
+        <div id="debug-output" class="debug-info" style="display: none;"></div>
+
+        <div class="participants-table-container">
+            <table class="participants-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Números</th>
+                        <th>Valor</th>
+                        <th>Método</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="participants-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            🔧 Aguardando dados de teste...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Dados de teste simples
+        let dadosTeste = [];
+        let debugLogs = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLogs.push(`[${timestamp}] ${message}`);
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function criarDadosTeste() {
+            log('📊 Criando dados de teste...');
+            
+            dadosTeste = [
+                {
+                    id: 'teste-1',
+                    buyerName: 'Maria Silva - TESTE ISOLADO',
+                    buyerPhone: '(11) 99999-1111',
+                    numbers: [1, 2, 3],
+                    totalAmount: 120.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                },
+                {
+                    id: 'teste-2',
+                    buyerName: 'João Santos - TESTE ISOLADO',
+                    buyerPhone: '(11) 98888-2222',
+                    numbers: [10, 20],
+                    totalAmount: 80.00,
+                    paymentMethod: 'pix',
+                    status: 'confirmed',
+                    date: new Date().toISOString()
+                },
+                {
+                    id: 'teste-3',
+                    buyerName: 'Ana Costa - TESTE ISOLADO',
+                    buyerPhone: '(11) 97777-3333',
+                    numbers: [50, 51],
+                    totalAmount: 80.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                }
+            ];
+
+            log(`✅ ${dadosTeste.length} dados de teste criados`);
+            alert(`✅ ${dadosTeste.length} dados de teste criados com sucesso!`);
+        }
+
+        function carregarTabela() {
+            log('📋 Carregando tabela...');
+            
+            if (dadosTeste.length === 0) {
+                alert('⚠️ Crie dados de teste primeiro!');
+                return;
+            }
+
+            const tbody = document.getElementById('participants-tbody');
+            tbody.innerHTML = '';
+
+            dadosTeste.forEach(purchase => {
+                const row = criarLinhaParticipante(purchase);
+                tbody.appendChild(row);
+            });
+
+            log(`✅ ${dadosTeste.length} participantes carregados`);
+            alert(`✅ ${dadosTeste.length} participantes carregados na tabela!`);
+        }
+
+        function criarLinhaParticipante(purchase) {
+            const row = document.createElement('tr');
+            
+            const statusClass = obterClasseStatus(purchase.status);
+            const statusText = obterTextoStatus(purchase.status);
+            const numbersText = purchase.numbers ? purchase.numbers.join(', ') : 'N/A';
+            const paymentText = obterTextoMetodoPagamento(purchase.paymentMethod);
+            
+            row.innerHTML = `
+                <td>${purchase.buyerName || 'N/A'}</td>
+                <td>${purchase.buyerPhone || 'N/A'}</td>
+                <td>${numbersText}</td>
+                <td>${formatarMoeda(purchase.totalAmount)}</td>
+                <td>${paymentText}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                <td>${formatarData(purchase.date)}</td>
+                <td>
+                    <div class="action-buttons">
+                        ${criarBotoesAcao(purchase)}
+                    </div>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        function criarBotoesAcao(purchase) {
+            let buttons = [];
+            
+            if (purchase.status === 'pending_donation') {
+                buttons.push(`
+                    <button class="btn-confirm" 
+                            onclick="confirmarDoacao('${purchase.id}')" 
+                            title="Confirmar Doação">
+                        ✅ Confirmar
+                    </button>
+                    <button class="btn-reject" 
+                            onclick="rejeitarDoacao('${purchase.id}')" 
+                            title="Rejeitar Doação">
+                        ❌ Rejeitar
+                    </button>
+                `);
+            }
+            
+            buttons.push(`
+                <button class="btn-edit" 
+                        onclick="editarParticipante('${purchase.id}')" 
+                        title="Editar">
+                    ✏️ Editar
+                </button>
+            `);
+            
+            return buttons.join('');
+        }
+
+        // Funções dos botões
+        function confirmarDoacao(purchaseId) {
+            log(`✅ BOTÃO FUNCIONOU! Confirmação para: ${purchaseId}`);
+            
+            const purchase = dadosTeste.find(p => p.id === purchaseId);
+            if (purchase) {
+                const confirmar = confirm(`Confirmar doação de ${purchase.buyerName}?`);
+                if (confirmar) {
+                    purchase.status = 'confirmed';
+                    carregarTabela();
+                    alert(`✅ Doação de ${purchase.buyerName} confirmada!`);
+                    log(`✅ Doação confirmada: ${purchase.buyerName}`);
+                }
+            }
+        }
+
+        function rejeitarDoacao(purchaseId) {
+            log(`❌ BOTÃO FUNCIONOU! Rejeição para: ${purchaseId}`);
+            
+            const purchase = dadosTeste.find(p => p.id === purchaseId);
+            if (purchase) {
+                const motivo = prompt(`Motivo da rejeição para ${purchase.buyerName}:`);
+                if (motivo && motivo.trim()) {
+                    purchase.status = 'rejected';
+                    purchase.rejectReason = motivo.trim();
+                    carregarTabela();
+                    alert(`❌ Doação de ${purchase.buyerName} rejeitada!`);
+                    log(`❌ Doação rejeitada: ${purchase.buyerName} - Motivo: ${motivo}`);
+                }
+            }
+        }
+
+        function editarParticipante(purchaseId) {
+            log(`✏️ BOTÃO FUNCIONOU! Edição para: ${purchaseId}`);
+            
+            const purchase = dadosTeste.find(p => p.id === purchaseId);
+            if (purchase) {
+                const novoNome = prompt(`Nome atual: ${purchase.buyerName}\n\nNovo nome:`, purchase.buyerName);
+                if (novoNome && novoNome.trim()) {
+                    const novoTelefone = prompt(`Telefone atual: ${purchase.buyerPhone}\n\nNovo telefone:`, purchase.buyerPhone);
+                    if (novoTelefone && novoTelefone.trim()) {
+                        purchase.buyerName = novoNome.trim();
+                        purchase.buyerPhone = novoTelefone.trim();
+                        carregarTabela();
+                        alert(`✅ Dados de ${purchase.buyerName} atualizados!`);
+                        log(`✏️ Participante editado: ${purchase.buyerName}`);
+                    }
+                }
+            }
+        }
+
+        function limparTabela() {
+            log('🧹 Limpando tabela...');
+            
+            const tbody = document.getElementById('participants-tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                        🧹 Tabela limpa - pronta para novos testes
+                    </td>
+                </tr>
+            `;
+            
+            log('✅ Tabela limpa');
+        }
+
+        function mostrarDebug() {
+            const debugDiv = document.getElementById('debug-output');
+            debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+            
+            if (debugDiv.style.display === 'block') {
+                debugDiv.innerHTML = `
+                    <strong>📊 Debug Information:</strong><br>
+                    • Dados de teste: ${dadosTeste.length} registros<br>
+                    • DOM Ready: ${document.readyState}<br>
+                    • Timestamp: ${new Date().toLocaleString()}<br><br>
+                    <strong>📝 Logs:</strong><br>
+                    ${debugLogs.join('<br>')}
+                `;
+            }
+        }
+
+        // Funções auxiliares
+        function obterClasseStatus(status) {
+            const classes = {
+                'confirmed': 'status-confirmed',
+                'pending': 'status-pending',
+                'pending_donation': 'status-pending-donation',
+                'rejected': 'status-rejected'
+            };
+            return classes[status] || 'status-unknown';
+        }
+
+        function obterTextoStatus(status) {
+            const texts = {
+                'confirmed': 'Confirmado',
+                'pending': 'Pendente',
+                'pending_donation': 'Doação Pendente',
+                'rejected': 'Rejeitado'
+            };
+            return texts[status] || 'Desconhecido';
+        }
+
+        function obterTextoMetodoPagamento(method) {
+            const methods = {
+                'pix': '💳 PIX',
+                'doacao': '🍼 Doação',
+                'money': '💰 Dinheiro'
+            };
+            return methods[method] || '❓ Outro';
+        }
+
+        function formatarMoeda(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value || 0);
+        }
+
+        function formatarData(dateString) {
+            return new Date(dateString).toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de teste isolado carregada');
+            console.log('🔧 TESTE ISOLADO: Todas as funções dos botões estão funcionais');
+            console.log('📋 Use os controles acima para testar os botões');
+        });
+    </script>
+</body>
+</html>

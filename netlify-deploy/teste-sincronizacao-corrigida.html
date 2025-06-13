@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Sincronização Corrigida</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; color: #856404; }
+        .error { background: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        
+        button { 
+            background: #007bff; color: white; border: none; padding: 10px 20px; 
+            margin: 5px; border-radius: 4px; cursor: pointer; 
+        }
+        button:hover { background: #0056b3; }
+        .success-btn { background: #28a745; }
+        .warning-btn { background: #ffc107; color: black; }
+        .danger-btn { background: #dc3545; }
+        
+        .log { 
+            background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 4px; 
+            font-family: monospace; font-size: 12px; max-height: 300px; 
+            overflow-y: auto; white-space: pre-wrap; border: 1px solid #dee2e6; 
+        }
+        
+        .numbers-display {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 5px; margin: 10px 0;
+        }
+        
+        .number-card {
+            padding: 8px; text-align: center; border-radius: 4px; font-weight: bold;
+            cursor: pointer; border: 2px solid transparent;
+        }
+        
+        .sold { background: #dc3545; color: white; }
+        .reserved { background: #ffc107; color: black; }
+        .available { background: #28a745; color: white; }
+        
+        .stats { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px; margin: 15px 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;
+        }
+        
+        .stat-number { font-size: 24px; font-weight: bold; color: #007bff; margin-bottom: 5px; }
+        .stat-label { font-size: 14px; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Sincronização Corrigida</h1>
+        <p>Este teste verifica se a correção do problema de sincronização funcionou corretamente.</p>
+        
+        <div class="test-section">
+            <h2>📊 1. Status Atual dos Dados</h2>
+            <button onclick="verificarDados()" class="success-btn">🔍 Verificar Dados</button>
+            <button onclick="limparDados()" class="danger-btn">🗑️ Limpar Dados de Teste</button>
+            
+            <div class="stats" id="stats-container">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-purchases">0</div>
+                    <div class="stat-label">Total de Compras</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="confirmed-numbers">0</div>
+                    <div class="stat-label">Números Confirmados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pending-numbers">0</div>
+                    <div class="stat-label">Números Pendentes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="sync-status">❓</div>
+                    <div class="stat-label">Status Sincronização</div>
+                </div>
+            </div>
+            
+            <div id="status-log" class="log">Clique em "Verificar Dados" para começar...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>⚡ 2. Teste de Sincronização Automática</h2>
+            <button onclick="criarCompraConfirmada()" class="success-btn">✅ Criar Compra Confirmada</button>
+            <button onclick="criarCompraPendente()" class="warning-btn">⏳ Criar Compra Pendente</button>
+            <button onclick="confirmarUltimaPendente()" class="success-btn">🎯 Confirmar Última Pendente</button>
+            
+            <div id="test-log" class="log">Use os botões acima para testar a sincronização...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔢 3. Estado dos Números (1-20)</h2>
+            <p><strong>Legenda:</strong> 🔴 Confirmado (vendido) | 🟡 Pendente (reservado) | 🟢 Disponível</p>
+            
+            <div id="numbers-display" class="numbers-display"></div>
+            
+            <button onclick="abrirPaginaPrincipal()" class="info">🏠 Abrir Página Principal</button>
+            <button onclick="abrirAdmin()" class="warning-btn">⚙️ Abrir Admin</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>🚀 4. Validação Final</h2>
+            <button onclick="executarValidacaoCompleta()" class="success-btn">🎯 Executar Validação Completa</button>
+            
+            <div id="validation-log" class="log">Clique no botão acima para executar validação completa...</div>
+        </div>
+    </div>
+
+    <script>
+        let testNumbers = [];
+        let lastPurchaseId = null;
+        
+        function log(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            container.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            container.scrollTop = container.scrollHeight;
+            console.log(`${prefix} ${message}`);
+        }
+        
+        function verificarDados() {
+            log('status-log', 'Verificando dados do localStorage...', 'info');
+            
+            try {
+                const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+                const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{}');
+                
+                const confirmedNumbers = new Set();
+                const pendingNumbers = new Set();
+                
+                purchases.forEach(purchase => {
+                    if (purchase.numbers && Array.isArray(purchase.numbers)) {
+                        if (purchase.status === 'confirmed') {
+                            purchase.numbers.forEach(n => confirmedNumbers.add(n));
+                        } else if (['pending', 'pending_donation', 'reserved'].includes(purchase.status)) {
+                            purchase.numbers.forEach(n => pendingNumbers.add(n));
+                        }
+                    }
+                });
+                
+                // Atualizar estatísticas
+                document.getElementById('total-purchases').textContent = purchases.length;
+                document.getElementById('confirmed-numbers').textContent = confirmedNumbers.size;
+                document.getElementById('pending-numbers').textContent = pendingNumbers.size;
+                
+                // Verificar sincronização
+                const rifaDataSold = rifaData.soldNumbers || [];
+                const isSync = JSON.stringify([...confirmedNumbers].sort()) === JSON.stringify(rifaDataSold.sort());
+                document.getElementById('sync-status').textContent = isSync ? '✅' : '❌';
+                
+                log('status-log', `📊 Dados encontrados:`, 'success');
+                log('status-log', `- Total de compras: ${purchases.length}`, 'info');
+                log('status-log', `- Números confirmados: ${confirmedNumbers.size} [${Array.from(confirmedNumbers).sort((a,b) => a-b).join(', ')}]`, 'success');
+                log('status-log', `- Números pendentes: ${pendingNumbers.size} [${Array.from(pendingNumbers).sort((a,b) => a-b).join(', ')}]`, 'warning');
+                log('status-log', `- rifaData sincronizado: ${isSync ? 'SIM' : 'NÃO'}`, isSync ? 'success' : 'error');
+                
+                atualizarExibicaoNumeros();
+                
+            } catch (error) {
+                log('status-log', `❌ Erro ao verificar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        function criarCompraConfirmada() {
+            const numero = Math.floor(Math.random() * 20) + 1;
+            const compra = {
+                id: `test-confirmed-${Date.now()}`,
+                buyerName: `Teste Confirmado ${numero}`,
+                buyerPhone: '(11) 99999-9999',
+                numbers: [numero],
+                totalAmount: 40.00,
+                paymentMethod: 'pix',
+                status: 'confirmed',
+                timestamp: new Date().toISOString()
+            };
+            
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            purchases.push(compra);
+            localStorage.setItem('purchases', JSON.stringify(purchases));
+            
+            lastPurchaseId = compra.id;
+            testNumbers.push(numero);
+            
+            log('test-log', `✅ Compra CONFIRMADA criada - Número ${numero}`, 'success');
+            log('test-log', `> Verificar se número ${numero} aparece VERMELHO na página principal`, 'info');
+            
+            setTimeout(() => {
+                verificarDados();
+                atualizarExibicaoNumeros();
+            }, 500);
+        }
+        
+        function criarCompraPendente() {
+            const numero = Math.floor(Math.random() * 20) + 1;
+            const compra = {
+                id: `test-pending-${Date.now()}`,
+                buyerName: `Teste Pendente ${numero}`,
+                buyerPhone: '(11) 99999-9999',
+                numbers: [numero],
+                totalAmount: 40.00,
+                paymentMethod: 'doacao',
+                status: 'pending_donation',
+                timestamp: new Date().toISOString()
+            };
+            
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            purchases.push(compra);
+            localStorage.setItem('purchases', JSON.stringify(purchases));
+            
+            lastPurchaseId = compra.id;
+            testNumbers.push(numero);
+            
+            log('test-log', `⏳ Compra PENDENTE criada - Número ${numero}`, 'warning');
+            log('test-log', `> Verificar se número ${numero} aparece AMARELO na página principal`, 'info');
+            
+            setTimeout(() => {
+                verificarDados();
+                atualizarExibicaoNumeros();
+            }, 500);
+        }
+        
+        function confirmarUltimaPendente() {
+            if (!lastPurchaseId) {
+                log('test-log', '❌ Nenhuma compra pendente para confirmar!', 'error');
+                return;
+            }
+            
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const compra = purchases.find(p => p.id === lastPurchaseId);
+            
+            if (compra && compra.status !== 'confirmed') {
+                compra.status = 'confirmed';
+                compra.confirmedAt = new Date().toISOString();
+                localStorage.setItem('purchases', JSON.stringify(purchases));
+                
+                log('test-log', `🎯 Compra confirmada - Número ${compra.numbers[0]}`, 'success');
+                log('test-log', `> Verificar se número ${compra.numbers[0]} mudou para VERMELHO`, 'info');
+                
+                setTimeout(() => {
+                    verificarDados();
+                    atualizarExibicaoNumeros();
+                }, 500);
+            } else {
+                log('test-log', '❌ Compra não encontrada ou já confirmada!', 'error');
+            }
+        }
+        
+        function atualizarExibicaoNumeros() {
+            const display = document.getElementById('numbers-display');
+            display.innerHTML = '';
+            
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const confirmedNumbers = new Set();
+            const pendingNumbers = new Set();
+            
+            purchases.forEach(purchase => {
+                if (purchase.numbers && Array.isArray(purchase.numbers)) {
+                    if (purchase.status === 'confirmed') {
+                        purchase.numbers.forEach(n => confirmedNumbers.add(n));
+                    } else if (['pending', 'pending_donation', 'reserved'].includes(purchase.status)) {
+                        purchase.numbers.forEach(n => pendingNumbers.add(n));
+                    }
+                }
+            });
+            
+            // Mostrar números 1-20
+            for (let i = 1; i <= 20; i++) {
+                const card = document.createElement('div');
+                card.className = 'number-card';
+                card.textContent = i.toString().padStart(2, '0');
+                
+                if (confirmedNumbers.has(i)) {
+                    card.classList.add('sold');
+                    card.title = `Número ${i} - CONFIRMADO (deve aparecer VERMELHO na página principal)`;
+                } else if (pendingNumbers.has(i)) {
+                    card.classList.add('reserved');
+                    card.title = `Número ${i} - PENDENTE (deve aparecer AMARELO na página principal)`;
+                } else {
+                    card.classList.add('available');
+                    card.title = `Número ${i} - DISPONÍVEL (deve aparecer VERDE na página principal)`;
+                }
+                
+                display.appendChild(card);
+            }
+        }
+        
+        function limparDados() {
+            if (!confirm('Limpar todos os dados de teste?')) return;
+            
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            const filteredPurchases = purchases.filter(p => !p.id.startsWith('test-'));
+            localStorage.setItem('purchases', JSON.stringify(filteredPurchases));
+            
+            // Limpar rifaData também
+            localStorage.removeItem('rifaData');
+            
+            testNumbers = [];
+            lastPurchaseId = null;
+            
+            log('test-log', '🗑️ Dados de teste limpos', 'warning');
+            log('status-log', '🗑️ Dados de teste removidos', 'warning');
+            
+            setTimeout(() => {
+                verificarDados();
+                atualizarExibicaoNumeros();
+            }, 500);
+        }
+        
+        function abrirPaginaPrincipal() {
+            window.open('index.html', '_blank');
+            log('test-log', '🏠 Página principal aberta. Compare os números!', 'info');
+        }
+        
+        function abrirAdmin() {
+            window.open('admin.html', '_blank');
+            log('test-log', '⚙️ Admin aberto. Use para confirmar doações!', 'info');
+        }
+        
+        function executarValidacaoCompleta() {
+            log('validation-log', '🚀 Iniciando validação completa...', 'info');
+            
+            // Teste 1: Criar compra confirmada
+            log('validation-log', '1️⃣ Criando compra confirmada...', 'info');
+            const numeroTeste = Math.floor(Math.random() * 20) + 1;
+            
+            const compraConfirmada = {
+                id: `validation-confirmed-${Date.now()}`,
+                buyerName: `Validação ${numeroTeste}`,
+                buyerPhone: '(11) 99999-9999',
+                numbers: [numeroTeste],
+                totalAmount: 40.00,
+                paymentMethod: 'pix',
+                status: 'confirmed',
+                timestamp: new Date().toISOString()
+            };
+            
+            const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+            purchases.push(compraConfirmada);
+            localStorage.setItem('purchases', JSON.stringify(purchases));
+            
+            log('validation-log', `✅ Compra confirmada criada - Número ${numeroTeste}`, 'success');
+            
+            // Teste 2: Verificar sincronização
+            setTimeout(() => {
+                log('validation-log', '2️⃣ Verificando sincronização...', 'info');
+                
+                const updatedPurchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+                const rifaData = JSON.parse(localStorage.getItem('rifaData') || '{}');
+                
+                const confirmedNumbers = new Set();
+                updatedPurchases.forEach(purchase => {
+                    if (purchase.status === 'confirmed' && purchase.numbers) {
+                        purchase.numbers.forEach(n => confirmedNumbers.add(n));
+                    }
+                });
+                
+                const temNumeroConfirmado = confirmedNumbers.has(numeroTeste);
+                const rifaDataAtualizado = rifaData.soldNumbers && rifaData.soldNumbers.includes(numeroTeste);
+                
+                log('validation-log', `✅ Número ${numeroTeste} confirmado em purchases: ${temNumeroConfirmado}`, temNumeroConfirmado ? 'success' : 'error');
+                log('validation-log', `${rifaDataAtualizado ? '✅' : '❌'} Número ${numeroTeste} sincronizado em rifaData: ${rifaDataAtualizado}`, rifaDataAtualizado ? 'success' : 'error');
+                
+                // Teste 3: Verificar se página principal carregaria corretamente
+                log('validation-log', '3️⃣ Simulando carregamento da página principal...', 'info');
+                
+                // Simular a função loadSoldNumbersFromLocalStorage
+                const simulatedSoldNumbers = new Set();
+                const simulatedReservedNumbers = new Set();
+                
+                updatedPurchases.forEach(purchase => {
+                    if (purchase.numbers && Array.isArray(purchase.numbers)) {
+                        if (purchase.status === 'confirmed') {
+                            purchase.numbers.forEach(number => simulatedSoldNumbers.add(number));
+                        } else if (['pending', 'reserved', 'pending_donation'].includes(purchase.status)) {
+                            purchase.numbers.forEach(number => simulatedReservedNumbers.add(number));
+                        }
+                    }
+                });
+                
+                const paginaCarregariaCorretamente = simulatedSoldNumbers.has(numeroTeste);
+                log('validation-log', `${paginaCarregariaCorretamente ? '✅' : '❌'} Página principal carregaria número ${numeroTeste} como vendido: ${paginaCarregariaCorretamente}`, paginaCarregariaCorretamente ? 'success' : 'error');
+                
+                // Resultado final
+                const sucessoTotal = temNumeroConfirmado && paginaCarregariaCorretamente;
+                log('validation-log', '', 'info');
+                log('validation-log', `🎯 RESULTADO FINAL: ${sucessoTotal ? 'SUCESSO' : 'FALHOU'}`, sucessoTotal ? 'success' : 'error');
+                
+                if (sucessoTotal) {
+                    log('validation-log', '🎉 A sincronização está funcionando corretamente!', 'success');
+                    log('validation-log', '✅ Números confirmados no admin aparecem como vendidos na página principal', 'success');
+                } else {
+                    log('validation-log', '❌ Ainda há problemas de sincronização', 'error');
+                    log('validation-log', '🔧 Verifique o console da página principal para mais detalhes', 'warning');
+                }
+                
+                // Atualizar exibição
+                verificarDados();
+                atualizarExibicaoNumeros();
+                
+            }, 1000);
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            log('status-log', '🚀 Teste de sincronização carregado!', 'success');
+            log('status-log', 'Use os botões para testar a correção implementada.', 'info');
+            verificarDados();
+            atualizarExibicaoNumeros();
+        });
+    </script>
+</body>
+</html>

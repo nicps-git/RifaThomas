@@ -283,6 +283,18 @@
                 return;
             }
             
+            if (!email.includes('@') || !email.includes('.')) {
+                showError('Por favor, insira um email válido.');
+                return;
+            }
+            
+            // Verificar se Firebase está carregado
+            if (typeof firebase === 'undefined' || typeof window.FirebaseDB === 'undefined') {
+                showError('O sistema de autenticação não está disponível no momento. Tente novamente em instantes.');
+                console.error('Firebase não está disponível para autenticação');
+                return;
+            }
+            
             // Mostrar loading
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span class="loading"></span> Processando...';
