@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🆘 Admin Emergencial - Rifa Thomas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .emergency-badge {
+            background: #ff0000;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn.danger { background: linear-gradient(135deg, #dc3545, #fd7e14); }
+        .btn.warning { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+        .btn.secondary { background: linear-gradient(135deg, #6c757d, #495057); }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+        
+        .participants-table {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #007bff;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🆘 Admin Emergencial</h1>
+                <p>Sistema de backup - Rifa Thomas</p>
+            </div>
+            <div class="emergency-badge">MODO EMERGÊNCIA</div>
+        </div>
+        
+        <div class="content">
+            <div id="auth-status" class="status warning">
+                🔐 Verificando autenticação de emergência...
+            </div>
+            
+            <div id="main-content" style="display: none;">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-participants">0</div>
+                        <div>Participantes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-sold">0</div>
+                        <div>Números Vendidos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-revenue">R$ 0</div>
+                        <div>Arrecadação</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-pending">0</div>
+                        <div>Pendentes</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard">
+                    <div class="card">
+                        <h3>🔧 Ações Administrativas</h3>
+                        <button class="btn" onclick="loadData()">📊 Carregar Dados</button>
+                        <button class="btn warning" onclick="exportData()">📄 Exportar CSV</button>
+                        <button class="btn danger" onclick="resetSystem()">🔄 Reset Sistema</button>
+                        <button class="btn secondary" onclick="backupData()">💾 Backup Dados</button>
+                        <hr style="margin: 15px 0;">
+                        <button class="btn secondary" onclick="goToNormalAdmin()">↩️ Admin Normal</button>
+                        <button class="btn danger" onclick="logout()">🚪 Sair</button>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>📊 Status do Sistema</h3>
+                        <div id="system-status">
+                            <div class="status info">🔄 Verificando sistemas...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>👥 Participantes</h3>
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" id="search-participant" placeholder="🔍 Buscar participante..." style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 300px;">
+                        <button class="btn" onclick="searchParticipants()">🔍 Buscar</button>
+                        <button class="btn secondary" onclick="showAllParticipants()">👥 Mostrar Todos</button>
+                    </div>
+                    
+                    <div class="participants-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Telefone</th>
+                                    <th>PIX</th>
+                                    <th>Números</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participants-list">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 20px;">
+                                        <div class="loading"></div> Carregando dados...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sistema de dados da rifa
+        let rifaData = {
+            participants: [],
+            purchases: [],
+            stats: {
+                totalParticipants: 0,
+                totalSold: 0,
+                totalRevenue: 0,
+                totalPending: 0
+            }
+        };
+        
+        // Verificar autenticação de emergência
+        function checkEmergencyAuth() {
+            const bypass = localStorage.getItem('adminBypass');
+            const token = localStorage.getItem('adminToken');
+            
+            if (bypass === 'true' || token) {
+                showAuthSuccess();
+                loadMainContent();
+            } else {
+                showAuthError();
+            }
+        }
+        
+        function showAuthSuccess() {
+            const statusDiv = document.getElementById('auth-status');
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = '✅ Autenticação de emergência confirmada';
+        }
+        
+        function showAuthError() {
+            const statusDiv = document.getElementById('auth-status');
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = `
+                ❌ Acesso negado - Autenticação necessária<br>
+                <button class="btn" onclick="window.location.href='admin-bypass-auth.html'">🔐 Fazer Login de Emergência</button>
+            `;
+        }
+        
+        function loadMainContent() {
+            document.getElementById('main-content').style.display = 'block';
+            checkSystemStatus();
+            loadData();
+        }
+        
+        // Verificar status dos sistemas
+        async function checkSystemStatus() {
+            const statusDiv = document.getElementById('system-status');
+            let statusHtml = '';
+            
+            // Verificar Firebase
+            try {
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    statusHtml += '<div class="status success">🔥 Firebase: Conectado</div>';
+                } else {
+                    statusHtml += '<div class="status warning">⚠️ Firebase: Não disponível</div>';
+                }
+            } catch (error) {
+                statusHtml += '<div class="status error">❌ Firebase: Erro</div>';
+            }
+            
+            // Verificar localStorage
+            try {
+                const testKey = 'test_' + Date.now();
+                localStorage.setItem(testKey, 'test');
+                localStorage.removeItem(testKey);
+                statusHtml += '<div class="status success">💾 LocalStorage: OK</div>';
+            } catch (error) {
+                statusHtml += '<div class="status error">❌ LocalStorage: Erro</div>';
+            }
+            
+            // Verificar dados
+            const localData = localStorage.getItem('purchases');
+            if (localData) {
+                statusHtml += '<div class="status success">📊 Dados Locais: Disponíveis</div>';
+            } else {
+                statusHtml += '<div class="status warning">⚠️ Dados Locais: Não encontrados</div>';
+            }
+            
+            statusDiv.innerHTML = statusHtml;
+        }
+        
+        // Carregar dados (Firebase ou localStorage)
+        async function loadData() {
+            console.log('🔄 Carregando dados...');
+            
+            try {
+                let purchases = [];
+                
+                // Tentar carregar do Firebase primeiro
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    console.log('Tentando carregar do Firebase...');
+                    const firebaseResult = await window.FirebaseDB.loadPurchases();
+                    if (firebaseResult.success) {
+                        purchases = firebaseResult.purchases;
+                        console.log(`✅ Carregado ${purchases.length} compras do Firebase`);
+                    }
+                }
+                
+                // Se Firebase falhou, tentar localStorage
+                if (purchases.length === 0) {
+                    console.log('Tentando carregar do localStorage...');
+                    const localData = localStorage.getItem('purchases');
+                    if (localData) {
+                        purchases = JSON.parse(localData);
+                        console.log(`✅ Carregado ${purchases.length} compras do localStorage`);
+                    }
+                }
+                
+                // Processar dados
+                processRifaData(purchases);
+                updateStats();
+                displayParticipants();
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                const statusDiv = document.getElementById('system-status');
+                statusDiv.innerHTML += `<div class="status error">❌ Erro ao carregar: ${error.message}</div>`;
+            }
+        }
+        
+        // Processar dados da rifa
+        function processRifaData(purchases) {
+            rifaData.purchases = purchases;
+            rifaData.participants = [];
+            
+            // Agrupar por participante
+            const participantMap = {};
+            
+            purchases.forEach(purchase => {
+                const key = `${purchase.name}_${purchase.phone}`;
+                
+                if (!participantMap[key]) {
+                    participantMap[key] = {
+                        name: purchase.name,
+                        phone: purchase.phone,
+                        pix: purchase.pix || purchase.payment || 'N/A',
+                        numbers: [],
+                        totalPaid: 0,
+                        status: 'pending',
+                        purchases: []
+                    };
+                }
+                
+                participantMap[key].numbers.push(...purchase.numbers);
+                participantMap[key].totalPaid += purchase.numbers.length * 5; // R$ 5 por número
+                participantMap[key].purchases.push(purchase);
+                
+                if (purchase.status === 'confirmed') {
+                    participantMap[key].status = 'confirmed';
+                }
+            });
+            
+            rifaData.participants = Object.values(participantMap);
+            
+            // Calcular estatísticas
+            rifaData.stats = {
+                totalParticipants: rifaData.participants.length,
+                totalSold: rifaData.participants.reduce((sum, p) => sum + p.numbers.length, 0),
+                totalRevenue: rifaData.participants.reduce((sum, p) => sum + p.totalPaid, 0),
+                totalPending: rifaData.participants.filter(p => p.status === 'pending').length
+            };
+        }
+        
+        // Atualizar estatísticas
+        function updateStats() {
+            document.getElementById('total-participants').textContent = rifaData.stats.totalParticipants;
+            document.getElementById('total-sold').textContent = rifaData.stats.totalSold;
+            document.getElementById('total-revenue').textContent = `R$ ${rifaData.stats.totalRevenue.toFixed(2)}`;
+            document.getElementById('total-pending').textContent = rifaData.stats.totalPending;
+        }
+        
+        // Exibir participantes
+        function displayParticipants(participants = rifaData.participants) {
+            const tbody = document.getElementById('participants-list');
+            
+            if (participants.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Nenhum participante encontrado</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = participants.map(participant => `
+                <tr>
+                    <td><strong>${participant.name}</strong></td>
+                    <td>${participant.phone}</td>
+                    <td>${participant.pix}</td>
+                    <td>
+                        <span style="background: #e3f2fd; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                            ${participant.numbers.length} números
+                        </span>
+                        <br>
+                        <small>${participant.numbers.slice(0, 5).join(', ')}${participant.numbers.length > 5 ? '...' : ''}</small>
+                    </td>
+                    <td>
+                        <span class="status ${participant.status === 'confirmed' ? 'success' : 'warning'}" style="padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                            ${participant.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn" style="font-size: 12px; padding: 4px 8px;" onclick="editParticipant('${participant.name}', '${participant.phone}')">✏️ Editar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Buscar participantes
+        function searchParticipants() {
+            const query = document.getElementById('search-participant').value.toLowerCase();
+            const filtered = rifaData.participants.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                p.phone.includes(query)
+            );
+            displayParticipants(filtered);
+        }
+        
+        // Mostrar todos os participantes
+        function showAllParticipants() {
+            document.getElementById('search-participant').value = '';
+            displayParticipants();
+        }
+        
+        // Editar participante
+        function editParticipant(name, phone) {
+            alert(`Funcionalidade de edição para ${name} - ${phone}\nEm desenvolvimento...`);
+        }
+        
+        // Exportar dados para CSV
+        function exportData() {
+            if (rifaData.participants.length === 0) {
+                alert('Nenhum dado para exportar');
+                return;
+            }
+            
+            let csv = 'Nome,Telefone,PIX,Números,Total Pago,Status\n';
+            
+            rifaData.participants.forEach(participant => {
+                csv += `"${participant.name}","${participant.phone}","${participant.pix}","${participant.numbers.join('; ')}","R$ ${participant.totalPaid.toFixed(2)}","${participant.status}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rifa-thomas-backup-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            alert('✅ Dados exportados com sucesso!');
+        }
+        
+        // Backup dos dados
+        function backupData() {
+            const backup = {
+                timestamp: new Date().toISOString(),
+                participants: rifaData.participants,
+                purchases: rifaData.purchases,
+                stats: rifaData.stats
+            };
+            
+            const backupJson = JSON.stringify(backup, null, 2);
+            localStorage.setItem(`backup_${Date.now()}`, backupJson);
+            
+            const blob = new Blob([backupJson], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rifa-thomas-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            alert('✅ Backup criado com sucesso!');
+        }
+        
+        // Reset do sistema
+        function resetSystem() {
+            if (confirm('⚠️ ATENÇÃO: Isso irá limpar todos os dados locais. Tem certeza?')) {
+                if (confirm('🚨 ÚLTIMA CHANCE: Esta ação é irreversível. Continuar?')) {
+                    localStorage.clear();
+                    alert('✅ Sistema resetado. Recarregando página...');
+                    window.location.reload();
+                }
+            }
+        }
+        
+        // Ir para admin normal
+        function goToNormalAdmin() {
+            if (confirm('Tentar acessar o admin normal? (pode dar erro de autenticação)')) {
+                window.location.href = 'admin.html';
+            }
+        }
+        
+        // Logout
+        function logout() {
+            localStorage.removeItem('adminBypass');
+            localStorage.removeItem('adminToken');
+            alert('Logout realizado. Redirecionando...');
+            window.location.href = 'admin-bypass-auth.html';
+        }
+        
+        // Inicialização
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🆘 Admin Emergencial iniciado');
+            checkEmergencyAuth();
+        });
+        
+        // Tentar carregar Firebase se disponível
+        setTimeout(() => {
+            if (typeof window.FirebaseDB === 'undefined') {
+                console.log('⚠️ Firebase não disponível - usando apenas dados locais');
+            }
+        }, 2000);
+    </script>
+    
+    <!-- Tentar carregar Firebase se disponível -->
+    <script src="firebase-config.js" onerror="console.log('Firebase config não disponível - usando modo offline')"></script>
+</body>
+</html>

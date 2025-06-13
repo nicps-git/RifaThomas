@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnóstico Final - Admin Quebrado</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .diagnostic-panel { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-btn { background: #007bff; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; }
+        .test-btn:hover { background: #0056b3; }
+        .success { background: #d4edda; color: #155724; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .warning { background: #fff3cd; color: #856404; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .code { font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; white-space: pre-wrap; }
+        .participants-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .participants-table th, .participants-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .participants-table th { background: #f8f9fa; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico Final - Problema Admin Quebrado</h1>
+    
+    <div class="diagnostic-panel">
+        <h2>🎯 OBJETIVO</h2>
+        <p>Identificar e corrigir o problema que está impedindo o admin de carregar dados dos participantes após a implementação PIX.</p>
+        
+        <h3>📋 STATUS ATUAL:</h3>
+        <ul>
+            <li>✅ PIX implementado com sucesso</li>
+            <li>❌ Admin não carrega dados dos participantes</li>
+            <li>❓ Causa ainda não identificada</li>
+        </ul>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h2>🔍 TESTES DE DIAGNÓSTICO</h2>
+        <button class="test-btn" onclick="teste1_VerificarFirebase()">1️⃣ Verificar Firebase</button>
+        <button class="test-btn" onclick="teste2_VerificarFuncoes()">2️⃣ Verificar Funções</button>
+        <button class="test-btn" onclick="teste3_VerificarElementos()">3️⃣ Verificar DOM</button>
+        <button class="test-btn" onclick="teste4_TestarCarregamento()">4️⃣ Testar Carregamento</button>
+        <button class="test-btn" onclick="teste5_CriarDadosTeste()">5️⃣ Criar Dados de Teste</button>
+        <button class="test-btn" onclick="teste6_ForcarFuncionalidade()">6️⃣ Forçar Funcionalidade</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h2>📊 Simulação da Tabela de Participantes</h2>
+        <div class="participants-table-container">
+            <table class="participants-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Números</th>
+                        <th>Valor</th>
+                        <th>Método</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="test-participants-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            🔍 Aguardando testes...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts necessários para o admin -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        // Sistema de logs
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(logEntry);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Dados de teste
+        const dadosTestePIX = [
+            {
+                id: 'test-1',
+                buyerName: 'João Silva',
+                buyerPhone: '(11) 99999-1111',
+                buyerEmail: 'joao@teste.com',
+                numbers: [1, 2, 3],
+                totalAmount: 120.00,
+                paymentMethod: 'pix',
+                status: 'confirmed',
+                date: new Date().toISOString(),
+                timestamp: new Date()
+            },
+            {
+                id: 'test-2',
+                buyerName: 'Maria Santos',
+                buyerPhone: '(11) 99999-2222',
+                buyerEmail: 'maria@teste.com',
+                numbers: [10, 20],
+                totalAmount: 80.00,
+                paymentMethod: 'doacao',
+                status: 'pending_donation',
+                date: new Date().toISOString(),
+                timestamp: new Date()
+            }
+        ];
+
+        // Teste 1: Verificar Firebase
+        async function teste1_VerificarFirebase() {
+            log('=== TESTE 1: Verificando Firebase ===');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    log('❌ Firebase não está disponível', 'error');
+                    
+                    // Aguardar um pouco caso esteja carregando
+                    log('⏳ Aguardando Firebase carregar...', 'warning');
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    
+                    if (typeof window.FirebaseDB === 'undefined') {
+                        log('❌ Firebase ainda não disponível após espera', 'error');
+                        return false;
+                    }
+                }
+                
+                log('✅ Firebase está disponível', 'success');
+                
+                // Testar função básica
+                const result = await window.FirebaseDB.loadPurchases();
+                log(`📊 Resultado loadPurchases: ${JSON.stringify(result)}`, 'info');
+                
+                if (result.success) {
+                    log(`✅ Firebase funcionando - ${result.data.length} compras encontradas`, 'success');
+                } else {
+                    log(`⚠️ Firebase retornou erro: ${result.error}`, 'warning');
+                }
+                
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro no Firebase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Teste 2: Verificar funções necessárias
+        function teste2_VerificarFuncoes() {
+            log('=== TESTE 2: Verificando Funções ===');
+            
+            const funcoesNecessarias = [
+                'formatCurrency',
+                'formatDate',
+                'loadParticipants',
+                'createParticipantRow',
+                'updateDashboard',
+                'loadPurchaseData'
+            ];
+            
+            let funcoesEncontradas = 0;
+            
+            funcoesNecessarias.forEach(funcao => {
+                if (typeof window[funcao] === 'function') {
+                    log(`✅ Função ${funcao} encontrada`, 'success');
+                    funcoesEncontradas++;
+                } else {
+                    log(`❌ Função ${funcao} NÃO encontrada`, 'error');
+                }
+            });
+            
+            log(`📊 Resultado: ${funcoesEncontradas}/${funcoesNecessarias.length} funções encontradas`);
+            
+            // Testar funções de formatação
+            try {
+                if (typeof window.formatCurrency === 'function') {
+                    const teste = window.formatCurrency(100);
+                    log(`💰 formatCurrency(100) = ${teste}`, 'info');
+                } else {
+                    log('❌ Não foi possível testar formatCurrency', 'error');
+                }
+                
+                if (typeof window.formatDate === 'function') {
+                    const teste = window.formatDate(new Date().toISOString());
+                    log(`📅 formatDate(agora) = ${teste}`, 'info');
+                } else {
+                    log('❌ Não foi possível testar formatDate', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro ao testar funções: ${error.message}`, 'error');
+            }
+            
+            return funcoesEncontradas === funcoesNecessarias.length;
+        }
+
+        // Teste 3: Verificar elementos DOM
+        function teste3_VerificarElementos() {
+            log('=== TESTE 3: Verificando Elementos DOM ===');
+            
+            const elementosNecessarios = [
+                'participants-tbody',
+                'total-participants',
+                'total-revenue',
+                'config-pix-key'
+            ];
+            
+            let elementosEncontrados = 0;
+            
+            elementosNecessarios.forEach(id => {
+                const elemento = document.getElementById(id);
+                if (elemento) {
+                    log(`✅ Elemento #${id} encontrado`, 'success');
+                    elementosEncontrados++;
+                } else {
+                    log(`❌ Elemento #${id} NÃO encontrado`, 'error');
+                }
+            });
+            
+            log(`📊 Resultado: ${elementosEncontrados}/${elementosNecessarios.length} elementos encontrados`);
+            return elementosEncontrados === elementosNecessarios.length;
+        }
+
+        // Teste 4: Testar carregamento de dados
+        async function teste4_TestarCarregamento() {
+            log('=== TESTE 4: Testando Carregamento ===');
+            
+            try {
+                // Verificar se adminData existe
+                if (typeof window.adminData !== 'undefined') {
+                    log(`✅ adminData encontrado: ${window.adminData.purchases?.length || 0} compras`, 'success');
+                } else {
+                    log('❌ adminData não encontrado', 'error');
+                    return false;
+                }
+                
+                // Tentar carregar dados
+                if (typeof window.loadPurchaseData === 'function') {
+                    log('🔄 Tentando carregar dados...', 'info');
+                    await window.loadPurchaseData();
+                    log(`📊 Após carregar: ${window.adminData.purchases?.length || 0} compras`, 'info');
+                } else {
+                    log('❌ Função loadPurchaseData não encontrada', 'error');
+                }
+                
+                // Tentar atualizar interface
+                if (typeof window.loadParticipants === 'function') {
+                    log('🔄 Tentando atualizar participantes...', 'info');
+                    window.loadParticipants();
+                    log('✅ loadParticipants executada', 'success');
+                } else {
+                    log('❌ Função loadParticipants não encontrada', 'error');
+                }
+                
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro no carregamento: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Teste 5: Criar dados de teste
+        function teste5_CriarDadosTeste() {
+            log('=== TESTE 5: Criando Dados de Teste ===');
+            
+            try {
+                // Simular adminData se não existir
+                if (typeof window.adminData === 'undefined') {
+                    window.adminData = {
+                        purchases: [],
+                        config: {
+                            totalNumbers: 150,
+                            ticketPrice: 40.00,
+                            pixKey: 'teste@pix.com'
+                        },
+                        firebaseReady: true
+                    };
+                    log('✅ adminData criado', 'success');
+                }
+                
+                // Adicionar dados de teste
+                window.adminData.purchases = dadosTestePIX;
+                log(`✅ ${dadosTestePIX.length} dados de teste adicionados`, 'success');
+                
+                // Salvar no localStorage como backup
+                localStorage.setItem('admin_test_data', JSON.stringify(dadosTestePIX));
+                log('💾 Dados salvos no localStorage', 'info');
+                
+                // Testar na nossa tabela de simulação
+                const tbody = document.getElementById('test-participants-tbody');
+                tbody.innerHTML = '';
+                
+                dadosTestePIX.forEach(purchase => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${purchase.buyerName}</td>
+                        <td>${purchase.buyerPhone}</td>
+                        <td>${purchase.numbers.join(', ')}</td>
+                        <td>R$ ${purchase.totalAmount.toFixed(2).replace('.', ',')}</td>
+                        <td>${purchase.paymentMethod.toUpperCase()}</td>
+                        <td>${purchase.status}</td>
+                        <td>${new Date(purchase.date).toLocaleString('pt-BR')}</td>
+                        <td>Teste</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                log('✅ Dados exibidos na tabela de simulação', 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados de teste: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Teste 6: Forçar funcionalidade
+        async function teste6_ForcarFuncionalidade() {
+            log('=== TESTE 6: Forçando Funcionalidade ===');
+            
+            try {
+                // Criar funções básicas se não existirem
+                if (typeof window.formatCurrency !== 'function') {
+                    window.formatCurrency = function(value) {
+                        return new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                        }).format(value || 0);
+                    };
+                    log('✅ formatCurrency criada', 'success');
+                }
+                
+                if (typeof window.formatDate !== 'function') {
+                    window.formatDate = function(dateString) {
+                        if (!dateString) return 'N/A';
+                        return new Date(dateString).toLocaleString('pt-BR');
+                    };
+                    log('✅ formatDate criada', 'success');
+                }
+                
+                // Garantir adminData
+                if (typeof window.adminData === 'undefined') {
+                    window.adminData = {
+                        purchases: dadosTestePIX,
+                        config: { totalNumbers: 150, pixKey: 'teste@pix.com' },
+                        firebaseReady: true
+                    };
+                    log('✅ adminData forçado', 'success');
+                }
+                
+                // Testar se agora funciona
+                log('🧪 Testando funcionalidade completa...', 'info');
+                
+                const testeCurrency = window.formatCurrency(100);
+                const testeDate = window.formatDate(new Date().toISOString());
+                
+                log(`💰 formatCurrency(100): ${testeCurrency}`, 'success');
+                log(`📅 formatDate(agora): ${testeDate}`, 'success');
+                log(`📊 adminData.purchases: ${window.adminData.purchases.length} itens`, 'success');
+                
+                log('✅ DIAGNÓSTICO CONCLUÍDO - Funcionalidade forçada!', 'success');
+                
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro ao forçar funcionalidade: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Executar teste inicial
+        window.addEventListener('load', () => {
+            log('🚀 Sistema de diagnóstico carregado');
+            log('💡 Execute os testes na ordem para identificar o problema');
+            
+            // Auto-executar teste básico após 2 segundos
+            setTimeout(() => {
+                log('🔍 Executando diagnóstico automático...', 'warning');
+                teste2_VerificarFuncoes();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

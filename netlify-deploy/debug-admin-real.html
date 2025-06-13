@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Admin - Verificação Completa</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .panel { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .success { background: #d4edda; color: #155724; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .warning { background: #fff3cd; color: #856404; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .code { font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 4px; white-space: pre-wrap; overflow-x: auto; }
+        iframe { width: 100%; height: 600px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Admin - Verificação Completa</h1>
+    
+    <div class="panel">
+        <h2>🎯 Diagnóstico Atual</h2>
+        <p>Verificando o estado atual do admin.html e identificando o que foi perdido na correção anterior.</p>
+        
+        <button class="btn" onclick="verificarEstadoAtual()">1️⃣ Verificar Estado Atual</button>
+        <button class="btn" onclick="testarFuncoes()">2️⃣ Testar Funções</button>
+        <button class="btn" onclick="verificarElementos()">3️⃣ Verificar Elementos</button>
+        <button class="btn" onclick="testarCarregamentoCompleto()">4️⃣ Teste Completo</button>
+        <button class="btn" onclick="abrirAdminOriginal()">5️⃣ Abrir Admin Real</button>
+        
+        <div id="debug-results"></div>
+    </div>
+
+    <div class="panel">
+        <h2>📊 Admin Real (Iframe)</h2>
+        <iframe id="admin-iframe" src="admin.html"></iframe>
+    </div>
+
+    <!-- Scripts necessários -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        // Sistema de logs
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('debug-results');
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(logEntry);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Verificar estado atual
+        function verificarEstadoAtual() {
+            log('=== VERIFICAÇÃO DO ESTADO ATUAL ===');
+            
+            // Verificar Firebase
+            log(`Firebase disponível: ${typeof window.FirebaseDB !== 'undefined'}`, 
+                typeof window.FirebaseDB !== 'undefined' ? 'success' : 'error');
+            
+            // Verificar se admin.js foi carregado no iframe
+            try {
+                const iframe = document.getElementById('admin-iframe');
+                const iframeWindow = iframe.contentWindow;
+                const iframeDoc = iframe.contentDocument;
+                
+                if (iframeDoc) {
+                    log('✅ Iframe carregado e acessível', 'success');
+                    
+                    // Verificar se o admin.js foi carregado
+                    const scripts = iframeDoc.querySelectorAll('script[src*="admin.js"]');
+                    log(`Scripts admin.js encontrados: ${scripts.length}`, scripts.length > 0 ? 'success' : 'warning');
+                    
+                    // Verificar se funções estão disponíveis
+                    const funcoes = ['loadParticipants', 'formatCurrency', 'formatDate', 'adminData'];
+                    funcoes.forEach(func => {
+                        const disponivel = typeof iframeWindow[func] !== 'undefined';
+                        log(`Função ${func}: ${disponivel ? 'OK' : 'MISSING'}`, disponivel ? 'success' : 'error');
+                    });
+                    
+                    // Verificar elementos DOM críticos
+                    const elementos = ['participants-tbody', 'total-participants', 'config-pix-key'];
+                    elementos.forEach(id => {
+                        const elemento = iframeDoc.getElementById(id);
+                        log(`Elemento ${id}: ${elemento ? 'OK' : 'MISSING'}`, elemento ? 'success' : 'error');
+                    });
+                    
+                } else {
+                    log('❌ Não foi possível acessar o conteúdo do iframe', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar iframe: ${error.message}`, 'error');
+            }
+        }
+
+        // Testar funções específicas
+        async function testarFuncoes() {
+            log('=== TESTE DE FUNÇÕES ===');
+            
+            try {
+                const iframe = document.getElementById('admin-iframe');
+                const iframeWindow = iframe.contentWindow;
+                
+                if (iframeWindow && typeof iframeWindow.adminData !== 'undefined') {
+                    log('✅ adminData encontrado', 'success');
+                    log(`Compras no adminData: ${iframeWindow.adminData.purchases?.length || 0}`, 'info');
+                    
+                    // Testar formatCurrency
+                    if (typeof iframeWindow.formatCurrency === 'function') {
+                        const teste = iframeWindow.formatCurrency(100);
+                        log(`formatCurrency(100) = ${teste}`, 'success');
+                    } else {
+                        log('❌ formatCurrency não encontrada', 'error');
+                    }
+                    
+                    // Testar formatDate
+                    if (typeof iframeWindow.formatDate === 'function') {
+                        const teste = iframeWindow.formatDate(new Date().toISOString());
+                        log(`formatDate(agora) = ${teste}`, 'success');
+                    } else {
+                        log('❌ formatDate não encontrada', 'error');
+                    }
+                    
+                    // Testar loadParticipants
+                    if (typeof iframeWindow.loadParticipants === 'function') {
+                        log('🔄 Testando loadParticipants...', 'info');
+                        iframeWindow.loadParticipants();
+                        log('✅ loadParticipants executada', 'success');
+                    } else {
+                        log('❌ loadParticipants não encontrada', 'error');
+                    }
+                    
+                } else {
+                    log('❌ adminData não encontrado no iframe', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste de funções: ${error.message}`, 'error');
+            }
+        }
+
+        // Verificar elementos
+        function verificarElementos() {
+            log('=== VERIFICAÇÃO DE ELEMENTOS ===');
+            
+            try {
+                const iframe = document.getElementById('admin-iframe');
+                const iframeDoc = iframe.contentDocument;
+                
+                if (iframeDoc) {
+                    // Verificar tabela de participantes
+                    const tbody = iframeDoc.getElementById('participants-tbody');
+                    if (tbody) {
+                        log('✅ Tabela de participantes encontrada', 'success');
+                        log(`Conteúdo atual: ${tbody.innerHTML.substring(0, 200)}...`, 'info');
+                    } else {
+                        log('❌ Tabela participants-tbody não encontrada', 'error');
+                    }
+                    
+                    // Verificar dashboard
+                    const totalParticipants = iframeDoc.getElementById('total-participants');
+                    if (totalParticipants) {
+                        log(`Total participantes mostrado: ${totalParticipants.textContent}`, 'success');
+                    } else {
+                        log('❌ Elemento total-participants não encontrado', 'error');
+                    }
+                    
+                    // Verificar campo PIX
+                    const pixKey = iframeDoc.getElementById('config-pix-key');
+                    if (pixKey) {
+                        log(`Campo PIX: ${pixKey.value || 'vazio'}`, 'success');
+                    } else {
+                        log('❌ Campo config-pix-key não encontrado', 'error');
+                    }
+                    
+                } else {
+                    log('❌ Documento do iframe não acessível', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na verificação de elementos: ${error.message}`, 'error');
+            }
+        }
+
+        // Teste completo
+        async function testarCarregamentoCompleto() {
+            log('=== TESTE COMPLETO DE CARREGAMENTO ===');
+            
+            try {
+                const iframe = document.getElementById('admin-iframe');
+                const iframeWindow = iframe.contentWindow;
+                
+                // Forçar carregamento se função estiver disponível
+                if (typeof iframeWindow.forcarCarregamentoDados === 'function') {
+                    log('🔄 Forçando carregamento de dados...', 'info');
+                    const resultado = await iframeWindow.forcarCarregamentoDados();
+                    log(`Resultado: ${resultado?.length || 0} registros`, 'success');
+                } else if (typeof iframeWindow.createSampleData === 'function') {
+                    log('🔄 Criando dados de amostra...', 'info');
+                    const dados = iframeWindow.createSampleData();
+                    log(`Dados criados: ${dados?.length || 0} registros`, 'success');
+                    
+                    if (typeof iframeWindow.loadParticipants === 'function') {
+                        iframeWindow.loadParticipants();
+                        log('✅ Tabela atualizada', 'success');
+                    }
+                } else {
+                    log('❌ Nenhuma função de carregamento encontrada', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste completo: ${error.message}`, 'error');
+            }
+        }
+
+        // Abrir admin em nova aba
+        function abrirAdminOriginal() {
+            window.open('admin.html', '_blank');
+        }
+
+        // Aguardar carregamento do iframe
+        window.addEventListener('load', () => {
+            log('🚀 Sistema de debug carregado');
+            
+            const iframe = document.getElementById('admin-iframe');
+            iframe.addEventListener('load', () => {
+                log('📄 Iframe admin carregado');
+                setTimeout(() => {
+                    verificarEstadoAtual();
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>

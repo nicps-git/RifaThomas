@@ -66,7 +66,7 @@
                     <div class="info-card">
                         <i class="fas fa-calendar-alt"></i>
                         <h3>Data do Sorteio</h3>
-                        <p id="draw-date">11 de Julho de 2025 às 16h</p>
+                        <p id="draw-date">Carregando data...</p>
                     </div>
                     <div class="info-card">
                         <i class="fas fa-ticket-alt"></i>
@@ -113,7 +113,7 @@
                     <p class="premio-note">
                         <strong>🍼 Sugestões de Marcas de Fraldas:</strong> Pampers, Huggies ou MamyPoko<br>
                         <strong>💰 Formas de Pagamento:</strong> PIX (R$ 40,00) ou Doação de Fraldas<br>
-                        <strong>📅 Data do Sorteio:</strong> 11 de Julho de 2025 às 16h
+                        <strong>📅 Data do Sorteio:</strong> <span data-firebase="drawDate">Carregando data...</span>
                     </p>
                 </div>
             </div>
@@ -197,7 +197,12 @@
                     <div class="contact-item">
                         <i class="fas fa-envelope"></i>
                         <h3>Email</h3>
-                        <p>contato@rifaonline.com</p>
+                        <p data-contact-email>contato@rifaonline.com</p>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>PIX</h3>
+                        <p data-firebase="pixKey" data-pix-key>Carregando chave PIX...</p>
                     </div>
                 </div>
             </div>

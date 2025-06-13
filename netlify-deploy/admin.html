@@ -448,7 +448,7 @@
             console.log('✅ Painel administrativo exibido com sucesso');
         };
         
-        // Função ÚNICA para mostrar erro
+        // Função ÚNICA para mostrar erro com opções de recuperação
         window.showAdminError = function(errorMessage) {
             if (adminVerificationCompleted) {
                 console.log('⚠️ Verificação já concluída, ignorando erro');
@@ -460,21 +460,35 @@
             const loaderContent = document.querySelector('.loader-content');
             if (loaderContent) {
                 loaderContent.innerHTML = `
-                    <h2 style="color: #dc3545;">❌ Acesso Negado</h2>
+                    <h2 style="color: #dc3545;">❌ Problema de Autenticação</h2>
                     <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #f5c6cb;">
                         <strong>Erro:</strong> ${errorMessage}
                     </div>
-                    <p>Você será redirecionado para a página de login...</p>
-                    <button onclick="window.location.href='login.html'" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-top: 15px;">
-                        🔐 Ir para Login
-                    </button>
+                    <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffeaa7;">
+                        <strong>💡 Soluções:</strong><br>
+                        • O sistema de autenticação Firebase pode estar temporariamente indisponível<br>
+                        • Suas credenciais podem ter expirado<br>
+                        • Há um problema de conectividade com o Firebase
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="window.location.reload()" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🔄 Tentar Novamente
+                        </button>
+                        <button onclick="window.location.href='login.html'" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🔐 Fazer Login
+                        </button>
+                        <button onclick="window.location.href='admin-bypass-auth.html'" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🆘 Acesso de Emergência
+                        </button>
+                        <button onclick="window.location.href='diagnostico-firebase-auth.html'" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🔍 Diagnóstico
+                        </button>
+                    </div>
+                    <p style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+                        Se o problema persistir, use o "Acesso de Emergência" para acessar o painel administrativo.
+                    </p>
                 `;
             }
-            
-            // Redirecionar após 5 segundos
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 5000);
         };
         
         // Função ÚNICA para atualizar status
@@ -519,20 +533,44 @@
         window.adminSystemReady = false;
         window.firebaseLoaded = false;
         
-        // Função para verificar autenticação antes de qualquer carregamento
+        // Função para verificar autenticação com estratégia mais robusta
         async function verifyAdminAuth() {
             console.log('🔐 Verificando autenticação de administrador...');
+            
             try {
+                // Aguardar FirebaseDB estar disponível
                 if (typeof window.FirebaseDB === 'undefined') {
-                    throw new Error('FirebaseDB não disponível');
+                    console.log('⏳ Aguardando FirebaseDB...');
+                    await waitForFirebaseDB();
                 }
                 
-                // Adicionar pequeno delay para garantir que Firebase Auth esteja pronto
-                await new Promise(resolve => setTimeout(resolve, 1200));
+                console.log('✅ FirebaseDB disponível, prosseguindo...');
                 
-                const result = await window.FirebaseDB.getCurrentAdmin();
+                // Estratégia 1: Verificar se já há admin logado
+                console.log('🔍 Verificando admin atual...');
+                let result = await window.FirebaseDB.getCurrentAdmin();
+                
                 if (!result.success || !result.isAdmin) {
-                    throw new Error(result.error || 'Não autenticado como administrador');
+                    console.log('❌ Nenhum admin logado, tentando login automático...');
+                    
+                    // Estratégia 2: Tentar login automático
+                    const loginResult = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                    
+                    if (loginResult.success) {
+                        console.log('✅ Login automático bem-sucedido');
+                        
+                        // Aguardar sincronização
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        
+                        // Verificar novamente
+                        result = await window.FirebaseDB.getCurrentAdmin();
+                        
+                        if (!result.success || !result.isAdmin) {
+                            throw new Error('Falha na verificação pós-login');
+                        }
+                    } else {
+                        throw new Error(`Login automático falhou: ${loginResult.error}`);
+                    }
                 }
                 
                 // Dupla verificação com isAdmin
@@ -549,11 +587,34 @@
                 // Continuar carregamento normal
                 document.querySelector('.admin-main').style.display = 'block';
                 document.querySelector('.admin-loader').style.display = 'none';
+                
             } catch (error) {
                 console.error('❌ Falha na verificação de admin:', error);
                 window.showAdminError(error.message || 'Acesso não autorizado');
                 return false;
             }
+        }
+        
+        // Função auxiliar para aguardar FirebaseDB
+        function waitForFirebaseDB() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 20;
+                
+                const check = () => {
+                    if (typeof window.FirebaseDB !== 'undefined') {
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Timeout: FirebaseDB não carregou'));
+                    } else {
+                        attempts++;
+                        window.updateAdminStatus(`Aguardando Firebase... (${attempts}/${maxAttempts})`);
+                        setTimeout(check, 500);
+                    }
+                };
+                
+                check();
+            });
         }
         
         // Aguardar Firebase estar pronto

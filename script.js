@@ -175,7 +175,7 @@ function initializeRifa() {
     // Configurar informações na página
     document.getElementById('total-tickets').textContent = RIFA_CONFIG.totalNumbers;
     document.getElementById('ticket-price').textContent = `R$ ${RIFA_CONFIG.ticketPrice.toFixed(2)}`;
-    document.getElementById('draw-date').textContent = 'Sorteio: 11 de Julho de 2025 às 16h';
+    document.getElementById('draw-date').textContent = 'Data do sorteio a definir';
 }
 
 // Configurar event listeners

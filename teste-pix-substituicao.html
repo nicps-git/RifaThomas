@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ TESTE: Instagram → PIX Implementado</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: #333;
+        }
+        
+        .hero {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .hero h1 {
+            color: #28a745;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .success-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 5px solid #28a745;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .status-card h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .check-icon {
+            color: #28a745;
+            font-size: 1.2em;
+            margin-right: 10px;
+            min-width: 25px;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .log-area {
+            background: #1a202c;
+            color: #a0aec0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .icon-comparison {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .icon-item {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .icon-item.old {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .icon-item.new {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .icon-item i {
+            font-size: 3em;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .arrow {
+            font-size: 3em;
+            color: #666;
+        }
+        
+        .pix-display {
+            background: #e3f2fd;
+            border: 2px solid #1976d2;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .pix-key {
+            font-family: monospace;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #1976d2;
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="hero">
+        <div class="success-icon">🎉</div>
+        <h1>Instagram → PIX Implementado</h1>
+        <p>Substituição realizada com sucesso no sistema Chá Rifa Thomas!</p>
+    </div>
+
+    <div class="status-grid">
+        <div class="status-card">
+            <h3>📋 Mudanças Implementadas</h3>
+            
+            <div class="checklist-item">
+                <span class="check-icon">✅</span>
+                <span><strong>Ícone Instagram removido:</strong> fab fa-instagram substituído</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">✅</span>
+                <span><strong>Ícone PIX adicionado:</strong> fas fa-credit-card implementado</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">✅</span>
+                <span><strong>Título atualizado:</strong> "Instagram" → "PIX"</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">✅</span>
+                <span><strong>Chave PIX dinâmica:</strong> Conectada ao Firebase admin</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">✅</span>
+                <span><strong>Atributos data-firebase:</strong> Sincronização automática</span>
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <h3>📁 Arquivos Modificados</h3>
+            
+            <div class="checklist-item">
+                <span class="check-icon">📄</span>
+                <span><strong>index.html:</strong> PIX adicionado na seção contato</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">📄</span>
+                <span><strong>netlify-deploy/index.html:</strong> PIX adicionado</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">📄</span>
+                <span><strong>deploy-final/.../index.html:</strong> Instagram → PIX</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">🔧</span>
+                <span><strong>Sistema Admin:</strong> Campo "Chave PIX" já configurado</span>
+            </div>
+            
+            <div class="checklist-item">
+                <span class="check-icon">🔥</span>
+                <span><strong>Firebase:</strong> Sincronização automática ativa</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Comparação Visual</h2>
+        
+        <div class="icon-comparison">
+            <div class="icon-item old">
+                <i class="fab fa-instagram"></i>
+                <h4>ANTES</h4>
+                <p>Instagram</p>
+                <p>@rifaonline</p>
+            </div>
+            
+            <div class="arrow">→</div>
+            
+            <div class="icon-item new">
+                <i class="fas fa-credit-card"></i>
+                <h4>DEPOIS</h4>
+                <p>PIX</p>
+                <div class="pix-display">
+                    <span class="pix-key" data-firebase="pixKey" data-pix-key>Carregando chave PIX...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Teste de Funcionalidade</h2>
+        <button class="test-button" onclick="testFirebaseConnection()">🔥 Testar Firebase</button>
+        <button class="test-button" onclick="testPixLoad()">💳 Testar Chave PIX</button>
+        <button class="test-button" onclick="simulateAdminUpdate()">⚙️ Simular Admin Update</button>
+        <button class="test-button" onclick="testMainPage()">🏠 Testar Página Principal</button>
+        
+        <div class="log-area" id="test-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Status do Sistema</h2>
+        <div id="system-status">
+            <p><strong>🔥 Firebase:</strong> <span id="firebase-status">Verificando...</span></p>
+            <p><strong>💳 Chave PIX Atual:</strong> <span id="current-pix" class="pix-key">Carregando...</span></p>
+            <p><strong>📅 Última Atualização:</strong> <span id="last-update">-</span></p>
+            <p><strong>🌐 Página Principal:</strong> <span id="main-page-status">Não testada</span></p>
+        </div>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let testLog = '';
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            testLog += `[${timestamp}] ${icon} ${message}\n`;
+            document.getElementById('test-log').textContent = testLog;
+            document.getElementById('test-log').scrollTop = document.getElementById('test-log').scrollHeight;
+            console.log(`${icon} ${message}`);
+        }
+        
+        function updateStatus(element, text, type = 'info') {
+            document.getElementById(element).textContent = text;
+            if (type === 'success') {
+                document.getElementById(element).style.color = '#22543d';
+            } else if (type === 'error') {
+                document.getElementById(element).style.color = '#742a2a';
+            } else {
+                document.getElementById(element).style.color = '#744210';
+            }
+        }
+        
+        async function testFirebaseConnection() {
+            addLog('🔥 Testando conexão com Firebase...', 'info');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não está disponível');
+                }
+                
+                addLog('✅ FirebaseDB disponível', 'success');
+                updateStatus('firebase-status', 'Conectado', 'success');
+                
+                // Testar operação básica
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success) {
+                    addLog('✅ Teste de leitura Firebase bem-sucedido', 'success');
+                    return true;
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro na conexão Firebase: ${error.message}`, 'error');
+                updateStatus('firebase-status', 'Erro', 'error');
+                return false;
+            }
+        }
+        
+        async function testPixLoad() {
+            addLog('💳 Testando carregamento da chave PIX...', 'info');
+            
+            if (!await testFirebaseConnection()) {
+                return;
+            }
+            
+            try {
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success && result.data && result.data.pixKey) {
+                    const pixKey = result.data.pixKey;
+                    addLog(`✅ Chave PIX carregada: ${pixKey}`, 'success');
+                    updateStatus('current-pix', pixKey, 'success');
+                    updateStatus('last-update', new Date().toLocaleString(), 'success');
+                    
+                    // Atualizar elemento de teste
+                    const pixElement = document.querySelector('[data-pix-key]');
+                    if (pixElement) {
+                        pixElement.textContent = pixKey;
+                        addLog('✅ Elemento PIX atualizado na página de teste', 'success');
+                    }
+                    
+                } else {
+                    throw new Error('Chave PIX não encontrada na configuração');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro ao carregar chave PIX: ${error.message}`, 'error');
+                updateStatus('current-pix', 'Erro', 'error');
+            }
+        }
+        
+        async function simulateAdminUpdate() {
+            addLog('⚙️ Simulando atualização via admin...', 'info');
+            
+            if (!await testFirebaseConnection()) {
+                return;
+            }
+            
+            try {
+                const newPixKey = `teste.${Date.now()}@pixkey.com`;
+                
+                // Simular salvamento de configuração
+                const updateConfig = {
+                    pixKey: newPixKey,
+                    ticketPrice: 40,
+                    totalNumbers: 150,
+                    drawDate: new Date('2025-07-11T16:00:00'),
+                    contactPhone: '(11) 99999-9999',
+                    contactEmail: 'contato@rifaonline.com'
+                };
+                
+                addLog(`💾 Salvando nova chave PIX: ${newPixKey}`, 'info');
+                
+                const result = await window.FirebaseDB.saveConfig(updateConfig);
+                
+                if (result.success) {
+                    addLog('✅ Configuração atualizada com sucesso', 'success');
+                    
+                    // Aguardar um pouco e recarregar
+                    setTimeout(async () => {
+                        addLog('🔄 Recarregando configurações...', 'info');
+                        await testPixLoad();
+                    }, 1000);
+                    
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro na simulação: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testMainPage() {
+            addLog('🏠 Testando integração com página principal...', 'info');
+            
+            try {
+                // Criar iframe para testar a página principal
+                const iframe = document.createElement('iframe');
+                iframe.src = './index.html';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                
+                iframe.onload = function() {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        
+                        // Verificar se o elemento PIX existe
+                        const pixElement = iframeDoc.querySelector('[data-pix-key]');
+                        const pixIcon = iframeDoc.querySelector('.contact-item .fas.fa-credit-card');
+                        const pixTitle = iframeDoc.querySelector('.contact-item h3');
+                        
+                        if (pixIcon) {
+                            addLog('✅ Ícone PIX encontrado na página principal', 'success');
+                        } else {
+                            addLog('❌ Ícone PIX NÃO encontrado na página principal', 'error');
+                        }
+                        
+                        if (pixTitle && pixTitle.textContent.includes('PIX')) {
+                            addLog('✅ Título "PIX" encontrado na página principal', 'success');
+                        } else {
+                            addLog('❌ Título "PIX" NÃO encontrado na página principal', 'error');
+                        }
+                        
+                        if (pixElement) {
+                            addLog('✅ Elemento de chave PIX encontrado na página principal', 'success');
+                            addLog(`💳 Conteúdo atual: "${pixElement.textContent}"`, 'info');
+                            updateStatus('main-page-status', 'Integração OK', 'success');
+                        } else {
+                            addLog('❌ Elemento de chave PIX NÃO encontrado na página principal', 'error');
+                            updateStatus('main-page-status', 'Erro na integração', 'error');
+                        }
+                        
+                        // Verificar se o Instagram foi removido
+                        const instagramIcon = iframeDoc.querySelector('.fab.fa-instagram');
+                        if (!instagramIcon) {
+                            addLog('✅ Ícone Instagram removido com sucesso', 'success');
+                        } else {
+                            addLog('⚠️ Ícone Instagram ainda presente na página', 'warning');
+                        }
+                        
+                        document.body.removeChild(iframe);
+                        
+                    } catch (error) {
+                        addLog(`❌ Erro ao acessar página principal: ${error.message}`, 'error');
+                        document.body.removeChild(iframe);
+                    }
+                };
+                
+            } catch (error) {
+                addLog(`❌ Erro no teste da página principal: ${error.message}`, 'error');
+            }
+        }
+        
+        // Inicializar testes
+        window.addEventListener('load', function() {
+            addLog('🚀 Teste de substituição Instagram → PIX iniciado', 'info');
+            
+            // Aguardar Firebase carregar
+            setTimeout(async () => {
+                addLog('🔄 Iniciando testes automáticos...', 'info');
+                await testFirebaseConnection();
+                await testPixLoad();
+            }, 2000);
+        });
+        
+        // Listener para mudanças no Firebase
+        window.addEventListener('firebaseReady', function() {
+            addLog('🔥 Firebase pronto para uso', 'success');
+        });
+    </script>
+</body>
+</html>

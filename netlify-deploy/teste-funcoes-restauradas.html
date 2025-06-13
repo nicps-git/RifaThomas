@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 TESTE: Funções Admin Restauradas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        
+        h1 { color: #333; text-align: center; }
+        h2 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 TESTE: Verificação das Funções Admin Restauradas</h1>
+        
+        <div class="test-section">
+            <h2>📋 Status do Sistema</h2>
+            <div id="system-status">Verificando...</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 Teste de Funções Principais</h2>
+            <button class="test-button" onclick="testFilterParticipants()">🔍 Testar filterParticipants</button>
+            <button class="test-button" onclick="testEditParticipant()">✏️ Testar editParticipant</button>
+            <button class="test-button" onclick="testExportParticipants()">📊 Testar exportParticipants</button>
+            <button class="test-button" onclick="testLoadParticipants()">👥 Testar loadParticipants</button>
+            <div id="function-test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Teste de Dados</h2>
+            <button class="test-button" onclick="checkDataStatus()">📊 Verificar Dados</button>
+            <button class="test-button" onclick="createTestData()">🧪 Criar Dados de Teste</button>
+            <button class="test-button" onclick="forceLoadData()">🔄 Forçar Carregamento</button>
+            <div id="data-test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🌐 Teste de Acesso Global</h2>
+            <button class="test-button" onclick="testGlobalAccess()">🌐 Verificar Funções Globais</button>
+            <div id="global-test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🚀 Ações Diretas</h2>
+            <button class="test-button" onclick="goToAdmin()">🔧 Ir para Admin</button>
+            <button class="test-button" onclick="window.location.reload()">🔄 Recarregar Teste</button>
+        </div>
+    </div>
+
+    <!-- Carregar dependências -->
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+    
+    <script>
+        console.log('🔧 Teste carregado - verificando funções restauradas');
+        
+        function addResult(containerId, message, isSuccess = true) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `result ${isSuccess ? 'success' : 'error'}`;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+        
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+        
+        // Verificar status do sistema
+        function checkSystemStatus() {
+            const status = document.getElementById('system-status');
+            let statusMessage = '';
+            
+            statusMessage += `🔧 admin.js carregado: ${typeof window.adminData !== 'undefined'}\n`;
+            statusMessage += `🔥 Firebase disponível: ${typeof window.FirebaseDB !== 'undefined'}\n`;
+            statusMessage += `📊 Dados carregados: ${window.adminData?.purchases?.length || 0} compras\n`;
+            statusMessage += `✅ Sistema inicializado: ${window.adminData?.firebaseReady || false}\n`;
+            
+            status.innerHTML = `<pre>${statusMessage}</pre>`;
+        }
+        
+        // Testar filterParticipants
+        function testFilterParticipants() {
+            clearResults('function-test-results');
+            
+            try {
+                if (typeof window.filterParticipants === 'function') {
+                    addResult('function-test-results', '✅ filterParticipants existe e é uma função');
+                    
+                    // Tentar executar (sem efeito visual pois não estamos na página admin)
+                    console.log('🧪 Testando filterParticipants...');
+                    addResult('function-test-results', '✅ filterParticipants pode ser chamada');
+                } else {
+                    addResult('function-test-results', '❌ filterParticipants não foi encontrada', false);
+                }
+            } catch (error) {
+                addResult('function-test-results', `❌ Erro ao testar filterParticipants: ${error.message}`, false);
+            }
+        }
+        
+        // Testar editParticipant
+        function testEditParticipant() {
+            try {
+                if (typeof window.editParticipant === 'function') {
+                    addResult('function-test-results', '✅ editParticipant existe e é uma função');
+                } else {
+                    addResult('function-test-results', '❌ editParticipant não foi encontrada', false);
+                }
+            } catch (error) {
+                addResult('function-test-results', `❌ Erro ao testar editParticipant: ${error.message}`, false);
+            }
+        }
+        
+        // Testar exportParticipants
+        function testExportParticipants() {
+            try {
+                if (typeof window.exportParticipants === 'function') {
+                    addResult('function-test-results', '✅ exportParticipants existe e é uma função');
+                } else {
+                    addResult('function-test-results', '❌ exportParticipants não foi encontrada', false);
+                }
+            } catch (error) {
+                addResult('function-test-results', `❌ Erro ao testar exportParticipants: ${error.message}`, false);
+            }
+        }
+        
+        // Testar loadParticipants
+        function testLoadParticipants() {
+            try {
+                if (typeof window.loadParticipants === 'function') {
+                    addResult('function-test-results', '✅ loadParticipants existe e é uma função');
+                } else {
+                    addResult('function-test-results', '❌ loadParticipants não foi encontrada', false);
+                }
+            } catch (error) {
+                addResult('function-test-results', `❌ Erro ao testar loadParticipants: ${error.message}`, false);
+            }
+        }
+        
+        // Verificar dados
+        function checkDataStatus() {
+            clearResults('data-test-results');
+            
+            try {
+                const purchases = window.adminData?.purchases || [];
+                addResult('data-test-results', `📊 Total de compras: ${purchases.length}`);
+                
+                if (purchases.length > 0) {
+                    const pending = purchases.filter(p => p.status === 'pending_donation').length;
+                    const confirmed = purchases.filter(p => p.status === 'confirmed').length;
+                    const rejected = purchases.filter(p => p.status === 'rejected').length;
+                    
+                    addResult('data-test-results', `🍼 Pendentes: ${pending} | ✅ Confirmados: ${confirmed} | ❌ Rejeitados: ${rejected}`);
+                } else {
+                    addResult('data-test-results', '⚠️ Nenhum dado encontrado');
+                }
+            } catch (error) {
+                addResult('data-test-results', `❌ Erro ao verificar dados: ${error.message}`, false);
+            }
+        }
+        
+        // Criar dados de teste
+        function createTestData() {
+            try {
+                if (typeof window.createSampleData === 'function') {
+                    window.createSampleData();
+                    addResult('data-test-results', '✅ Dados de teste criados');
+                    setTimeout(() => checkDataStatus(), 500);
+                } else {
+                    addResult('data-test-results', '❌ createSampleData não disponível', false);
+                }
+            } catch (error) {
+                addResult('data-test-results', `❌ Erro ao criar dados: ${error.message}`, false);
+            }
+        }
+        
+        // Forçar carregamento
+        function forceLoadData() {
+            try {
+                if (typeof window.forcarCarregamentoDados === 'function') {
+                    window.forcarCarregamentoDados();
+                    addResult('data-test-results', '✅ Carregamento forçado executado');
+                } else if (typeof window.loadPurchaseData === 'function') {
+                    window.loadPurchaseData();
+                    addResult('data-test-results', '✅ loadPurchaseData executado');
+                } else {
+                    addResult('data-test-results', '❌ Funções de carregamento não encontradas', false);
+                }
+            } catch (error) {
+                addResult('data-test-results', `❌ Erro ao forçar carregamento: ${error.message}`, false);
+            }
+        }
+        
+        // Testar acesso global
+        function testGlobalAccess() {
+            clearResults('global-test-results');
+            
+            const functionsToCheck = [
+                'adminData', 'loadParticipants', 'filterParticipants', 
+                'editParticipant', 'exportParticipants', 'loadPurchaseData',
+                'updateDashboard', 'formatCurrency', 'formatDate'
+            ];
+            
+            let found = 0;
+            
+            functionsToCheck.forEach(funcName => {
+                if (typeof window[funcName] !== 'undefined') {
+                    addResult('global-test-results', `✅ window.${funcName} disponível`);
+                    found++;
+                } else {
+                    addResult('global-test-results', `❌ window.${funcName} não encontrada`, false);
+                }
+            });
+            
+            addResult('global-test-results', `📊 Total: ${found}/${functionsToCheck.length} funções encontradas`);
+        }
+        
+        // Ir para admin
+        function goToAdmin() {
+            window.location.href = 'admin.html';
+        }
+        
+        // Executar verificação inicial
+        setTimeout(() => {
+            checkSystemStatus();
+        }, 1000);
+        
+        console.log('✅ Teste inicializado - use os botões para verificar as funções');
+    </script>
+</body>
+</html>

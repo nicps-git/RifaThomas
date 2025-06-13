@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Teste de Correção - Admin Funcional</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .panel { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-danger { background: #dc3545; }
+        .success { background: #d4edda; color: #155724; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .error { background: #f8d7da; color: #721c24; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .warning { background: #fff3cd; color: #856404; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .info { background: #d1ecf1; color: #0c5460; padding: 10px; margin: 5px 0; border-radius: 4px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-value { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        .participants-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .participants-table th, .participants-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .participants-table th { background: #f8f9fa; font-weight: bold; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .status-confirmed { background: #d4edda; color: #155724; }
+        .status-pending-donation { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>✅ Teste de Correção - Admin Funcional</h1>
+    
+    <div class="panel">
+        <h2>🎯 Status da Correção</h2>
+        <p><strong>Problema:</strong> Admin não carregava dados dos participantes após implementação PIX</p>
+        <p><strong>Causa:</strong> Sistema Firebase-only sem fallback adequado</p>
+        <p><strong>Solução:</strong> Implementação de sistema robusto com fallback e modo emergência</p>
+    </div>
+
+    <div class="panel">
+        <h2>🔧 Testes de Validação</h2>
+        <button class="btn" onclick="testeBasico()">1️⃣ Teste Básico</button>
+        <button class="btn btn-success" onclick="testeCarregamento()">2️⃣ Teste Carregamento</button>
+        <button class="btn btn-warning" onclick="testeModoEmergencia()">3️⃣ Teste Modo Emergência</button>
+        <button class="btn btn-danger" onclick="testeDiagnostico()">4️⃣ Diagnóstico Completo</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="panel">
+        <h2>📊 Dashboard Simulado</h2>
+        <div class="stats">
+            <div class="stat-card">
+                <div>👥 Participantes</div>
+                <div class="stat-value" id="test-participants">0</div>
+            </div>
+            <div class="stat-card">
+                <div>💰 Receita</div>
+                <div class="stat-value" id="test-revenue">R$ 0,00</div>
+            </div>
+            <div class="stat-card">
+                <div>🎯 Completude</div>
+                <div class="stat-value" id="test-completion">0%</div>
+            </div>
+            <div class="stat-card">
+                <div>🔥 Firebase</div>
+                <div class="stat-value" id="test-firebase">❓</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>📋 Simulação da Tabela de Participantes</h2>
+        <div class="participants-table-container">
+            <table class="participants-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Números</th>
+                        <th>Valor</th>
+                        <th>Método</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="test-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            🔄 Aguardando testes...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts necessários -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+    
+    <script>
+        // Sistema de logs
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(logEntry);
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // Teste básico
+        function testeBasico() {
+            log('=== TESTE BÁSICO ===');
+            
+            // Verificar se as funções estão disponíveis
+            const funcoes = ['loadParticipants', 'formatCurrency', 'formatDate', 'forcarCarregamentoDados', 'diagnosticoRapido'];
+            let encontradas = 0;
+            
+            funcoes.forEach(func => {
+                if (typeof window[func] === 'function') {
+                    log(`✅ Função ${func} disponível`, 'success');
+                    encontradas++;
+                } else {
+                    log(`❌ Função ${func} não encontrada`, 'error');
+                }
+            });
+            
+            if (encontradas === funcoes.length) {
+                log('✅ TESTE BÁSICO PASSOU - Todas as funções encontradas', 'success');
+                document.getElementById('test-firebase').textContent = '✅';
+            } else {
+                log(`❌ TESTE BÁSICO FALHOU - ${encontradas}/${funcoes.length} funções`, 'error');
+                document.getElementById('test-firebase').textContent = '❌';
+            }
+        }
+
+        // Teste de carregamento
+        async function testeCarregamento() {
+            log('=== TESTE CARREGAMENTO ===');
+            
+            try {
+                if (typeof window.forcarCarregamentoDados === 'function') {
+                    log('🔄 Forçando carregamento de dados...', 'info');
+                    const dados = await window.forcarCarregamentoDados();
+                    
+                    if (dados && dados.length > 0) {
+                        log(`✅ ${dados.length} registros carregados`, 'success');
+                        
+                        // Atualizar dashboard
+                        document.getElementById('test-participants').textContent = dados.length;
+                        
+                        let totalReceita = 0;
+                        dados.forEach(item => {
+                            if (item.status === 'confirmed') {
+                                totalReceita += item.totalAmount || 0;
+                            }
+                        });
+                        
+                        if (typeof window.formatCurrency === 'function') {
+                            document.getElementById('test-revenue').textContent = window.formatCurrency(totalReceita);
+                        } else {
+                            document.getElementById('test-revenue').textContent = `R$ ${totalReceita.toFixed(2)}`;
+                        }
+                        
+                        document.getElementById('test-completion').textContent = Math.round((dados.length / 150) * 100) + '%';
+                        
+                        // Exibir na tabela
+                        exibirNaTabela(dados);
+                        
+                        log('✅ TESTE CARREGAMENTO PASSOU', 'success');
+                    } else {
+                        log('⚠️ Nenhum dado foi carregado', 'warning');
+                    }
+                } else {
+                    log('❌ Função forcarCarregamentoDados não encontrada', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro no teste de carregamento: ${error.message}`, 'error');
+            }
+        }
+
+        // Teste modo emergência
+        function testeModoEmergencia() {
+            log('=== TESTE MODO EMERGÊNCIA ===');
+            
+            try {
+                if (typeof window.createSampleData === 'function') {
+                    log('🚨 Ativando modo emergência...', 'warning');
+                    const dados = window.createSampleData();
+                    
+                    if (dados && dados.length > 0) {
+                        log(`✅ ${dados.length} dados de emergência criados`, 'success');
+                        exibirNaTabela(dados);
+                        
+                        // Atualizar dashboard
+                        document.getElementById('test-participants').textContent = dados.length;
+                        document.getElementById('test-firebase').textContent = '🚨';
+                        
+                        log('✅ TESTE MODO EMERGÊNCIA PASSOU', 'success');
+                    } else {
+                        log('❌ Falha ao criar dados de emergência', 'error');
+                    }
+                } else {
+                    log('❌ Função createSampleData não encontrada', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro no modo emergência: ${error.message}`, 'error');
+            }
+        }
+
+        // Diagnóstico completo
+        function testeDiagnostico() {
+            log('=== DIAGNÓSTICO COMPLETO ===');
+            
+            try {
+                if (typeof window.diagnosticoRapido === 'function') {
+                    const resultado = window.diagnosticoRapido();
+                    
+                    log(`Firebase: ${resultado.firebase ? '✅' : '❌'}`, resultado.firebase ? 'success' : 'error');
+                    log(`Compras: ${resultado.purchases}`, 'info');
+                    log(`Sistema: ${resultado.systemReady ? '✅' : '❌'}`, resultado.systemReady ? 'success' : 'warning');
+                    
+                    // Elementos DOM
+                    resultado.elements.forEach(elem => {
+                        log(`Elemento ${elem.id}: ${elem.found ? '✅' : '❌'}`, elem.found ? 'success' : 'error');
+                    });
+                    
+                    // Funções
+                    resultado.functions.forEach(func => {
+                        log(`Função ${func.func}: ${func.found ? '✅' : '❌'}`, func.found ? 'success' : 'error');
+                    });
+                    
+                    log('✅ DIAGNÓSTICO CONCLUÍDO', 'success');
+                } else {
+                    log('❌ Função diagnosticoRapido não encontrada', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro no diagnóstico: ${error.message}`, 'error');
+            }
+        }
+
+        // Exibir dados na tabela
+        function exibirNaTabela(dados) {
+            const tbody = document.getElementById('test-tbody');
+            tbody.innerHTML = '';
+            
+            dados.forEach(item => {
+                const row = document.createElement('tr');
+                
+                const statusClass = item.status === 'confirmed' ? 'status-confirmed' : 
+                                  item.status === 'pending_donation' ? 'status-pending-donation' : '';
+                
+                const statusText = item.status === 'confirmed' ? 'Confirmado' : 
+                                 item.status === 'pending_donation' ? 'Doação Pendente' : item.status;
+                
+                const valor = typeof window.formatCurrency === 'function' ? 
+                             window.formatCurrency(item.totalAmount) : 
+                             `R$ ${item.totalAmount.toFixed(2)}`;
+                
+                const data = typeof window.formatDate === 'function' ? 
+                           window.formatDate(item.date) : 
+                           new Date(item.date).toLocaleString('pt-BR');
+                
+                row.innerHTML = `
+                    <td>${item.buyerName}</td>
+                    <td>${item.buyerPhone}</td>
+                    <td>${item.numbers.join(', ')}</td>
+                    <td>${valor}</td>
+                    <td>${item.paymentMethod.toUpperCase()}</td>
+                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td>${data}</td>
+                    <td>
+                        <button class="btn" style="padding: 4px 8px; font-size: 12px;">✅</button>
+                        <button class="btn" style="padding: 4px 8px; font-size: 12px;">✏️</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+            
+            log(`📊 ${dados.length} registros exibidos na tabela`, 'success');
+        }
+
+        // Inicialização automática
+        window.addEventListener('load', () => {
+            log('🚀 Sistema de teste carregado');
+            
+            // Executar teste básico automaticamente
+            setTimeout(() => {
+                testeBasico();
+            }, 2000);
+            
+            // Status inicial
+            document.getElementById('test-firebase').textContent = '⏳';
+        });
+    </script>
+</body>
+</html>

@@ -12,7 +12,7 @@ Este é um site de rifa especialmente criado para o **Chá de Bebê do Thomas** 
 - **🚀 Tema**: Astronauta no Espaço  
 - **🎯 Total de números**: 150 (001 a 150)
 - **💰 Valor por número**: R$ 40,00
-- **📅 Sorteio**: 11 de Julho de 2025 às 16h
+- **📅 Sorteio**: Data a ser definida pelo administrador
 - **🎁 Prêmios por faixa**:
   - **1-30**: 1 Fralda P + chance PIX R$ 100,00
   - **31-100**: 1 Fralda M + chance PIX R$ 200,00  

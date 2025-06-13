@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 DIAGNÓSTICO: Admin Quebrado Após PIX</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%);
+            color: #333;
+        }
+        
+        .hero {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .hero h1 {
+            color: #dc3545;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .error-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: shake 2s infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 5px solid #dc3545;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-button.success {
+            background: #28a745;
+        }
+        
+        .test-button.error {
+            background: #dc3545;
+        }
+        
+        .log-area {
+            background: #1a202c;
+            color: #a0aec0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .iframe-container {
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .iframe-container iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .before-after {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .before-after.before {
+            border-left: 5px solid #28a745;
+        }
+        
+        .before-after.after {
+            border-left: 5px solid #dc3545;
+        }
+    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="hero">
+        <div class="error-icon">🚨</div>
+        <h1>Admin Quebrado Após PIX</h1>
+        <p>Diagnóstico dos problemas de carregamento no painel administrativo</p>
+    </div>
+
+    <div class="status-grid">
+        <div class="status-card">
+            <h3>🔍 Problema Identificado</h3>
+            <p><strong>Situação:</strong> Admin não carrega dados após implementação PIX</p>
+            <p><strong>Sintomas:</strong></p>
+            <ul>
+                <li>Dashboard vazio ou zerado</li>
+                <li>Participantes não aparecem</li>
+                <li>Configurações não carregam</li>
+                <li>Erros de JavaScript no console</li>
+            </ul>
+        </div>
+        
+        <div class="status-card">
+            <h3>🎯 Causas Prováveis</h3>
+            <p><strong>Possíveis origens:</strong></p>
+            <ul>
+                <li>Conflito nos seletores CSS</li>
+                <li>Erro na função applyConfigurationToUI</li>
+                <li>Problema nos listeners Firebase</li>
+                <li>Cache do navegador corrupto</li>
+                <li>Conflito no admin.js</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Testes Automáticos</h2>
+        <div style="margin: 15px 0;">
+            <button class="test-button" onclick="testFirebaseConnection()">🔥 Testar Firebase</button>
+            <button class="test-button" onclick="testAdminLoad()">👤 Testar Admin Load</button>
+            <button class="test-button" onclick="testConsoleErrors()">🐛 Verificar Erros</button>
+            <button class="test-button" onclick="testDataLoad()">📊 Testar Carregamento Dados</button>
+            <button class="test-button" onclick="compareBeforeAfter()">🔄 Comparar Antes/Depois</button>
+            <button class="test-button" onclick="fixAdminIssues()">🔧 Corrigir Problemas</button>
+        </div>
+        
+        <div class="log-area" id="diagnostic-log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Status dos Componentes</h2>
+        <div id="component-status">
+            <p><strong>🔥 Firebase:</strong> <span id="firebase-status">Verificando...</span></p>
+            <p><strong>👤 Autenticação:</strong> <span id="auth-status">Verificando...</span></p>
+            <p><strong>📊 Dashboard:</strong> <span id="dashboard-status">Verificando...</span></p>
+            <p><strong>📋 Participantes:</strong> <span id="participants-status">Verificando...</span></p>
+            <p><strong>⚙️ Configurações:</strong> <span id="config-status">Verificando...</span></p>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Comparação: Antes vs Depois</h2>
+        <div class="comparison-grid">
+            <div class="before-after before">
+                <h3>✅ ANTES (Funcionando)</h3>
+                <ul>
+                    <li>Dashboard carregava estatísticas</li>
+                    <li>Lista de participantes aparecia</li>
+                    <li>Botões de ação funcionavam</li>
+                    <li>Configurações salvavam/carregavam</li>
+                    <li>Firebase-only implementado</li>
+                </ul>
+            </div>
+            
+            <div class="before-after after">
+                <h3>❌ DEPOIS (Quebrado)</h3>
+                <ul>
+                    <li>Dashboard vazio/zerado</li>
+                    <li>Participantes não carregam</li>
+                    <li>Erros no console JavaScript</li>
+                    <li>Funções não executam</li>
+                    <li>Sistema não responde</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🖼️ Admin em Iframe (Para Debug)</h2>
+        <div class="iframe-container">
+            <iframe src="./admin.html" id="admin-iframe"></iframe>
+        </div>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let diagnosticLog = '';
+        let adminIframe;
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            diagnosticLog += `[${timestamp}] ${icon} ${message}\n`;
+            document.getElementById('diagnostic-log').textContent = diagnosticLog;
+            document.getElementById('diagnostic-log').scrollTop = document.getElementById('diagnostic-log').scrollHeight;
+            console.log(`${icon} ${message}`);
+        }
+        
+        function updateStatus(elementId, text, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text;
+                element.style.color = type === 'success' ? '#22543d' : type === 'error' ? '#742a2a' : '#744210';
+            }
+        }
+        
+        async function testFirebaseConnection() {
+            addLog('🔥 Testando conexão Firebase...', 'info');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                // Testar operação básica
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success) {
+                    addLog('✅ Firebase conectado e funcionando', 'success');
+                    updateStatus('firebase-status', 'Funcionando', 'success');
+                    return true;
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro Firebase: ${error.message}`, 'error');
+                updateStatus('firebase-status', 'Erro', 'error');
+                return false;
+            }
+        }
+        
+        async function testAdminLoad() {
+            addLog('👤 Testando carregamento do admin...', 'info');
+            
+            try {
+                // Verificar se admin iframe carregou
+                adminIframe = document.getElementById('admin-iframe');
+                
+                if (!adminIframe) {
+                    throw new Error('Iframe do admin não encontrado');
+                }
+                
+                // Aguardar iframe carregar
+                await new Promise((resolve, reject) => {
+                    if (adminIframe.contentDocument && adminIframe.contentDocument.readyState === 'complete') {
+                        resolve();
+                    } else {
+                        adminIframe.onload = resolve;
+                        adminIframe.onerror = reject;
+                        setTimeout(() => reject(new Error('Timeout no carregamento')), 10000);
+                    }
+                });
+                
+                const iframeDoc = adminIframe.contentDocument || adminIframe.contentWindow.document;
+                
+                // Verificar se elementos chave existem
+                const dashboard = iframeDoc.querySelector('#dashboard');
+                const participantes = iframeDoc.querySelector('#participantes');
+                const configuracoes = iframeDoc.querySelector('#configuracoes');
+                
+                if (dashboard) {
+                    addLog('✅ Seção Dashboard encontrada', 'success');
+                    updateStatus('dashboard-status', 'Presente', 'success');
+                } else {
+                    addLog('❌ Seção Dashboard não encontrada', 'error');
+                    updateStatus('dashboard-status', 'Ausente', 'error');
+                }
+                
+                if (participantes) {
+                    addLog('✅ Seção Participantes encontrada', 'success');
+                    updateStatus('participants-status', 'Presente', 'success');
+                } else {
+                    addLog('❌ Seção Participantes não encontrada', 'error');
+                    updateStatus('participants-status', 'Ausente', 'error');
+                }
+                
+                if (configuracoes) {
+                    addLog('✅ Seção Configurações encontrada', 'success');
+                    updateStatus('config-status', 'Presente', 'success');
+                } else {
+                    addLog('❌ Seção Configurações não encontrada', 'error');
+                    updateStatus('config-status', 'Ausente', 'error');
+                }
+                
+                updateStatus('auth-status', 'Verificado', 'success');
+                
+            } catch (error) {
+                addLog(`❌ Erro ao testar admin: ${error.message}`, 'error');
+                updateStatus('auth-status', 'Erro', 'error');
+            }
+        }
+        
+        async function testConsoleErrors() {
+            addLog('🐛 Verificando erros no console...', 'info');
+            
+            try {
+                // Capturar erros do console
+                const originalError = console.error;
+                const originalWarn = console.warn;
+                const errors = [];
+                const warnings = [];
+                
+                console.error = function(...args) {
+                    errors.push(args.join(' '));
+                    originalError.apply(console, args);
+                };
+                
+                console.warn = function(...args) {
+                    warnings.push(args.join(' '));
+                    originalWarn.apply(console, args);
+                };
+                
+                // Aguardar um tempo para capturar erros
+                setTimeout(() => {
+                    console.error = originalError;
+                    console.warn = originalWarn;
+                    
+                    if (errors.length > 0) {
+                        addLog(`❌ ${errors.length} erro(s) detectado(s):`, 'error');
+                        errors.forEach(error => addLog(`   • ${error}`, 'error'));
+                    } else {
+                        addLog('✅ Nenhum erro crítico detectado', 'success');
+                    }
+                    
+                    if (warnings.length > 0) {
+                        addLog(`⚠️ ${warnings.length} aviso(s) detectado(s):`, 'warning');
+                        warnings.forEach(warning => addLog(`   • ${warning}`, 'warning'));
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                addLog(`❌ Erro ao verificar console: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDataLoad() {
+            addLog('📊 Testando carregamento de dados...', 'info');
+            
+            if (!await testFirebaseConnection()) {
+                return;
+            }
+            
+            try {
+                // Testar carregamento de compras
+                const purchasesResult = await window.FirebaseDB.getPurchases();
+                
+                if (purchasesResult.success) {
+                    addLog(`✅ ${purchasesResult.data.length} compras carregadas`, 'success');
+                } else {
+                    addLog(`❌ Erro ao carregar compras: ${purchasesResult.error}`, 'error');
+                }
+                
+                // Testar carregamento de configurações
+                const configResult = await window.FirebaseDB.loadConfig();
+                
+                if (configResult.success) {
+                    addLog('✅ Configurações carregadas com sucesso', 'success');
+                    addLog(`   💳 PIX: ${configResult.data.pixKey || 'N/A'}`, 'info');
+                    addLog(`   📱 Telefone: ${configResult.data.contactPhone || 'N/A'}`, 'info');
+                } else {
+                    addLog(`❌ Erro ao carregar configurações: ${configResult.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro no teste de dados: ${error.message}`, 'error');
+            }
+        }
+        
+        async function compareBeforeAfter() {
+            addLog('🔄 Comparando estado antes vs depois...', 'info');
+            
+            addLog('📋 Mudanças realizadas na implementação PIX:', 'info');
+            addLog('   1. Substituído Instagram por PIX em index.html', 'info');
+            addLog('   2. Adicionados atributos data-firebase="pixKey"', 'info');
+            addLog('   3. Modificada função applyConfigurationToUI', 'info');
+            
+            addLog('🔍 Possíveis pontos de falha:', 'warning');
+            addLog('   • Conflito nos seletores CSS/JS', 'warning');
+            addLog('   • Problema na função applyConfigurationToUI', 'warning');
+            addLog('   • Cache do navegador desatualizado', 'warning');
+            addLog('   • Erro nos listeners Firebase', 'warning');
+            
+            addLog('🎯 Próximos passos de correção:', 'info');
+            addLog('   1. Verificar admin.js não foi alterado', 'info');
+            addLog('   2. Limpar cache do navegador', 'info');
+            addLog('   3. Verificar conflitos nos scripts', 'info');
+            addLog('   4. Restaurar versão funcionando se necessário', 'info');
+        }
+        
+        async function fixAdminIssues() {
+            addLog('🔧 Iniciando correção automática...', 'info');
+            
+            try {
+                // Verificar se problema é cache
+                addLog('🧹 Limpando cache...', 'info');
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
+                    addLog('✅ Cache limpo', 'success');
+                }
+                
+                // Forçar reload do admin
+                addLog('🔄 Recarregando admin...', 'info');
+                if (adminIframe) {
+                    adminIframe.src = adminIframe.src + '?t=' + Date.now();
+                }
+                
+                // Aguardar e testar novamente
+                setTimeout(async () => {
+                    addLog('🧪 Testando novamente após correções...', 'info');
+                    await testFirebaseConnection();
+                    await testDataLoad();
+                    await testAdminLoad();
+                    
+                    addLog('🎉 Correção automática concluída', 'success');
+                    addLog('📋 Se problemas persistem, será necessário correção manual', 'warning');
+                }, 3000);
+                
+            } catch (error) {
+                addLog(`❌ Erro na correção automática: ${error.message}`, 'error');
+            }
+        }
+        
+        // Inicializar diagnóstico
+        window.addEventListener('load', function() {
+            addLog('🚀 Diagnóstico de admin quebrado iniciado', 'info');
+            addLog('🔍 Investigando problemas após implementação PIX...', 'info');
+            
+            // Aguardar Firebase carregar
+            setTimeout(async () => {
+                addLog('🔄 Iniciando testes automáticos...', 'info');
+                await testFirebaseConnection();
+                await testConsoleErrors();
+                await testDataLoad();
+            }, 2000);
+        });
+        
+        // Listener para Firebase
+        window.addEventListener('firebaseReady', function() {
+            addLog('🔥 Firebase pronto - iniciando testes', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Admin Corrigido - Rifa Thomas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Loader específico para verificação */
+        .admin-loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .loader-content {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-ok { color: #28a745; }
+        .status-error { color: #dc3545; }
+        
+        .admin-main { display: none; }
+        
+        .retry-btn {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .emergency-btn {
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .emergency-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .auth-details {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader de verificação de autenticação -->
+    <div class="admin-loader" id="admin-loader">
+        <div class="loader-content">
+            <h2>🔐 Verificação de Acesso</h2>
+            <div class="spinner" id="loader-spinner"></div>
+            <p id="loader-status">Conectando ao sistema...</p>
+            <div id="loader-details" class="auth-details" style="display: none;"></div>
+            <div id="loader-actions" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Interface principal do admin (inicialmente oculta) -->
+    <div class="admin-main" id="admin-main">
+        <header class="admin-header">
+            <div class="header-content">
+                <h1><i class="fas fa-cog"></i> Admin - Rifa Thomas</h1>
+                <div class="header-actions">
+                    <span id="admin-user">Admin</span>
+                    <button class="logout-btn" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="admin-nav">
+            <div class="nav-content">
+                <button class="nav-btn active" onclick="showSection('dashboard')" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </button>
+                <button class="nav-btn" onclick="showSection('participants')" data-section="participants">
+                    <i class="fas fa-users"></i> Participantes
+                </button>
+                <button class="nav-btn" onclick="showSection('numbers')" data-section="numbers">
+                    <i class="fas fa-list-ol"></i> Números
+                </button>
+                <button class="nav-btn" onclick="showSection('config')" data-section="config">
+                    <i class="fas fa-cog"></i> Configurações
+                </button>
+            </div>
+        </nav>
+
+        <main class="admin-content">
+            <!-- Dashboard -->
+            <section id="dashboard" class="admin-section active">
+                <h2>📊 Dashboard</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-participants">0</span>
+                            <span class="stat-label">Participantes</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-list-ol"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-sold">0</span>
+                            <span class="stat-label">Números Vendidos</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-revenue">R$ 0</span>
+                            <span class="stat-label">Arrecadação</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-number" id="total-pending">0</span>
+                            <span class="stat-label">Pendentes</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Participantes -->
+            <section id="participants" class="admin-section">
+                <h2>👥 Participantes</h2>
+                <div class="participants-controls">
+                    <input type="text" id="search-input" placeholder="🔍 Buscar participante...">
+                    <button class="btn" onclick="searchParticipant()"><i class="fas fa-search"></i> Buscar</button>
+                    <button class="btn" onclick="exportParticipants()"><i class="fas fa-download"></i> Exportar CSV</button>
+                </div>
+                <div class="participants-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Telefone</th>
+                                <th>PIX</th>
+                                <th>Números</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participants-list">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 20px;">
+                                    Carregando participantes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Números -->
+            <section id="numbers" class="admin-section">
+                <h2>🔢 Gerenciar Números</h2>
+                <div class="numbers-grid" id="numbers-grid">
+                    <!-- Números serão carregados dinamicamente -->
+                </div>
+            </section>
+
+            <!-- Configurações -->
+            <section id="config" class="admin-section">
+                <h2>⚙️ Configurações</h2>
+                <div class="config-form">
+                    <div class="form-group">
+                        <label for="rifa-title">Título da Rifa:</label>
+                        <input type="text" id="rifa-title" placeholder="Ex: Rifa do Chá de Bebê Thomas">
+                    </div>
+                    <div class="form-group">
+                        <label for="rifa-description">Descrição:</label>
+                        <textarea id="rifa-description" placeholder="Descreva os prêmios..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="ticket-price">Preço por Número:</label>
+                        <input type="number" id="ticket-price" placeholder="5.00" step="0.01">
+                    </div>
+                    <button class="btn" onclick="saveConfiguration()">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        // Estado da verificação
+        let authenticationCompleted = false;
+        let currentAdminUser = null;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        // Função para log com timestamp
+        function logAuth(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`[${timestamp}] ${message}`);
+            
+            // Atualizar detalhes visuais
+            const detailsEl = document.getElementById('loader-details');
+            if (detailsEl) {
+                detailsEl.style.display = 'block';
+                const colors = { success: '#28a745', error: '#dc3545', warning: '#ffc107', info: '#007bff' };
+                detailsEl.innerHTML += `<div style="color: ${colors[type] || colors.info};">[${timestamp}] ${message}</div>`;
+                detailsEl.scrollTop = detailsEl.scrollHeight;
+            }
+        }
+        
+        // Atualizar status do loader
+        function updateAuthStatus(message, type = 'info') {
+            const statusEl = document.getElementById('loader-status');
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = type === 'success' ? 'status-ok' : type === 'error' ? 'status-error' : '';
+            }
+        }
+        
+        // Verificação de autenticação com múltiplas estratégias
+        async function verifyAuthentication() {
+            if (authenticationCompleted) {
+                logAuth('Verificação já concluída, ignorando nova tentativa', 'warning');
+                return;
+            }
+            
+            logAuth('=== INICIANDO VERIFICAÇÃO DE AUTENTICAÇÃO ===', 'info');
+            updateAuthStatus('🔐 Verificando autenticação...');
+            
+            try {
+                // Estratégia 1: Verificar se FirebaseDB está disponível
+                await waitForFirebaseDB();
+                
+                // Estratégia 2: Aguardar inicialização completa
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Estratégia 3: Verificar admin atual ou fazer login
+                const authResult = await performAuthCheck();
+                
+                if (authResult.success) {
+                    logAuth(`✅ Autenticação bem-sucedida: ${authResult.user.email}`, 'success');
+                    currentAdminUser = authResult.user;
+                    showAdminInterface();
+                } else {
+                    throw new Error(authResult.error);
+                }
+                
+            } catch (error) {
+                logAuth(`❌ Falha na autenticação: ${error.message}`, 'error');
+                handleAuthError(error);
+            }
+        }
+        
+        // Aguardar FirebaseDB estar disponível
+        async function waitForFirebaseDB() {
+            logAuth('Aguardando FirebaseDB estar disponível...', 'info');
+            
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 30; // 15 segundos
+                
+                const check = () => {
+                    if (typeof window.FirebaseDB !== 'undefined') {
+                        logAuth('✅ FirebaseDB disponível', 'success');
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Timeout: FirebaseDB não carregou'));
+                    } else {
+                        attempts++;
+                        updateAuthStatus(`Aguardando Firebase... (${attempts}/${maxAttempts})`);
+                        setTimeout(check, 500);
+                    }
+                };
+                
+                check();
+            });
+        }
+        
+        // Realizar verificação de autenticação
+        async function performAuthCheck() {
+            logAuth('Realizando verificação de autenticação...', 'info');
+            updateAuthStatus('🔍 Verificando permissões...');
+            
+            try {
+                // Primeiro: verificar se já há um admin logado
+                logAuth('Verificando admin atual...', 'info');
+                const currentResult = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (currentResult.success && currentResult.isAdmin) {
+                    logAuth(`Admin já autenticado: ${currentResult.user.email}`, 'success');
+                    return { success: true, user: currentResult.user };
+                }
+                
+                // Segundo: tentar fazer login automático se não há admin logado
+                logAuth('Nenhum admin logado, tentando login automático...', 'info');
+                const loginResult = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                
+                if (loginResult.success) {
+                    logAuth(`Login automático bem-sucedido: ${loginResult.user.email}`, 'success');
+                    
+                    // Verificar novamente após login
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    const verifyResult = await window.FirebaseDB.getCurrentAdmin();
+                    
+                    if (verifyResult.success && verifyResult.isAdmin) {
+                        return { success: true, user: verifyResult.user };
+                    } else {
+                        throw new Error('Verificação pós-login falhou');
+                    }
+                } else {
+                    throw new Error(`Login automático falhou: ${loginResult.error}`);
+                }
+                
+            } catch (error) {
+                logAuth(`Erro na verificação: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // Mostrar interface admin
+        function showAdminInterface() {
+            logAuth('✅ Mostrando interface do administrador', 'success');
+            authenticationCompleted = true;
+            
+            // Ocultar loader
+            document.getElementById('admin-loader').style.display = 'none';
+            
+            // Mostrar interface principal
+            document.getElementById('admin-main').style.display = 'block';
+            
+            // Atualizar informações do usuário
+            const userEl = document.getElementById('admin-user');
+            if (userEl && currentAdminUser) {
+                userEl.textContent = currentAdminUser.email;
+            }
+            
+            // Carregar dados iniciais
+            loadAdminData();
+        }
+        
+        // Lidar com erro de autenticação
+        function handleAuthError(error) {
+            logAuth(`Tratando erro de autenticação: ${error.message}`, 'error');
+            
+            const actionsEl = document.getElementById('loader-actions');
+            const spinnerEl = document.getElementById('loader-spinner');
+            
+            if (spinnerEl) spinnerEl.style.display = 'none';
+            
+            if (retryCount < maxRetries) {
+                updateAuthStatus(`❌ Erro: ${error.message}`, 'error');
+                
+                if (actionsEl) {
+                    actionsEl.style.display = 'block';
+                    actionsEl.innerHTML = `
+                        <button class="retry-btn" onclick="retryAuthentication()">
+                            🔄 Tentar Novamente (${retryCount + 1}/${maxRetries})
+                        </button>
+                        <button class="emergency-btn" onclick="useEmergencyAccess()">
+                            🆘 Acesso de Emergência
+                        </button>
+                    `;
+                }
+            } else {
+                updateAuthStatus('❌ Falha na autenticação após múltiplas tentativas', 'error');
+                
+                if (actionsEl) {
+                    actionsEl.style.display = 'block';
+                    actionsEl.innerHTML = `
+                        <p style="color: #dc3545; margin: 10px 0;">
+                            O sistema de autenticação não está funcionando corretamente.
+                        </p>
+                        <button class="emergency-btn" onclick="useEmergencyAccess()">
+                            🆘 Usar Sistema de Emergência
+                        </button>
+                        <button class="retry-btn" onclick="window.location.reload()">
+                            🔄 Recarregar Página
+                        </button>
+                    `;
+                }
+            }
+        }
+        
+        // Tentar autenticação novamente
+        async function retryAuthentication() {
+            retryCount++;
+            authenticationCompleted = false;
+            
+            const spinnerEl = document.getElementById('loader-spinner');
+            const actionsEl = document.getElementById('loader-actions');
+            
+            if (spinnerEl) spinnerEl.style.display = 'block';
+            if (actionsEl) actionsEl.style.display = 'none';
+            
+            logAuth(`=== TENTATIVA ${retryCount} DE AUTENTICAÇÃO ===`, 'info');
+            
+            // Aguardar um pouco antes de tentar novamente
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            verifyAuthentication();
+        }
+        
+        // Usar acesso de emergência
+        function useEmergencyAccess() {
+            logAuth('Redirecionando para sistema de emergência...', 'warning');
+            window.location.href = 'admin-bypass-auth.html';
+        }
+        
+        // Carregar dados administrativos
+        async function loadAdminData() {
+            logAuth('Carregando dados administrativos...', 'info');
+            
+            try {
+                // Tentar carregar dados do Firebase primeiro
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    const purchases = await window.FirebaseDB.loadPurchases();
+                    if (purchases.success) {
+                        processAdminData(purchases.purchases);
+                        return;
+                    }
+                }
+                
+                // Fallback para localStorage
+                const localData = localStorage.getItem('purchases');
+                if (localData) {
+                    const purchases = JSON.parse(localData);
+                    processAdminData(purchases);
+                } else {
+                    logAuth('Nenhum dado encontrado', 'warning');
+                }
+                
+            } catch (error) {
+                logAuth(`Erro ao carregar dados: ${error.message}`, 'error');
+            }
+        }
+        
+        // Processar dados administrativos
+        function processAdminData(purchases) {
+            logAuth(`Processando ${purchases.length} compras...`, 'info');
+            
+            // Calcular estatísticas
+            const totalParticipants = new Set(purchases.map(p => `${p.name}_${p.phone}`)).size;
+            const totalSold = purchases.reduce((sum, p) => sum + p.numbers.length, 0);
+            const totalRevenue = totalSold * 5; // R$ 5 por número
+            const totalPending = purchases.filter(p => p.status === 'pending').length;
+            
+            // Atualizar dashboard
+            document.getElementById('total-participants').textContent = totalParticipants;
+            document.getElementById('total-sold').textContent = totalSold;
+            document.getElementById('total-revenue').textContent = `R$ ${totalRevenue.toFixed(2)}`;
+            document.getElementById('total-pending').textContent = totalPending;
+            
+            // Carregar lista de participantes
+            loadParticipantsList(purchases);
+            
+            logAuth('✅ Dados administrativos carregados', 'success');
+        }
+        
+        // Carregar lista de participantes
+        function loadParticipantsList(purchases) {
+            const tbody = document.getElementById('participants-list');
+            
+            if (purchases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum participante encontrado</td></tr>';
+                return;
+            }
+            
+            // Agrupar por participante
+            const participants = {};
+            purchases.forEach(purchase => {
+                const key = `${purchase.name}_${purchase.phone}`;
+                if (!participants[key]) {
+                    participants[key] = {
+                        name: purchase.name,
+                        phone: purchase.phone,
+                        pix: purchase.pix || purchase.payment || 'N/A',
+                        numbers: [],
+                        status: purchase.status || 'pending'
+                    };
+                }
+                participants[key].numbers.push(...purchase.numbers);
+            });
+            
+            // Criar HTML da tabela
+            tbody.innerHTML = Object.values(participants).map(participant => `
+                <tr>
+                    <td><strong>${participant.name}</strong></td>
+                    <td>${participant.phone}</td>
+                    <td>${participant.pix}</td>
+                    <td>
+                        <span style="background: #e3f2fd; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                            ${participant.numbers.length} números
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status ${participant.status === 'confirmed' ? 'success' : 'warning'}">
+                            ${participant.status === 'confirmed' ? '✅ Confirmado' : '⏳ Pendente'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn" onclick="editParticipant('${participant.name}', '${participant.phone}')">
+                            ✏️ Editar
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Navegação entre seções
+        function showSection(sectionName) {
+            // Remover classe active de todas as seções
+            document.querySelectorAll('.admin-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remover classe active de todos os botões
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Ativar seção e botão correspondente
+            document.getElementById(sectionName).classList.add('active');
+            document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
+        }
+        
+        // Funções administrativas básicas
+        function searchParticipant() {
+            const query = document.getElementById('search-input').value;
+            logAuth(`Buscando: ${query}`, 'info');
+            // Implementar busca
+        }
+        
+        function exportParticipants() {
+            logAuth('Exportando participantes...', 'info');
+            // Implementar exportação
+        }
+        
+        function editParticipant(name, phone) {
+            logAuth(`Editando: ${name} - ${phone}`, 'info');
+            // Implementar edição
+        }
+        
+        function saveConfiguration() {
+            logAuth('Salvando configurações...', 'info');
+            // Implementar salvamento
+        }
+        
+        // Logout
+        async function logout() {
+            logAuth('Fazendo logout...', 'info');
+            
+            try {
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    await window.FirebaseDB.adminLogout();
+                }
+                
+                // Limpar dados locais
+                currentAdminUser = null;
+                authenticationCompleted = false;
+                
+                // Redirecionar para login
+                window.location.href = 'login.html';
+                
+            } catch (error) {
+                logAuth(`Erro no logout: ${error.message}`, 'error');
+                // Forçar redirecionamento mesmo com erro
+                window.location.href = 'login.html';
+            }
+        }
+        
+        // Inicialização
+        window.addEventListener('DOMContentLoaded', function() {
+            logAuth('Admin Corrigido iniciado', 'info');
+            
+            // Aguardar um pouco e iniciar verificação
+            setTimeout(() => {
+                verifyAuthentication();
+            }, 1000);
+        });
+        
+        // Aguardar evento do Firebase
+        window.addEventListener('firebaseReady', () => {
+            logAuth('Firebase pronto - acelerando verificação', 'success');
+            if (!authenticationCompleted) {
+                setTimeout(() => {
+                    verifyAuthentication();
+                }, 500);
+            }
+        });
+        
+        // Se Firebase já estiver pronto
+        setTimeout(() => {
+            if (typeof window.FirebaseDB !== 'undefined' && !authenticationCompleted) {
+                logAuth('Firebase já disponível', 'success');
+                verifyAuthentication();
+            }
+        }, 2000);
+    </script>
+    
+    <!-- Carregar script do admin após verificação -->
+    <script src="admin.js"></script>
+</body>
+</html>

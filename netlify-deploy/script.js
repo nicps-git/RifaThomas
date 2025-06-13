@@ -379,7 +379,7 @@ function applyConfigurationToUI(config) {
         
         if (drawDateEl) {
             // Usar data do Firebase se disponível
-            let dateText = 'Sorteio: 11 de Julho de 2025 às 16h';
+            let dateText = 'Data do sorteio a definir';
             if (config.drawDate) {
                 try {
                     // Tentar múltiplos formatos de data

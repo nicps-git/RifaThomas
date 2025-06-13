@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnóstico Firebase Auth - Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        
+        .btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn.primary { background: linear-gradient(135deg, #007bff, #0056b3); }
+        .btn.danger { background: linear-gradient(135deg, #dc3545, #fd7e14); }
+        .btn.warning { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 20px 0;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Diagnóstico Completo Firebase Auth</h1>
+            <p>Identificando problemas de autenticação do Admin</p>
+        </div>
+        
+        <div class="content">
+            <div id="main-status" class="status info">
+                🔄 Iniciando diagnóstico completo...
+            </div>
+            
+            <div class="test-section">
+                <h3>📋 Progresso do Diagnóstico</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
+                <div id="progress-text">0% - Preparando...</div>
+            </div>
+            
+            <div class="test-section">
+                <h3>🔧 Ações Disponíveis</h3>
+                <button class="btn primary" onclick="runFullDiagnosis()">🔍 Diagnóstico Completo</button>
+                <button class="btn" onclick="testFirebaseConnection()">🔥 Testar Conexão Firebase</button>
+                <button class="btn" onclick="testAdminAuth()">🔐 Testar Auth Admin</button>
+                <button class="btn warning" onclick="resetAndRecreate()">🔄 Reset e Recriar</button>
+                <button class="btn danger" onclick="clearAllData()">🗑️ Limpar Dados</button>
+            </div>
+            
+            <div class="test-section">
+                <h3>📊 Resultados dos Testes</h3>
+                <div id="test-results"></div>
+            </div>
+            
+            <div id="log" class="log" style="display: none;">
+                <strong>Log Detalhado:</strong><br>
+                <div id="log-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let testResults = {};
+        let currentProgress = 0;
+        
+        function log(message, type = 'info') {
+            console.log(message);
+            const logDiv = document.getElementById('log');
+            const logContent = document.getElementById('log-content');
+            
+            logDiv.style.display = 'block';
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545',
+                warning: '#ffc107',
+                info: '#6c757d'
+            };
+            
+            logContent.innerHTML += `<div style="color: ${colors[type] || colors.info};">[${new Date().toLocaleTimeString()}] ${message}</div>`;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('main-status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+        
+        function updateProgress(percent, text) {
+            currentProgress = percent;
+            document.getElementById('progress').style.width = percent + '%';
+            document.getElementById('progress-text').textContent = `${percent}% - ${text}`;
+        }
+        
+        function updateTestResults(testName, status, message) {
+            testResults[testName] = { status, message };
+            
+            const resultsDiv = document.getElementById('test-results');
+            let html = '';
+            
+            for (const [name, result] of Object.entries(testResults)) {
+                const statusClass = result.status === 'success' ? 'success' : 
+                                   result.status === 'error' ? 'error' : 'warning';
+                html += `<div class="status ${statusClass}">
+                    <strong>${name}:</strong> ${result.message}
+                </div>`;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Teste 1: Verificar carregamento do Firebase
+        async function testFirebaseScripts() {
+            log('🔍 Teste 1: Verificando scripts Firebase...', 'info');
+            updateProgress(10, 'Verificando scripts Firebase...');
+            
+            try {
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase global não definido');
+                }
+                
+                if (!firebase.app) {
+                    throw new Error('Firebase app não disponível');
+                }
+                
+                if (!firebase.auth) {
+                    throw new Error('Firebase Auth não disponível');
+                }
+                
+                if (!firebase.firestore) {
+                    throw new Error('Firebase Firestore não disponível');
+                }
+                
+                log('✅ Todos os scripts Firebase carregados', 'success');
+                updateTestResults('Scripts Firebase', 'success', 'Todos os scripts carregados corretamente');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro nos scripts Firebase: ${error.message}`, 'error');
+                updateTestResults('Scripts Firebase', 'error', error.message);
+                return false;
+            }
+        }
+        
+        // Teste 2: Verificar inicialização do Firebase
+        async function testFirebaseInit() {
+            log('🔍 Teste 2: Verificando inicialização Firebase...', 'info');
+            updateProgress(25, 'Verificando inicialização...');
+            
+            try {
+                if (!firebase.apps.length) {
+                    throw new Error('Nenhum app Firebase inicializado');
+                }
+                
+                const app = firebase.app();
+                log(`✅ Firebase app inicializado: ${app.name}`, 'success');
+                
+                // Verificar configuração
+                const options = app.options;
+                if (!options.apiKey || !options.projectId) {
+                    throw new Error('Configuração Firebase incompleta');
+                }
+                
+                log(`✅ Projeto: ${options.projectId}`, 'success');
+                updateTestResults('Inicialização Firebase', 'success', `App inicializado - Projeto: ${options.projectId}`);
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro na inicialização: ${error.message}`, 'error');
+                updateTestResults('Inicialização Firebase', 'error', error.message);
+                return false;
+            }
+        }
+        
+        // Teste 3: Verificar FirebaseDB
+        async function testFirebaseDB() {
+            log('🔍 Teste 3: Verificando FirebaseDB...', 'info');
+            updateProgress(40, 'Verificando FirebaseDB...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não definido no window');
+                }
+                
+                const db = window.FirebaseDB;
+                
+                // Verificar propriedades essenciais
+                const requiredMethods = ['initAuth', 'adminLogin', 'isAdmin', 'getCurrentAdmin'];
+                for (const method of requiredMethods) {
+                    if (typeof db[method] !== 'function') {
+                        throw new Error(`Método ${method} não encontrado em FirebaseDB`);
+                    }
+                }
+                
+                log('✅ FirebaseDB carregado com todos os métodos', 'success');
+                updateTestResults('FirebaseDB', 'success', 'Objeto carregado com todos os métodos necessários');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro no FirebaseDB: ${error.message}`, 'error');
+                updateTestResults('FirebaseDB', 'error', error.message);
+                return false;
+            }
+        }
+        
+        // Teste 4: Testar autenticação anônima
+        async function testAnonymousAuth() {
+            log('🔍 Teste 4: Testando autenticação anônima...', 'info');
+            updateProgress(55, 'Testando auth anônima...');
+            
+            try {
+                const authResult = await window.FirebaseDB.initAuth();
+                
+                if (!authResult || !authResult.uid) {
+                    throw new Error('Autenticação anônima falhou');
+                }
+                
+                log(`✅ Auth anônima OK: ${authResult.uid}`, 'success');
+                updateTestResults('Auth Anônima', 'success', `Sucesso - UID: ${authResult.uid.substring(0, 8)}...`);
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro na auth anônima: ${error.message}`, 'error');
+                updateTestResults('Auth Anônima', 'error', error.message);
+                return false;
+            }
+        }
+        
+        // Teste 5: Testar login admin
+        async function testAdminLogin() {
+            log('🔍 Teste 5: Testando login admin...', 'info');
+            updateProgress(70, 'Testando login admin...');
+            
+            try {
+                const loginResult = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                
+                if (!loginResult.success) {
+                    throw new Error(`Login falhou: ${loginResult.error}`);
+                }
+                
+                log(`✅ Login admin bem-sucedido: ${loginResult.user.email}`, 'success');
+                updateTestResults('Login Admin', 'success', `Sucesso - ${loginResult.user.email}`);
+                return loginResult.user;
+                
+            } catch (error) {
+                log(`❌ Erro no login admin: ${error.message}`, 'error');
+                updateTestResults('Login Admin', 'error', error.message);
+                return null;
+            }
+        }
+        
+        // Teste 6: Verificar permissões admin
+        async function testAdminPermissions(user) {
+            log('🔍 Teste 6: Verificando permissões admin...', 'info');
+            updateProgress(85, 'Verificando permissões...');
+            
+            try {
+                if (!user) {
+                    throw new Error('Usuário não fornecido para teste');
+                }
+                
+                const isAdmin = await window.FirebaseDB.isAdmin(user.uid);
+                
+                if (!isAdmin) {
+                    throw new Error('Usuário não tem permissões de admin');
+                }
+                
+                log(`✅ Permissões admin confirmadas para ${user.uid}`, 'success');
+                updateTestResults('Permissões Admin', 'success', 'Permissões confirmadas');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro nas permissões: ${error.message}`, 'error');
+                updateTestResults('Permissões Admin', 'error', error.message);
+                return false;
+            }
+        }
+        
+        // Teste 7: Verificar getCurrentAdmin
+        async function testGetCurrentAdmin() {
+            log('🔍 Teste 7: Testando getCurrentAdmin...', 'info');
+            updateProgress(95, 'Testando getCurrentAdmin...');
+            
+            try {
+                const currentResult = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (!currentResult.success) {
+                    throw new Error(`getCurrentAdmin falhou: ${currentResult.error}`);
+                }
+                
+                if (!currentResult.isAdmin) {
+                    throw new Error('getCurrentAdmin retornou isAdmin=false');
+                }
+                
+                log(`✅ getCurrentAdmin funcionando: ${currentResult.user.email}`, 'success');
+                updateTestResults('getCurrentAdmin', 'success', `Funcionando - ${currentResult.user.email}`);
+                return true;
+                
+            } catch (error) {
+                log(`❌ Erro getCurrentAdmin: ${error.message}`, 'error');
+                updateTestResults('getCurrentAdmin', 'error', error.message);
+                return false;
+            }
+        }
+        
+        // Diagnóstico completo
+        async function runFullDiagnosis() {
+            log('=== INICIANDO DIAGNÓSTICO COMPLETO ===', 'info');
+            updateStatus('🔄 Executando diagnóstico completo...', 'info');
+            testResults = {};
+            
+            try {
+                // Aguardar Firebase estar pronto
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const step1 = await testFirebaseScripts();
+                if (!step1) throw new Error('Falha nos scripts Firebase');
+                
+                const step2 = await testFirebaseInit();
+                if (!step2) throw new Error('Falha na inicialização Firebase');
+                
+                const step3 = await testFirebaseDB();
+                if (!step3) throw new Error('Falha no FirebaseDB');
+                
+                const step4 = await testAnonymousAuth();
+                if (!step4) throw new Error('Falha na autenticação anônima');
+                
+                const user = await testAdminLogin();
+                if (!user) throw new Error('Falha no login admin');
+                
+                const step6 = await testAdminPermissions(user);
+                if (!step6) throw new Error('Falha nas permissões admin');
+                
+                const step7 = await testGetCurrentAdmin();
+                if (!step7) throw new Error('Falha no getCurrentAdmin');
+                
+                updateProgress(100, 'Diagnóstico concluído!');
+                updateStatus('✅ Diagnóstico concluído - Sistema funcionando!', 'success');
+                log('=== DIAGNÓSTICO COMPLETO: SUCESSO ===', 'success');
+                
+                // Fazer logout para limpeza
+                await firebase.auth().signOut();
+                log('✅ Logout de limpeza realizado', 'success');
+                
+            } catch (error) {
+                updateStatus(`❌ Diagnóstico falhou: ${error.message}`, 'error');
+                log(`=== DIAGNÓSTICO FALHOU: ${error.message} ===`, 'error');
+            }
+        }
+        
+        // Testar conexão Firebase
+        async function testFirebaseConnection() {
+            updateStatus('🔄 Testando conexão Firebase...', 'info');
+            
+            try {
+                // Teste de conectividade básica
+                const testDoc = firebase.firestore().collection('test_connection').doc('ping');
+                await testDoc.set({ timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+                
+                updateStatus('✅ Conexão Firebase OK!', 'success');
+                log('✅ Teste de conectividade Firebase bem-sucedido', 'success');
+                
+            } catch (error) {
+                updateStatus(`❌ Erro na conexão: ${error.message}`, 'error');
+                log(`❌ Erro na conectividade: ${error.message}`, 'error');
+            }
+        }
+        
+        // Testar autenticação admin
+        async function testAdminAuth() {
+            updateStatus('🔐 Testando autenticação admin...', 'info');
+            
+            try {
+                const loginResult = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                
+                if (loginResult.success) {
+                    const currentResult = await window.FirebaseDB.getCurrentAdmin();
+                    
+                    if (currentResult.success && currentResult.isAdmin) {
+                        updateStatus('✅ Autenticação admin funcionando!', 'success');
+                        log('✅ Login e verificação admin OK', 'success');
+                        
+                        // Logout
+                        await firebase.auth().signOut();
+                    } else {
+                        throw new Error('getCurrentAdmin falhou após login');
+                    }
+                } else {
+                    throw new Error(loginResult.error);
+                }
+                
+            } catch (error) {
+                updateStatus(`❌ Erro na auth admin: ${error.message}`, 'error');
+                log(`❌ Erro no teste admin: ${error.message}`, 'error');
+            }
+        }
+        
+        // Reset e recriar admin
+        async function resetAndRecreate() {
+            if (!confirm('⚠️ Isso irá resetar e recriar o admin. Continuar?')) return;
+            
+            updateStatus('🔄 Resetando e recriando admin...', 'warning');
+            
+            try {
+                // Limpar admins não autorizados
+                const cleanResult = await window.FirebaseDB.cleanUnauthorizedAdmins();
+                log(`Limpeza: ${cleanResult.success ? 'Sucesso' : 'Falha'}`, cleanResult.success ? 'success' : 'warning');
+                
+                // Tentar criar admin
+                const createResult = await window.FirebaseDB.createAdmin('admin@rifathomas.com', 'casaVERDE123');
+                
+                if (createResult.success) {
+                    updateStatus('✅ Admin recriado com sucesso!', 'success');
+                    log('✅ Admin recriado', 'success');
+                } else {
+                    // Se falhou porque já existe, tentar login
+                    if (createResult.error.includes('já existe')) {
+                        const loginResult = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                        if (loginResult.success) {
+                            updateStatus('✅ Admin já existe e funciona!', 'success');
+                            log('✅ Admin validado via login', 'success');
+                        } else {
+                            throw new Error('Admin existe mas login falha: ' + loginResult.error);
+                        }
+                    } else {
+                        throw new Error(createResult.error);
+                    }
+                }
+                
+            } catch (error) {
+                updateStatus(`❌ Erro no reset: ${error.message}`, 'error');
+                log(`❌ Erro no reset: ${error.message}`, 'error');
+            }
+        }
+        
+        // Limpar todos os dados
+        async function clearAllData() {
+            if (!confirm('🚨 ATENÇÃO: Isso irá limpar TODOS os dados. Esta ação é irreversível!')) return;
+            if (!confirm('🚨 ÚLTIMA CHANCE: Tem certeza absoluta?')) return;
+            
+            updateStatus('🗑️ Limpando todos os dados...', 'warning');
+            
+            try {
+                // Limpar localStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Fazer logout
+                await firebase.auth().signOut();
+                
+                // Limpar coleções Firebase (se necessário)
+                const cleanResult = await window.FirebaseDB.cleanUnauthorizedAdmins();
+                
+                updateStatus('✅ Limpeza concluída!', 'success');
+                log('✅ Todos os dados limpos', 'success');
+                
+            } catch (error) {
+                updateStatus(`❌ Erro na limpeza: ${error.message}`, 'error');
+                log(`❌ Erro na limpeza: ${error.message}`, 'error');
+            }
+        }
+        
+        // Inicialização
+        window.addEventListener('DOMContentLoaded', function() {
+            log('🔍 Diagnóstico Firebase Auth iniciado', 'info');
+            updateProgress(0, 'Aguardando Firebase...');
+        });
+        
+        // Aguardar Firebase estar pronto
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 Firebase carregado e pronto', 'success');
+            updateStatus('✅ Firebase carregado - Pronto para diagnóstico', 'success');
+            updateProgress(5, 'Firebase carregado');
+        });
+        
+        // Se Firebase já estiver pronto
+        setTimeout(() => {
+            if (typeof window.FirebaseDB !== 'undefined') {
+                log('🔥 Firebase já disponível', 'success');
+                updateStatus('✅ Firebase disponível - Execute o diagnóstico', 'success');
+            } else {
+                log('⚠️ Firebase ainda não carregado', 'warning');
+                updateStatus('⚠️ Aguardando Firebase carregar...', 'warning');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
