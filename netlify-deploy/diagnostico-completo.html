@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🩺 Diagnóstico Completo - Sistema de Salvamento</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .test-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .test-card h3 {
+            color: #495057;
+            margin-top: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-ok { background: #28a745; }
+        .status-warning { background: #ffc107; }
+        .status-error { background: #dc3545; }
+        .status-unknown { background: #6c757d; }
+
+        .log-output {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-warning:hover { background: #e0a800; }
+
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+
+        .form-minimal {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .form-minimal input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .summary h3 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🩺 Diagnóstico Completo - Sistema de Salvamento</h1>
+        
+        <div class="summary">
+            <h3>📋 Resumo do Diagnóstico</h3>
+            <div id="summary-content">
+                Executando verificações...
+            </div>
+        </div>
+
+        <div class="test-grid">
+            <!-- Verificação do Sistema -->
+            <div class="test-card">
+                <h3>🔧 Verificação do Sistema</h3>
+                <div id="system-status">
+                    <div><span class="status-indicator status-unknown"></span>LocalStorage: Verificando...</div>
+                    <div><span class="status-indicator status-unknown"></span>Admin.js: Verificando...</div>
+                    <div><span class="status-indicator status-unknown"></span>Firebase: Verificando...</div>
+                    <div><span class="status-indicator status-unknown"></span>Formulário: Verificando...</div>
+                </div>
+                <button class="btn" onclick="runSystemCheck()">🔍 Verificar Sistema</button>
+            </div>
+
+            <!-- Teste de Formulário -->
+            <div class="test-card">
+                <h3>📝 Teste de Formulário</h3>
+                <form id="config-form">
+                    <div class="form-minimal">
+                        <input type="number" id="config-total-numbers" value="200" placeholder="Total números">
+                        <input type="number" id="config-ticket-price" value="45.00" step="0.01" placeholder="Preço">
+                        <input type="text" id="config-baby-name" value="Thomas Teste" placeholder="Nome bebê">
+                        <input type="tel" id="config-contact-phone" value="(11) 98765-4321" placeholder="Telefone">
+                        <input type="text" id="config-pix-key" value="teste@pix.com" placeholder="PIX">
+                        <input type="text" id="config-first-prize" value="R$ 200,00" placeholder="1º prêmio">
+                        <input type="text" id="config-second-prize" value="R$ 150,00" placeholder="2º prêmio">
+                        <input type="text" id="config-third-prize" value="Kit bebê" placeholder="3º prêmio">
+                        <input type="datetime-local" id="config-draw-date" value="2025-07-20T16:00">
+                    </div>
+                    <button type="submit" class="btn btn-success">💾 Testar Salvamento</button>
+                </form>
+            </div>
+
+            <!-- Verificação de Funções -->
+            <div class="test-card">
+                <h3>⚙️ Funções Disponíveis</h3>
+                <div id="functions-status">
+                    Verificando funções...
+                </div>
+                <button class="btn" onclick="checkFunctions()">🔍 Verificar Funções</button>
+                <button class="btn btn-warning" onclick="testDirectSave()">🧪 Teste Direto</button>
+            </div>
+
+            <!-- Storage Management -->
+            <div class="test-card">
+                <h3>💾 Gerenciamento de Dados</h3>
+                <div id="storage-info">
+                    Verificando dados salvos...
+                </div>
+                <button class="btn" onclick="showStoredData()">📊 Mostrar Dados</button>
+                <button class="btn btn-warning" onclick="createTestData()">🧪 Criar Dados Teste</button>
+                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Limpar Tudo</button>
+            </div>
+        </div>
+
+        <!-- Log Global -->
+        <div class="test-card">
+            <h3>📝 Log de Execução</h3>
+            <div id="global-log" class="log-output">
+                Aguardando ações...
+            </div>
+            <button class="btn btn-warning" onclick="clearLog()">🧹 Limpar Log</button>
+        </div>
+    </div>
+
+    <!-- Incluir scripts necessários -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        let diagnosticLog = [];
+        let testResults = {
+            localStorage: false,
+            adminJs: false,
+            firebase: false,
+            formElement: false,
+            saveFunction: false,
+            loadFunction: false
+        };
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            diagnosticLog.push(`[${timestamp}] ${prefix} ${message}`);
+            document.getElementById('global-log').textContent = diagnosticLog.slice(-50).join('\n');
+            console.log(`[DIAGNÓSTICO] ${message}`);
+        }
+
+        function clearLog() {
+            diagnosticLog = [];
+            document.getElementById('global-log').textContent = 'Log limpo...';
+        }
+
+        function updateSystemStatus() {
+            const statusDiv = document.getElementById('system-status');
+            statusDiv.innerHTML = `
+                <div><span class="status-indicator ${testResults.localStorage ? 'status-ok' : 'status-error'}"></span>LocalStorage: ${testResults.localStorage ? '✅ OK' : '❌ Falha'}</div>
+                <div><span class="status-indicator ${testResults.adminJs ? 'status-ok' : 'status-error'}"></span>Admin.js: ${testResults.adminJs ? '✅ OK' : '❌ Falha'}</div>
+                <div><span class="status-indicator ${testResults.firebase ? 'status-ok' : 'status-warning'}"></span>Firebase: ${testResults.firebase ? '✅ OK' : '⚠️ Indisponível'}</div>
+                <div><span class="status-indicator ${testResults.formElement ? 'status-ok' : 'status-error'}"></span>Formulário: ${testResults.formElement ? '✅ OK' : '❌ Falha'}</div>
+            `;
+        }
+
+        function runSystemCheck() {
+            log('🔍 Iniciando verificação completa do sistema...');
+            
+            // Verificar localStorage
+            try {
+                localStorage.setItem('test', 'ok');
+                localStorage.removeItem('test');
+                testResults.localStorage = true;
+                log('✅ LocalStorage funcionando');
+            } catch (e) {
+                testResults.localStorage = false;
+                log('❌ LocalStorage falhou: ' + e.message, 'error');
+            }
+
+            // Verificar admin.js
+            testResults.adminJs = typeof adminData !== 'undefined';
+            log(testResults.adminJs ? '✅ Admin.js carregado' : '❌ Admin.js não encontrado', testResults.adminJs ? 'success' : 'error');
+
+            // Verificar Firebase
+            testResults.firebase = typeof window.FirebaseDB !== 'undefined';
+            log(testResults.firebase ? '✅ Firebase disponível' : '⚠️ Firebase não disponível', testResults.firebase ? 'success' : 'warning');
+
+            // Verificar formulário
+            testResults.formElement = document.getElementById('config-form') !== null;
+            log(testResults.formElement ? '✅ Formulário encontrado' : '❌ Formulário não encontrado', testResults.formElement ? 'success' : 'error');
+
+            updateSystemStatus();
+            updateSummary();
+        }
+
+        function checkFunctions() {
+            log('⚙️ Verificando funções disponíveis...');
+            
+            const functionsDiv = document.getElementById('functions-status');
+            let functionsHtml = '';
+
+            // Verificar saveConfiguration
+            const hasSaveGlobal = typeof window.saveConfiguration === 'function';
+            const hasSaveLocal = typeof saveConfiguration === 'function';
+            testResults.saveFunction = hasSaveGlobal || hasSaveLocal;
+            functionsHtml += `<div><span class="status-indicator ${testResults.saveFunction ? 'status-ok' : 'status-error'}"></span>saveConfiguration: ${testResults.saveFunction ? '✅ OK' : '❌ Não encontrada'}</div>`;
+
+            // Verificar loadConfiguration
+            const hasLoadGlobal = typeof window.loadConfiguration === 'function';
+            const hasLoadLocal = typeof loadConfiguration === 'function';
+            testResults.loadFunction = hasLoadGlobal || hasLoadLocal;
+            functionsHtml += `<div><span class="status-indicator ${testResults.loadFunction ? 'status-ok' : 'status-error'}"></span>loadConfiguration: ${testResults.loadFunction ? '✅ OK' : '❌ Não encontrada'}</div>`;
+
+            // Verificar adminData
+            const hasAdminData = typeof adminData !== 'undefined';
+            functionsHtml += `<div><span class="status-indicator ${hasAdminData ? 'status-ok' : 'status-error'}"></span>adminData: ${hasAdminData ? '✅ OK' : '❌ Não encontrada'}</div>`;
+
+            functionsDiv.innerHTML = functionsHtml;
+
+            log(`Funções encontradas: save=${testResults.saveFunction}, load=${testResults.loadFunction}, adminData=${hasAdminData}`);
+        }
+
+        function testDirectSave() {
+            log('🧪 Executando teste direto de salvamento...');
+            
+            try {
+                if (typeof window.saveConfiguration === 'function') {
+                    log('Tentando window.saveConfiguration...');
+                    const fakeEvent = { preventDefault: () => {} };
+                    window.saveConfiguration(fakeEvent);
+                    log('✅ window.saveConfiguration executada');
+                } else if (typeof saveConfiguration === 'function') {
+                    log('Tentando saveConfiguration local...');
+                    const fakeEvent = { preventDefault: () => {} };
+                    saveConfiguration(fakeEvent);
+                    log('✅ saveConfiguration local executada');
+                } else {
+                    throw new Error('Função saveConfiguration não encontrada');
+                }
+            } catch (error) {
+                log(`❌ Erro no teste direto: ${error.message}`, 'error');
+            }
+        }
+
+        function showStoredData() {
+            log('📊 Verificando dados salvos...');
+            
+            const storageDiv = document.getElementById('storage-info');
+            try {
+                const savedConfig = localStorage.getItem('adminConfig');
+                if (savedConfig) {
+                    const config = JSON.parse(savedConfig);
+                    storageDiv.innerHTML = `
+                        <div>📊 Total números: ${config.totalNumbers || 'N/A'}</div>
+                        <div>💰 Preço: R$ ${config.ticketPrice || 'N/A'}</div>
+                        <div>👶 Bebê: ${config.babyName || 'N/A'}</div>
+                        <div>📱 Telefone: ${config.contactPhone || 'N/A'}</div>
+                        <div>💳 PIX: ${config.pixKey || 'N/A'}</div>
+                    `;
+                    log('✅ Dados encontrados e exibidos');
+                } else {
+                    storageDiv.innerHTML = '<div>⚠️ Nenhum dado salvo encontrado</div>';
+                    log('⚠️ Nenhum dado salvo encontrado', 'warning');
+                }
+            } catch (error) {
+                storageDiv.innerHTML = `<div>❌ Erro: ${error.message}</div>`;
+                log(`❌ Erro ao verificar dados: ${error.message}`, 'error');
+            }
+        }
+
+        function createTestData() {
+            log('🧪 Criando dados de teste...');
+            
+            try {
+                const testConfig = {
+                    totalNumbers: 250,
+                    ticketPrice: 60.00,
+                    babyName: 'Thomas Diagnóstico',
+                    contactPhone: '(11) 99999-8888',
+                    pixKey: 'diagnostico@teste.com',
+                    prizes: {
+                        first: 'R$ 300,00',
+                        second: 'R$ 200,00',
+                        third: 'Kit completo'
+                    },
+                    timestamp: new Date().toISOString()
+                };
+
+                localStorage.setItem('adminConfig', JSON.stringify(testConfig));
+                log('✅ Dados de teste criados com sucesso');
+                showStoredData();
+            } catch (error) {
+                log(`❌ Erro ao criar dados de teste: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAllData() {
+            log('🗑️ Limpando todos os dados...');
+            
+            try {
+                localStorage.removeItem('adminConfig');
+                log('✅ Dados removidos com sucesso');
+                showStoredData();
+            } catch (error) {
+                log(`❌ Erro ao limpar dados: ${error.message}`, 'error');
+            }
+        }
+
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summary-content');
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(Boolean).length;
+            const passRate = ((passedTests / totalTests) * 100).toFixed(1);
+
+            summaryDiv.innerHTML = `
+                <div style="font-size: 18px; margin-bottom: 10px;">
+                    📊 Status: ${passedTests}/${totalTests} testes passaram (${passRate}%)
+                </div>
+                <div>
+                    ${testResults.localStorage && testResults.formElement && testResults.saveFunction ? 
+                      '✅ Sistema básico funcionando - salvamento deve funcionar' : 
+                      '⚠️ Alguns componentes críticos falharam'}
+                </div>
+            `;
+        }
+
+        // Event listener para o formulário
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de diagnóstico carregada');
+            
+            // Verificar se admin.js configurou o event listener
+            const form = document.getElementById('config-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    log('📝 FORMULÁRIO SUBMETIDO - evento interceptado!');
+                    // Deixar o processamento normal continuar
+                });
+            }
+
+            // Executar verificações iniciais
+            setTimeout(() => {
+                runSystemCheck();
+                checkFunctions();
+                showStoredData();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

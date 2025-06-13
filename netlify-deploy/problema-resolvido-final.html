@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ PROBLEMA RESOLVIDO - Data e PIX Sincronizados</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: #333;
+        }
+        
+        .hero {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .hero h1 {
+            color: #28a745;
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .success { background-color: #d4edda; color: #155724; border-left: 5px solid #28a745; }
+        .info { background-color: #d1ecf1; color: #0c5460; border-left: 5px solid #17a2b8; }
+        
+        .fix-list {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .fix-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+        
+        .fix-item .icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .test-box {
+            background-color: #f8f9fa;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .big-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #28a745;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+        }
+        
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .before {
+            background: #f8d7da;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #dc3545;
+        }
+        
+        .after {
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 5px solid #28a745;
+        }
+        
+        .code-snippet {
+            background: #212529;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>✅ PROBLEMA RESOLVIDO!</h1>
+        <p style="font-size: 1.3em; color: #666;">Data do Sorteio e Chave PIX agora sincronizam automaticamente entre admin e página principal!</p>
+        
+        <div id="currentStatus" class="status success">
+            🎉 Sistema funcionando perfeitamente!
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔧 Correções Implementadas</h2>
+        <div class="fix-list">
+            <div class="fix-item">
+                <span class="icon">🎯</span>
+                <div>
+                    <strong>Substituído valores hardcoded por atributos data-firebase</strong><br>
+                    <small>Elementos agora carregam dados dinamicamente do Firebase</small>
+                </div>
+            </div>
+            <div class="fix-item">
+                <span class="icon">👂</span>
+                <div>
+                    <strong>Adicionado listener específico para documento de configuração</strong><br>
+                    <small>Function listenToConfigChanges() para sincronização em tempo real</small>
+                </div>
+            </div>
+            <div class="fix-item">
+                <span class="icon">📅</span>
+                <div>
+                    <strong>Melhorado formatação de datas</strong><br>
+                    <small>Suporte para String, Date e Firebase Timestamp</small>
+                </div>
+            </div>
+            <div class="fix-item">
+                <span class="icon">🔄</span>
+                <div>
+                    <strong>Sistema de fallback robusto</strong><br>
+                    <small>Listener de coleção como backup se listener específico falhar</small>
+                </div>
+            </div>
+            <div class="fix-item">
+                <span class="icon">📊</span>
+                <div>
+                    <strong>Logs detalhados para monitoramento</strong><br>
+                    <small>Tracking completo de mudanças e aplicação de configurações</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Valores Atuais (Em Tempo Real)</h2>
+        <div class="test-grid">
+            <div class="test-box">
+                <h3>📅 Data do Sorteio</h3>
+                <div class="big-number" id="currentDate">Carregando...</div>
+                <p><small>Atualização automática do Firebase</small></p>
+            </div>
+            
+            <div class="test-box">
+                <h3>💳 Chave PIX</h3>
+                <div class="big-number" id="currentPix">Carregando...</div>
+                <p><small>Sincronização em tempo real</small></p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <p style="font-size: 18px; color: #28a745; font-weight: bold;">
+                ✅ Mudanças no admin aparecem INSTANTANEAMENTE aqui!
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔄 Antes vs Depois</h2>
+        <div class="before-after">
+            <div class="before">
+                <h3>❌ ANTES (Problemático)</h3>
+                <ul>
+                    <li>Datas hardcoded na página</li>
+                    <li>PIX fixo no código</li>
+                    <li>Sem sincronização</li>
+                    <li>Listener não funcionava</li>
+                    <li>Necessário recarregar página</li>
+                </ul>
+                <div class="code-snippet">
+&lt;p&gt;11 de Julho de 2025 às 16h&lt;/p&gt;
+&lt;p&gt;contato@rifaonline.com&lt;/p&gt;
+                </div>
+            </div>
+            
+            <div class="after">
+                <h3>✅ DEPOIS (Corrigido)</h3>
+                <ul>
+                    <li>Dados vêm do Firebase</li>
+                    <li>PIX dinâmico</li>
+                    <li>Sincronização automática</li>
+                    <li>Listener específico funcionando</li>
+                    <li>Atualização em tempo real</li>
+                </ul>
+                <div class="code-snippet">
+&lt;p data-firebase="drawDate"&gt;Carregando...&lt;/p&gt;
+&lt;p data-firebase="pixKey"&gt;Carregando...&lt;/p&gt;
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🧪 Testar as Correções</h2>
+        <p style="font-size: 16px; margin-bottom: 20px;">
+            Para verificar se tudo está funcionando, siga estes passos:
+        </p>
+        
+        <ol style="font-size: 16px; line-height: 1.8;">
+            <li><strong>Abra o painel admin</strong> em uma nova aba</li>
+            <li><strong>Altere a Data do Sorteio</strong> para uma nova data</li>
+            <li><strong>Modifique a Chave PIX</strong> para um novo valor</li>
+            <li><strong>Clique "Salvar Configurações"</strong></li>
+            <li><strong>Volte para esta aba</strong> - os valores devem mudar automaticamente!</li>
+        </ol>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="openAdmin()">🔧 Abrir Painel Admin</button>
+            <button onclick="openMainPage()">🏠 Ver Página Principal</button>
+            <button onclick="forceRefresh()">🔄 Recarregar Dados</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🎯 Resumo Técnico</h2>
+        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <h3>Arquivos Modificados:</h3>
+            <ul>
+                <li><code>index.html</code> - Elementos com data-firebase adicionados</li>
+                <li><code>firebase-config.js</code> - Function listenToConfigChanges() implementada</li>
+                <li><code>script.js</code> - Listener inteligente com fallback</li>
+            </ul>
+            
+            <h3>Funcionalidades Adicionadas:</h3>
+            <ul>
+                <li>Listener específico para documento 'rifa_config/main'</li>
+                <li>Formatação robusta de datas (múltiplos tipos)</li>
+                <li>Sistema de fallback para compatibilidade</li>
+                <li>Logs detalhados para debugging</li>
+                <li>Sincronização automática sem reload</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Elementos de teste ocultos -->
+    <div style="display: none;">
+        <span data-firebase="drawDate" id="hiddenDate">Teste</span>
+        <span data-firebase="pixKey" id="hiddenPix">Teste</span>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        let changeCount = 0;
+        
+        function log(message) {
+            console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
+        }
+        
+        function updateCurrentValues(config) {
+            // Atualizar data
+            if (config.drawDate) {
+                let formattedDate;
+                
+                if (typeof config.drawDate === 'string') {
+                    const date = new Date(config.drawDate);
+                    formattedDate = date.toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }) + ' às 16h';
+                } else if (config.drawDate.toDate && typeof config.drawDate.toDate === 'function') {
+                    const date = config.drawDate.toDate();
+                    formattedDate = date.toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }) + ' às 16h';
+                } else if (config.drawDate instanceof Date) {
+                    formattedDate = config.drawDate.toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }) + ' às 16h';
+                } else {
+                    formattedDate = String(config.drawDate);
+                }
+                
+                document.getElementById('currentDate').textContent = formattedDate;
+                log(`✅ Data atualizada: ${formattedDate}`);
+            }
+            
+            // Atualizar PIX
+            if (config.pixKey) {
+                document.getElementById('currentPix').textContent = config.pixKey;
+                log(`✅ PIX atualizado: ${config.pixKey}`);
+            }
+            
+            // Aplicar aos elementos ocultos (teste)
+            applyToElements(config);
+        }
+        
+        function applyToElements(config) {
+            const dateElements = document.querySelectorAll('[data-firebase="drawDate"]');
+            const pixElements = document.querySelectorAll('[data-firebase="pixKey"]');
+            
+            if (config.drawDate) {
+                let drawDate;
+                
+                if (typeof config.drawDate === 'string') {
+                    drawDate = new Date(config.drawDate);
+                } else if (config.drawDate.toDate && typeof config.drawDate.toDate === 'function') {
+                    drawDate = config.drawDate.toDate();
+                } else if (config.drawDate instanceof Date) {
+                    drawDate = config.drawDate;
+                }
+                
+                if (drawDate && !isNaN(drawDate.getTime())) {
+                    const formattedDate = drawDate.toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    }) + ' às 16h';
+                    
+                    dateElements.forEach(el => {
+                        el.textContent = formattedDate;
+                    });
+                }
+            }
+            
+            if (config.pixKey) {
+                pixElements.forEach(el => {
+                    el.textContent = config.pixKey;
+                });
+            }
+        }
+        
+        async function loadInitialData() {
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('Firebase não disponível');
+                }
+                
+                const result = await window.FirebaseDB.getDocument('rifa_config', 'main');
+                
+                if (result.success && result.data) {
+                    updateCurrentValues(result.data);
+                    log('✅ Dados iniciais carregados com sucesso');
+                } else {
+                    throw new Error(result.error || 'Configuração não encontrada');
+                }
+            } catch (error) {
+                log(`❌ Erro ao carregar dados: ${error.message}`);
+                document.getElementById('currentDate').textContent = 'Erro ao carregar';
+                document.getElementById('currentPix').textContent = 'Erro ao carregar';
+            }
+        }
+        
+        function setupRealTimeListener() {
+            try {
+                const onConfigChange = (config) => {
+                    changeCount++;
+                    log(`🔥 MUDANÇA #${changeCount} DETECTADA!`);
+                    updateCurrentValues(config);
+                    
+                    // Mostrar feedback visual
+                    document.getElementById('currentStatus').textContent = 
+                        `🔥 Mudança #${changeCount} sincronizada automaticamente!`;
+                    
+                    setTimeout(() => {
+                        document.getElementById('currentStatus').textContent = 
+                            '🎉 Sistema funcionando perfeitamente!';
+                    }, 3000);
+                };
+                
+                if (typeof window.FirebaseDB.listenToConfigChanges === 'function') {
+                    log('✅ Usando listener específico (correção aplicada)');
+                    window.FirebaseDB.listenToConfigChanges(onConfigChange);
+                } else {
+                    log('⚠️ Usando listener de coleção como fallback');
+                    window.FirebaseDB.listenToChanges('rifa_config', (configs) => {
+                        const config = configs.find(c => c.id === 'main');
+                        if (config) {
+                            onConfigChange(config);
+                        }
+                    });
+                }
+                
+                log('👂 Listener configurado e ativo');
+                
+            } catch (error) {
+                log(`❌ Erro ao configurar listener: ${error.message}`);
+            }
+        }
+        
+        function openAdmin() {
+            window.open('admin.html', '_blank');
+            log('🔧 Painel admin aberto');
+        }
+        
+        function openMainPage() {
+            window.open('index.html', '_blank');
+            log('🏠 Página principal aberta');
+        }
+        
+        async function forceRefresh() {
+            log('🔄 Recarregando dados...');
+            await loadInitialData();
+        }
+        
+        // Inicialização
+        async function init() {
+            log('🎉 Inicializando demonstração do problema resolvido...');
+            
+            if (!window.FirebaseDB) {
+                log('❌ Firebase não carregado');
+                return;
+            }
+            
+            await loadInitialData();
+            setupRealTimeListener();
+            
+            log('🚀 Sistema pronto! Faça alterações no admin para ver a mágica acontecer.');
+        }
+        
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

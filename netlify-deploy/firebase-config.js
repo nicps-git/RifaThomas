@@ -77,7 +77,14 @@ waitForFirebase().then(() => {
       try {
         console.log('💾 Salvando configuração...', config);
         const docRef = firebase.firestore().collection('rifa_config').doc('main');
-        await docRef.set(config, { merge: true });
+        
+        const configWithTimestamp = {
+          ...config,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastModified: new Date().toISOString()
+        };
+        
+        await docRef.set(configWithTimestamp, { merge: true });
         console.log('✅ Configuração salva');
         return { success: true };
       } catch (error) {
@@ -197,11 +204,16 @@ waitForFirebase().then(() => {
     listenToChanges(collection, callback) {
       try {
         console.log(`👂 Escutando mudanças em: ${collection}`);
-        const unsubscribe = firebase.firestore()
-          .collection(collection)
-          .orderBy('timestamp', 'desc') // Ordenar por timestamp para consistência
-          .onSnapshot(snapshot => {
-            console.log(`📥 Snapshot recebido: ${snapshot.size} documentos`);
+        
+        let query = firebase.firestore().collection(collection);
+        
+        // Aplicar ordenação apenas para coleções que têm timestamp
+        if (collection === 'purchases') {
+          query = query.orderBy('timestamp', 'desc');
+        }
+        
+        const unsubscribe = query.onSnapshot(snapshot => {
+            console.log(`📥 Snapshot recebido: ${snapshot.size} documentos em ${collection}`);
             const data = [];
             
             snapshot.forEach(doc => {
@@ -212,11 +224,19 @@ waitForFirebase().then(() => {
               });
               
               // Log detalhado para debug
-              console.log(`📋 Doc ${doc.id}:`, {
-                status: docData.status,
-                numbers: docData.numbers,
-                buyerName: docData.buyerName
-              });
+              if (collection === 'purchases') {
+                console.log(`📋 Doc ${doc.id}:`, {
+                  status: docData.status,
+                  numbers: docData.numbers,
+                  buyerName: docData.buyerName
+                });
+              } else if (collection === 'rifa_config') {
+                console.log(`⚙️ Config ${doc.id}:`, {
+                  totalNumbers: docData.totalNumbers,
+                  ticketPrice: docData.ticketPrice,
+                  pixKey: docData.pixKey
+                });
+              }
             });
             
             console.log(`🔄 Chamando callback com ${data.length} itens`);
@@ -234,6 +254,40 @@ waitForFirebase().then(() => {
         return unsubscribe;
       } catch (error) {
         console.error('❌ Erro ao configurar listener:', error);
+        return null;
+      }
+    },
+
+    // Escutar mudanças nas configurações (documento específico)
+    listenToConfigChanges(callback) {
+      try {
+        console.log('👂 Configurando listener para documento de configuração...');
+        
+        const unsubscribe = firebase.firestore()
+          .collection('rifa_config')
+          .doc('main')
+          .onSnapshot(doc => {
+            if (doc.exists) {
+              console.log('📥 Configuração atualizada:', doc.data());
+              const configData = { id: doc.id, ...doc.data() };
+              callback(configData);
+            } else {
+              console.log('⚠️ Documento de configuração não existe');
+              callback(null);
+            }
+          }, error => {
+            console.error('❌ Erro no listener de configuração:', error);
+            // Tentar reconectar em caso de erro
+            setTimeout(() => {
+              console.log('🔄 Tentando reconectar listener de configuração...');
+              this.listenToConfigChanges(callback);
+            }, 5000);
+          });
+        
+        console.log('✅ Listener de configuração configurado');
+        return unsubscribe;
+      } catch (error) {
+        console.error('❌ Erro ao configurar listener de configuração:', error);
         return null;
       }
     },
@@ -588,7 +642,103 @@ waitForFirebase().then(() => {
         console.error('❌ Erro ao limpar admins não autorizados:', error);
         return { success: false, error: error.message };
       }
-    }
+    },
+
+    // Deletar documento específico
+    async deleteDocument(collection, docId) {
+      try {
+        console.log(`🗑️ Deletando documento ${docId} da coleção ${collection}...`);
+        
+        const docRef = firebase.firestore().collection(collection).doc(docId);
+        await docRef.delete();
+        
+        console.log(`✅ Documento ${docId} deletado com sucesso`);
+        return { success: true };
+      } catch (error) {
+        console.error(`❌ Erro ao deletar documento ${docId}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Deletar todos os documentos de uma coleção
+    async deleteAllDocuments(collection) {
+      try {
+        console.log(`🗑️ Iniciando exclusão de todos os documentos da coleção ${collection}...`);
+        
+        const collectionRef = firebase.firestore().collection(collection);
+        const snapshot = await collectionRef.get();
+        
+        if (snapshot.empty) {
+          console.log(`ℹ️ Nenhum documento encontrado na coleção ${collection}`);
+          return { success: true, deletedCount: 0 };
+        }
+
+        console.log(`📊 Encontrados ${snapshot.size} documentos para deletar`);
+        
+        // Deletar em lotes para melhor performance
+        const batchSize = 500;
+        let deletedCount = 0;
+        let errorCount = 0;
+
+        // Processar em lotes
+        const docs = snapshot.docs;
+        for (let i = 0; i < docs.length; i += batchSize) {
+          const batch = firebase.firestore().batch();
+          const batchDocs = docs.slice(i, i + batchSize);
+          
+          batchDocs.forEach(doc => {
+            batch.delete(doc.ref);
+          });
+
+          try {
+            await batch.commit();
+            deletedCount += batchDocs.length;
+            console.log(`✅ Lote ${Math.floor(i/batchSize) + 1}: ${batchDocs.length} documentos deletados`);
+          } catch (batchError) {
+            errorCount += batchDocs.length;
+            console.error(`❌ Erro no lote ${Math.floor(i/batchSize) + 1}:`, batchError);
+          }
+        }
+
+        console.log(`📊 Exclusão completa: ${deletedCount} deletados, ${errorCount} erros`);
+        return { 
+          success: errorCount === 0, 
+          deletedCount, 
+          errorCount,
+          message: `${deletedCount} documentos deletados${errorCount > 0 ? `, ${errorCount} erros` : ''}`
+        };
+
+      } catch (error) {
+        console.error(`❌ Erro ao deletar todos os documentos da coleção ${collection}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
+
+    // Obter todos os documentos de uma coleção
+    async getAllDocuments(collection) {
+      try {
+        console.log(`📋 Carregando todos os documentos da coleção ${collection}...`);
+        
+        const snapshot = await firebase.firestore()
+          .collection(collection)
+          .get();
+        
+        const documents = [];
+        snapshot.forEach(doc => {
+          documents.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+
+        console.log(`✅ ${documents.length} documentos carregados da coleção ${collection}`);
+        return { success: true, data: documents };
+
+      } catch (error) {
+        console.error(`❌ Erro ao carregar documentos da coleção ${collection}:`, error);
+        return { success: false, error: error.message };
+      }
+    },
   };
   
   console.log('🎉 FirebaseDB configurado e disponível globalmente');

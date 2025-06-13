@@ -256,13 +256,6 @@
                                 <input type="text" id="config-pix-key" value="contato@charifa.com" required>
                             </div>
                             <div class="form-group">
-                                <label for="config-contact-email">Email de Contato:</label>
-                                <input type="email" id="config-contact-email" value="contato@rifaonline.com" required>
-                            </div>
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
                                 <label for="config-baby-name">Nome do Bebê:</label>
                                 <input type="text" id="config-baby-name" value="Thomas" required>
                             </div>
@@ -291,30 +284,6 @@
                             <i class="fas fa-save"></i> Salvar Configurações
                         </button>
                     </form>
-                    
-                    <!-- Teste de Salvamento -->
-                    <div style="margin: 30px 0; padding: 20px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
-                        <h4>🧪 Teste de Salvamento</h4>
-                        <p>Use os botões abaixo para testar e diagnosticar o sistema de salvamento:</p>
-                        <div style="margin: 15px 0;">
-                            <button onclick="if(typeof window.saveConfiguration === 'function') { console.log('✅ saveConfiguration encontrada'); alert('✅ Função saveConfiguration está disponível!'); } else { console.error('❌ saveConfiguration não encontrada'); alert('❌ Função saveConfiguration NÃO encontrada!'); }" 
-                                    style="background: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
-                                🔍 Verificar Função
-                            </button>
-                            <button onclick="if(typeof window.forcarSaveConfiguration === 'function') { window.forcarSaveConfiguration(); alert('✅ Save de emergência configurado!'); } else { alert('❌ Função de emergência não encontrada!'); }" 
-                                    style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
-                                🚨 Forçar Save
-                            </button>
-                            <button onclick="const form = document.getElementById('config-form'); if(form && typeof window.saveConfiguration === 'function') { const e = {preventDefault: () => {}, target: form}; window.saveConfiguration(e); } else { alert('❌ Teste falhou!'); }" 
-                                    style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
-                                🧪 Teste Manual
-                            </button>
-                            <button onclick="console.log('adminData:', typeof adminData !== 'undefined' ? adminData : 'não encontrado'); console.log('saveConfiguration:', typeof window.saveConfiguration); console.log('FirebaseDB:', typeof window.FirebaseDB); alert('Verifique o console para detalhes');" 
-                                    style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
-                                🔧 Debug Console
-                            </button>
-                        </div>
-                    </div>
                     
                     <!-- Ações Administrativas -->
                     <div class="admin-actions" style="margin-top: 2rem;">
@@ -555,6 +524,61 @@
                 return false;
             }
         }
+        
+        // DIAGNÓSTICO ESPECÍFICO PARA SAVE CONFIGURATION
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DIAGNÓSTICO: Página carregada');
+            
+            // Aguardar scripts carregarem
+            setTimeout(() => {
+                console.log('🔧 DIAGNÓSTICO: Verificando saveConfiguration...');
+                
+                // Verificar se saveConfiguration existe
+                if (typeof window.saveConfiguration === 'function') {
+                    console.log('✅ DIAGNÓSTICO: saveConfiguration encontrada');
+                } else {
+                    console.error('❌ DIAGNÓSTICO: saveConfiguration NÃO encontrada');
+                }
+                
+                // Verificar formulário
+                const form = document.getElementById('config-form');
+                if (form) {
+                    console.log('✅ DIAGNÓSTICO: Formulário config-form encontrado');
+                    
+                    // Adicionar listener adicional para teste
+                    form.addEventListener('submit', function(e) {
+                        console.log('🔧 DIAGNÓSTICO: Submit interceptado!');
+                        
+                        if (typeof window.saveConfiguration === 'function') {
+                            console.log('🔧 DIAGNÓSTICO: Chamando saveConfiguration...');
+                        } else {
+                            console.error('🔧 DIAGNÓSTICO: saveConfiguration não disponível no submit!');
+                        }
+                    });
+                } else {
+                    console.error('❌ DIAGNÓSTICO: Formulário config-form NÃO encontrado');
+                }
+                
+                // Verificar adminData
+                if (typeof adminData !== 'undefined') {
+                    console.log('✅ DIAGNÓSTICO: adminData encontrado', adminData);
+                } else {
+                    console.error('❌ DIAGNÓSTICO: adminData NÃO encontrado');
+                }
+                
+                // Verificar Firebase
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    console.log('✅ DIAGNÓSTICO: FirebaseDB encontrado');
+                    if (typeof window.FirebaseDB.saveConfig === 'function') {
+                        console.log('✅ DIAGNÓSTICO: saveConfig encontrada');
+                    } else {
+                        console.error('❌ DIAGNÓSTICO: saveConfig NÃO encontrada');
+                    }
+                } else {
+                    console.error('❌ DIAGNÓSTICO: FirebaseDB NÃO encontrado');
+                }
+            }, 3000);
+        });
         
         // Aguardar Firebase estar pronto
         if (typeof window.FirebaseDB !== 'undefined') {

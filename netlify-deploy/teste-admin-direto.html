@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Direto do Admin.js</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .form-minimal {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .form-minimal input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Direto do Admin.js</h1>
+        
+        <div class="test-area">
+            <h3>📋 Formulário de Teste Simples</h3>
+            <form id="config-form">
+                <div class="form-minimal">
+                    <input type="number" id="config-total-numbers" value="200" placeholder="Total números">
+                    <input type="number" id="config-ticket-price" value="45.00" step="0.01" placeholder="Preço">
+                    <input type="text" id="config-baby-name" value="Thomas Teste" placeholder="Nome bebê">
+                    <input type="tel" id="config-contact-phone" value="(11) 98765-4321" placeholder="Telefone">
+                    <input type="text" id="config-pix-key" value="teste@pix.com" placeholder="PIX">
+                    <input type="text" id="config-first-prize" value="R$ 200,00" placeholder="1º prêmio">
+                    <input type="text" id="config-second-prize" value="R$ 150,00" placeholder="2º prêmio">
+                    <input type="text" id="config-third-prize" value="Kit bebê" placeholder="3º prêmio">
+                    <input type="datetime-local" id="config-draw-date" value="2025-07-20T16:00">
+                </div>
+                <button type="submit">💾 Salvar Configurações</button>
+            </form>
+        </div>
+
+        <div class="test-area">
+            <h3>🔧 Testes Manuais</h3>
+            <button onclick="testAdminJsFunctions()">🧪 Testar Funções Admin.js</button>
+            <button onclick="testLocalSave()">💾 Teste Salvamento Local</button>
+            <button onclick="loadStoredData()">📂 Carregar Dados Salvos</button>
+            <button onclick="clearLog()">🧹 Limpar Log</button>
+        </div>
+
+        <div class="test-area">
+            <h3>📝 Log de Execução</h3>
+            <div id="log" class="log">Aguardando testes...</div>
+        </div>
+    </div>
+
+    <!-- Incluir admin.js -->
+    <script src="admin.js"></script>
+
+    <script>
+        let testLog = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            testLog.push(`[${timestamp}] ${message}`);
+            document.getElementById('log').textContent = testLog.join('\n');
+            console.log(`[TESTE] ${message}`);
+        }
+
+        function clearLog() {
+            testLog = [];
+            document.getElementById('log').textContent = 'Log limpo...';
+        }
+
+        function testAdminJsFunctions() {
+            log('🧪 Testando funções do admin.js...');
+            
+            try {
+                // Verificar se as funções estão disponíveis
+                log(`saveConfiguration global: ${typeof window.saveConfiguration}`);
+                log(`loadConfiguration global: ${typeof window.loadConfiguration}`);
+                
+                // Verificar adminData
+                if (typeof adminData !== 'undefined') {
+                    log(`adminData disponível: ${JSON.stringify(adminData.config)}`);
+                } else {
+                    log('❌ adminData não definido');
+                }
+                
+                // Verificar se o formulário tem event listener
+                const form = document.getElementById('config-form');
+                if (form) {
+                    log('✅ Formulário encontrado');
+                    
+                    // Tentar chamar loadConfiguration se disponível
+                    if (typeof window.loadConfiguration === 'function') {
+                        window.loadConfiguration();
+                        log('✅ loadConfiguration executada');
+                    } else {
+                        log('❌ loadConfiguration não disponível');
+                    }
+                } else {
+                    log('❌ Formulário não encontrado');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`);
+            }
+        }
+
+        function testLocalSave() {
+            log('💾 Testando salvamento local...');
+            
+            try {
+                const testConfig = {
+                    totalNumbers: 300,
+                    ticketPrice: 55.00,
+                    babyName: 'Test Baby',
+                    contactPhone: '(11) 12345-6789',
+                    pixKey: 'test@local.com',
+                    prizes: {
+                        first: 'R$ 300,00',
+                        second: 'R$ 200,00',
+                        third: 'Kit teste'
+                    },
+                    timestamp: new Date().toISOString()
+                };
+                
+                localStorage.setItem('adminConfig', JSON.stringify(testConfig));
+                log('✅ Dados salvos no localStorage');
+                
+                // Verificar se foi salvo
+                const saved = localStorage.getItem('adminConfig');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    log(`✅ Verificação: ${parsed.totalNumbers} números, R$ ${parsed.ticketPrice}`);
+                } else {
+                    log('❌ Falha na verificação');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no salvamento local: ${error.message}`);
+            }
+        }
+
+        function loadStoredData() {
+            log('📂 Carregando dados salvos...');
+            
+            try {
+                const saved = localStorage.getItem('adminConfig');
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    log(`📊 Dados encontrados:`);
+                    log(`  - Números: ${config.totalNumbers}`);
+                    log(`  - Preço: R$ ${config.ticketPrice}`);
+                    log(`  - Bebê: ${config.babyName}`);
+                    log(`  - PIX: ${config.pixKey}`);
+                    log(`  - Telefone: ${config.contactPhone}`);
+                    
+                    // Tentar carregar nos campos
+                    const fields = {
+                        'config-total-numbers': config.totalNumbers,
+                        'config-ticket-price': config.ticketPrice,
+                        'config-baby-name': config.babyName,
+                        'config-contact-phone': config.contactPhone,
+                        'config-pix-key': config.pixKey,
+                        'config-first-prize': config.prizes?.first,
+                        'config-second-prize': config.prizes?.second,
+                        'config-third-prize': config.prizes?.third
+                    };
+                    
+                    let loaded = 0;
+                    Object.entries(fields).forEach(([id, value]) => {
+                        const element = document.getElementById(id);
+                        if (element && value) {
+                            element.value = value;
+                            loaded++;
+                        }
+                    });
+                    
+                    log(`✅ ${loaded} campos carregados`);
+                } else {
+                    log('⚠️ Nenhum dado salvo encontrado');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao carregar dados: ${error.message}`);
+            }
+        }
+
+        // Aguardar DOM carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página carregada');
+            
+            // Aguardar um pouco para admin.js se inicializar
+            setTimeout(() => {
+                testAdminJsFunctions();
+            }, 1000);
+        });
+
+        // Interceptar submissão do formulário para logging
+        document.getElementById('config-form').addEventListener('submit', function(e) {
+            log('📝 Formulário submetido - interceptando...');
+            
+            // Não prevenir o evento aqui para deixar admin.js processar
+            setTimeout(() => {
+                log('⏱️ Aguardando processamento do admin.js...');
+            }, 100);
+        });
+    </script>
+</body>
+</html>

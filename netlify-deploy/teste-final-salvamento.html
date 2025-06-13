@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Teste Final - Salvamento de Configurações</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #28a745;
+        }
+
+        .test-status {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-warning:hover { background: #e0a800; }
+
+        .btn-info { background: #17a2b8; }
+        .btn-info:hover { background: #138496; }
+
+        .result-section {
+            margin: 25px 0;
+        }
+
+        .result-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .result-card.success { border-left-color: #28a745; }
+        .result-card.error { border-left-color: #dc3545; }
+
+        .log-container {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 13px;
+            margin: 20px 0;
+            border: 2px solid #333;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 25px;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #28a745, #20c997);
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .data-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .data-item strong {
+            color: #495057;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .data-item .value {
+            color: #007bff;
+            font-weight: bold;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Teste Final - Salvamento de Configurações</h1>
+            <p>Verificação completa do sistema de salvamento implementado</p>
+        </div>
+
+        <!-- Status do Teste -->
+        <div class="test-status">
+            <h3>📊 Status do Sistema</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%;">Iniciando...</div>
+            </div>
+            <div id="system-status">Verificando componentes...</div>
+        </div>
+
+        <!-- Formulário Principal -->
+        <div class="form-section">
+            <h3>📝 Formulário de Configurações (Idêntico ao Admin)</h3>
+            <form id="config-form">
+                <h4>📊 Configurações Básicas</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-total-numbers">Total de Números:</label>
+                        <input type="number" id="config-total-numbers" min="100" max="10000" value="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-ticket-price">Preço do Bilhete (R$):</label>
+                        <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-draw-date">Data do Sorteio:</label>
+                        <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-contact-phone">Telefone de Contato:</label>
+                        <input type="tel" id="config-contact-phone" value="(11) 99999-9999" required>
+                    </div>
+                </div>
+                
+                <h4>💰 Configurações de Pagamento</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-pix-key">Chave PIX:</label>
+                        <input type="text" id="config-pix-key" value="contato@charifa.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-baby-name">Nome do Bebê:</label>
+                        <input type="text" id="config-baby-name" value="Thomas" required>
+                    </div>
+                </div>
+                
+                <h4>🏆 Prêmios</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-first-prize">1º Prêmio:</label>
+                        <input type="text" id="config-first-prize" value="R$ 100,00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-second-prize">2º Prêmio:</label>
+                        <input type="text" id="config-second-prize" value="R$ 200,00" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="config-third-prize">3º Prêmio:</label>
+                    <input type="text" id="config-third-prize" value="Fraldas por faixa" required>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <button type="submit" class="btn btn-success">
+                        💾 Salvar Configurações
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="loadFromStorage()">
+                        📂 Carregar Salvos
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="testFullCycle()">
+                        🔄 Teste Completo
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Resultados -->
+        <div class="result-section">
+            <h3>📋 Resultados dos Testes</h3>
+            <div id="test-results">
+                <div class="result-card">
+                    <strong>Aguardando testes...</strong>
+                    <p>Execute um teste para ver os resultados aqui.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dados Atuais -->
+        <div class="form-section">
+            <h3>📊 Dados Atuais do Sistema</h3>
+            <div class="data-grid" id="current-data">
+                <div class="data-item">
+                    <strong>Total de Números</strong>
+                    <div class="value" id="current-numbers">-</div>
+                </div>
+                <div class="data-item">
+                    <strong>Preço do Bilhete</strong>
+                    <div class="value" id="current-price">-</div>
+                </div>
+                <div class="data-item">
+                    <strong>Nome do Bebê</strong>
+                    <div class="value" id="current-baby">-</div>
+                </div>
+                <div class="data-item">
+                    <strong>Telefone</strong>
+                    <div class="value" id="current-phone">-</div>
+                </div>
+                <div class="data-item">
+                    <strong>PIX</strong>
+                    <div class="value" id="current-pix">-</div>
+                </div>
+                <div class="data-item">
+                    <strong>Status</strong>
+                    <div class="value" id="current-status">Carregando...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log de Execução -->
+        <div class="form-section">
+            <h3>📝 Log de Execução</h3>
+            <div class="log-container" id="execution-log">
+                Aguardando ações...
+            </div>
+            <button class="btn" onclick="clearLog()">🧹 Limpar Log</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        let testLog = [];
+        let testProgress = 0;
+        let testResults = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const emoji = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            testLog.push(`[${timestamp}] ${emoji} ${message}`);
+            document.getElementById('execution-log').textContent = testLog.slice(-30).join('\n');
+            console.log(`[TESTE FINAL] ${message}`);
+        }
+
+        function clearLog() {
+            testLog = [];
+            document.getElementById('execution-log').textContent = 'Log limpo...';
+        }
+
+        function updateProgress(percent, message) {
+            testProgress = percent;
+            const progressFill = document.getElementById('progress-fill');
+            progressFill.style.width = `${percent}%`;
+            progressFill.textContent = message;
+        }
+
+        function addTestResult(title, success, details) {
+            testResults.push({ title, success, details, timestamp: new Date() });
+            updateTestResultsDisplay();
+        }
+
+        function updateTestResultsDisplay() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '';
+            
+            testResults.forEach(result => {
+                const resultCard = document.createElement('div');
+                resultCard.className = `result-card ${result.success ? 'success' : 'error'}`;
+                resultCard.innerHTML = `
+                    <strong>${result.success ? '✅' : '❌'} ${result.title}</strong>
+                    <p>${result.details}</p>
+                    <small>Executado em: ${result.timestamp.toLocaleTimeString()}</small>
+                `;
+                resultsDiv.appendChild(resultCard);
+            });
+        }
+
+        function updateCurrentData() {
+            try {
+                // Atualizar com dados do adminData se disponível
+                if (typeof adminData !== 'undefined' && adminData.config) {
+                    document.getElementById('current-numbers').textContent = adminData.config.totalNumbers || 'N/A';
+                    document.getElementById('current-price').textContent = `R$ ${(adminData.config.ticketPrice || 0).toFixed(2)}`;
+                    document.getElementById('current-baby').textContent = adminData.config.babyName || 'N/A';
+                    document.getElementById('current-phone').textContent = adminData.config.contactPhone || 'N/A';
+                    document.getElementById('current-pix').textContent = adminData.config.pixKey || 'N/A';
+                    document.getElementById('current-status').textContent = 'AdminData ✅';
+                } else {
+                    // Tentar carregar do localStorage
+                    const savedConfig = localStorage.getItem('adminConfig');
+                    if (savedConfig) {
+                        const config = JSON.parse(savedConfig);
+                        document.getElementById('current-numbers').textContent = config.totalNumbers || 'N/A';
+                        document.getElementById('current-price').textContent = `R$ ${(config.ticketPrice || 0).toFixed(2)}`;
+                        document.getElementById('current-baby').textContent = config.babyName || 'N/A';
+                        document.getElementById('current-phone').textContent = config.contactPhone || 'N/A';
+                        document.getElementById('current-pix').textContent = config.pixKey || 'N/A';
+                        document.getElementById('current-status').textContent = 'LocalStorage ✅';
+                    } else {
+                        document.getElementById('current-status').textContent = 'Sem dados ⚠️';
+                    }
+                }
+            } catch (error) {
+                log(`Erro ao atualizar dados atuais: ${error.message}`, 'error');
+                document.getElementById('current-status').textContent = 'Erro ❌';
+            }
+        }
+
+        async function loadFromStorage() {
+            log('📂 Carregando configurações salvas...');
+            updateProgress(20, 'Carregando...');
+            
+            try {
+                if (typeof window.loadConfiguration === 'function') {
+                    await window.loadConfiguration();
+                    log('✅ Função loadConfiguration executada com sucesso', 'success');
+                    addTestResult('Carregamento', true, 'Configurações carregadas do sistema');
+                } else {
+                    throw new Error('Função loadConfiguration não encontrada');
+                }
+                
+                updateProgress(100, 'Carregado ✅');
+                updateCurrentData();
+                
+            } catch (error) {
+                log(`❌ Erro no carregamento: ${error.message}`, 'error');
+                addTestResult('Carregamento', false, error.message);
+                updateProgress(0, 'Erro ❌');
+            }
+        }
+
+        async function testFullCycle() {
+            log('🔄 Iniciando teste completo de salvamento e carregamento...');
+            updateProgress(0, 'Iniciando...');
+            
+            try {
+                // 1. Verificar sistema
+                updateProgress(20, 'Verificando sistema...');
+                log('🔍 Verificando componentes do sistema...');
+                
+                const hasAdminData = typeof adminData !== 'undefined';
+                const hasFirebase = typeof window.FirebaseDB !== 'undefined';
+                const hasLocalStorage = typeof Storage !== 'undefined';
+                const hasSaveFunction = typeof window.saveConfiguration === 'function';
+                
+                log(`AdminData: ${hasAdminData ? 'OK' : 'FALHA'}`);
+                log(`Firebase: ${hasFirebase ? 'OK' : 'FALHA'}`);
+                log(`LocalStorage: ${hasLocalStorage ? 'OK' : 'FALHA'}`);
+                log(`SaveFunction: ${hasSaveFunction ? 'OK' : 'FALHA'}`);
+                
+                // 2. Modificar valores do formulário
+                updateProgress(40, 'Modificando dados...');
+                log('✏️ Modificando valores do formulário para teste...');
+                
+                const testData = {
+                    totalNumbers: 300,
+                    ticketPrice: 75.50,
+                    babyName: 'Thomas Teste Final',
+                    contactPhone: '(11) 98765-4321',
+                    pixKey: 'teste.final@email.com',
+                    firstPrize: 'R$ 500,00',
+                    secondPrize: 'R$ 300,00',
+                    thirdPrize: 'Kit premium'
+                };
+                
+                document.getElementById('config-total-numbers').value = testData.totalNumbers;
+                document.getElementById('config-ticket-price').value = testData.ticketPrice;
+                document.getElementById('config-baby-name').value = testData.babyName;
+                document.getElementById('config-contact-phone').value = testData.contactPhone;
+                document.getElementById('config-pix-key').value = testData.pixKey;
+                document.getElementById('config-first-prize').value = testData.firstPrize;
+                document.getElementById('config-second-prize').value = testData.secondPrize;
+                document.getElementById('config-third-prize').value = testData.thirdPrize;
+                
+                // 3. Executar salvamento
+                updateProgress(60, 'Salvando...');
+                log('💾 Executando salvamento...');
+                
+                if (typeof window.saveConfiguration === 'function') {
+                    const fakeEvent = { preventDefault: () => {} };
+                    await window.saveConfiguration(fakeEvent);
+                    log('✅ Salvamento executado', 'success');
+                } else {
+                    throw new Error('Função saveConfiguration não encontrada');
+                }
+                
+                // 4. Aguardar um pouco
+                updateProgress(80, 'Verificando...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 5. Verificar se foi salvo
+                updateProgress(90, 'Validando...');
+                log('🔍 Verificando se os dados foram salvos...');
+                
+                let savedCorrectly = false;
+                const savedConfig = localStorage.getItem('adminConfig');
+                if (savedConfig) {
+                    const config = JSON.parse(savedConfig);
+                    if (config.totalNumbers === testData.totalNumbers && 
+                        config.ticketPrice === testData.ticketPrice &&
+                        config.babyName === testData.babyName) {
+                        savedCorrectly = true;
+                        log('✅ Dados verificados no localStorage - corretos!', 'success');
+                    } else {
+                        log('⚠️ Dados no localStorage não coincidem', 'warning');
+                    }
+                } else {
+                    log('❌ Nenhum dado encontrado no localStorage', 'error');
+                }
+                
+                // 6. Finalizar
+                updateProgress(100, savedCorrectly ? 'Sucesso ✅' : 'Falha ❌');
+                
+                if (savedCorrectly) {
+                    addTestResult('Teste Completo', true, 
+                        `Salvamento e verificação bem-sucedidos. Dados: ${testData.totalNumbers} números, R$ ${testData.ticketPrice}, ${testData.babyName}`);
+                    log('🎉 TESTE COMPLETO PASSOU! Sistema funcionando corretamente.', 'success');
+                } else {
+                    addTestResult('Teste Completo', false, 'Dados não foram salvos corretamente');
+                    log('❌ TESTE COMPLETO FALHOU! Verificar implementação.', 'error');
+                }
+                
+                updateCurrentData();
+                
+            } catch (error) {
+                log(`❌ Erro no teste completo: ${error.message}`, 'error');
+                addTestResult('Teste Completo', false, error.message);
+                updateProgress(0, 'Erro ❌');
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de teste final carregada');
+            updateProgress(10, 'Inicializado');
+            
+            // Configurar event listener para o formulário
+            const form = document.getElementById('config-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    log('📝 FORMULÁRIO SUBMETIDO - capturado pelo listener!');
+                    // Deixar o processamento normal continuar
+                });
+            }
+
+            // Aguardar carregamento dos scripts e executar verificações
+            setTimeout(() => {
+                log('🔍 Executando verificações iniciais...');
+                updateCurrentData();
+                
+                // Atualizar status do sistema
+                const systemStatus = document.getElementById('system-status');
+                const checks = [
+                    { name: 'AdminData', ok: typeof adminData !== 'undefined' },
+                    { name: 'Firebase', ok: typeof window.FirebaseDB !== 'undefined' },
+                    { name: 'SaveFunction', ok: typeof window.saveConfiguration === 'function' },
+                    { name: 'LoadFunction', ok: typeof window.loadConfiguration === 'function' }
+                ];
+                
+                const statusText = checks.map(check => 
+                    `${check.name}: ${check.ok ? '✅' : '❌'}`
+                ).join(' | ');
+                
+                systemStatus.textContent = statusText;
+                
+                const allOK = checks.every(check => check.ok);
+                updateProgress(allOK ? 100 : 50, allOK ? 'Sistema OK ✅' : 'Problemas detectados ⚠️');
+                
+                log(`Status do sistema: ${statusText}`);
+                
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

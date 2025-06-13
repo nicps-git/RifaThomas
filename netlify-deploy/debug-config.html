@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Sincronização de Configurações</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug - Sincronização de Configurações</h1>
+    
+    <div class="container">
+        <h2>Status do Firebase</h2>
+        <div id="firebase-status" class="status info">Verificando Firebase...</div>
+        
+        <h2>Ações de Teste</h2>
+        <button onclick="testLoadConfig()">📖 Testar Carregar Configurações</button>
+        <button onclick="testSaveConfig()">💾 Testar Salvar Configurações</button>
+        <button onclick="testListener()">👂 Testar Listener</button>
+        <button onclick="clearLog()">🧹 Limpar Log</button>
+        
+        <h2>Configurações Atuais</h2>
+        <div id="current-config" class="log">Carregando...</div>
+        
+        <h2>Log de Debug</h2>
+        <div id="debug-log" class="log"></div>
+    </div>
+
+    <!-- Carregar Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let originalConsoleLog = console.log;
+        let originalConsoleError = console.error;
+        let originalConsoleWarn = console.warn;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEl = document.getElementById('debug-log');
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            logEl.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+        
+        // Interceptar console.log
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            log(args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            log(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            log(args.join(' '), 'warn');
+        };
+        
+        function updateFirebaseStatus() {
+            const statusEl = document.getElementById('firebase-status');
+            if (typeof window.FirebaseDB !== 'undefined') {
+                statusEl.textContent = '✅ Firebase carregado e disponível';
+                statusEl.className = 'status success';
+            } else {
+                statusEl.textContent = '❌ Firebase não disponível';
+                statusEl.className = 'status error';
+            }
+        }
+        
+        async function testLoadConfig() {
+            log('🔄 Testando carregamento de configurações...');
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('Firebase não disponível');
+                }
+                
+                const result = await window.FirebaseDB.loadConfig();
+                log(`📖 Resultado: ${JSON.stringify(result, null, 2)}`, result.success ? 'success' : 'error');
+                
+                if (result.success) {
+                    document.getElementById('current-config').textContent = JSON.stringify(result.data, null, 2);
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSaveConfig() {
+            log('🔄 Testando salvamento de configurações...');
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('Firebase não disponível');
+                }
+                
+                const testConfig = {
+                    totalNumbers: 200,
+                    ticketPrice: 50.00,
+                    pixKey: 'teste@debug.com',
+                    testField: `Debug ${new Date().getTime()}`
+                };
+                
+                const result = await window.FirebaseDB.saveConfig(testConfig);
+                log(`💾 Resultado do save: ${JSON.stringify(result, null, 2)}`, result.success ? 'success' : 'error');
+                
+                if (result.success) {
+                    log('✅ Aguardando 2 segundos para testar carregamento...', 'info');
+                    setTimeout(testLoadConfig, 2000);
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function testListener() {
+            log('🔄 Testando listener de configurações...');
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('Firebase não disponível');
+                }
+                
+                log('👂 Configurando listener...', 'info');
+                window.FirebaseDB.listenToChanges('rifa_config', (configs) => {
+                    log(`📥 Listener ativado! Recebidas ${configs.length} configurações:`, 'success');
+                    configs.forEach((config, index) => {
+                        log(`Config ${index + 1}: ID=${config.id}, dados=${JSON.stringify(config, null, 2)}`, 'info');
+                    });
+                });
+                
+                log('✅ Listener configurado. Faça uma alteração no admin para testar.', 'success');
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('debug-log').textContent = '';
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de debug carregada');
+            updateFirebaseStatus();
+            
+            // Aguardar Firebase carregar
+            if (typeof window.FirebaseDB === 'undefined') {
+                window.addEventListener('firebaseReady', () => {
+                    log('🔥 Firebase pronto!', 'success');
+                    updateFirebaseStatus();
+                    testLoadConfig();
+                });
+            } else {
+                testLoadConfig();
+            }
+        });
+    </script>
+</body>
+</html>

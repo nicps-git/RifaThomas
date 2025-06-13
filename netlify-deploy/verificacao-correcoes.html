@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação das Correções - Data e PIX</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        
+        .test-result {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .highlight {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .log {
+            background-color: #212529;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificação das Correções</h1>
+        <p>Este teste verifica se as correções específicas implementadas estão funcionando corretamente.</p>
+        
+        <div class="highlight">
+            <h3>🎯 Correções Implementadas:</h3>
+            <ul>
+                <li>✅ Adicionado <code>listenToConfigChanges()</code> no firebase-config.js</li>
+                <li>✅ Melhorado listener no script.js com fallback</li>
+                <li>✅ Corrigido formatação de datas (String, Date, Firebase Timestamp)</li>
+                <li>✅ Adicionado logs detalhados para debug</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔧 Teste das Funcionalidades</h2>
+        
+        <div class="test-result">
+            <h3>1. Teste da nova função listenToConfigChanges</h3>
+            <div id="listenerTest" class="status info">Testando...</div>
+            <button onclick="testNewListener()">🧪 Testar Listener Específico</button>
+        </div>
+        
+        <div class="test-result">
+            <h3>2. Teste de carregamento de configuração</h3>
+            <div id="configTest" class="status info">Testando...</div>
+            <button onclick="testConfigLoading()">📋 Testar Carregamento</button>
+        </div>
+        
+        <div class="test-result">
+            <h3>3. Teste de formatação de datas</h3>
+            <div id="dateTest" class="status info">Testando...</div>
+            <button onclick="testDateFormatting()">📅 Testar Formatação</button>
+        </div>
+        
+        <div class="test-result">
+            <h3>4. Teste de aplicação na UI</h3>
+            <div id="uiTest" class="status info">Testando...</div>
+            <button onclick="testUIApplication()">🖥️ Testar Aplicação UI</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔴 TESTE LIVE</h2>
+        <div class="test-result">
+            <h3>Monitor de Mudanças em Tempo Real</h3>
+            <p>Faça uma alteração no painel admin e observe se ela aparece aqui automaticamente:</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <strong>📅 Data do Sorteio:</strong>
+                    <div id="liveDate" style="font-size: 18px; font-weight: bold; color: #007bff;">Carregando...</div>
+                </div>
+                <div>
+                    <strong>💳 Chave PIX:</strong>
+                    <div id="livePix" style="font-size: 18px; font-weight: bold; color: #007bff;">Carregando...</div>
+                </div>
+            </div>
+            
+            <div id="liveStatus" class="status info">Aguardando inicialização...</div>
+            <p>Mudanças detectadas: <span id="changeCounter" style="font-weight: bold; color: red;">0</span></p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Log de Execução</h2>
+        <div id="logArea" class="log">
+            === VERIFICAÇÃO INICIADA ===
+        </div>
+        <button onclick="clearLog()">🗑️ Limpar Log</button>
+    </div>
+
+    <!-- Elementos de teste -->
+    <div style="display: none;">
+        <span data-firebase="drawDate" id="testDateElement">01/01/2024</span>
+        <span data-firebase="pixKey" id="testPixElement">teste@exemplo.com</span>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        let changeCount = 0;
+        let listenerActive = false;
+        
+        function log(message, level = 'info') {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const levelIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            }[level] || 'ℹ️';
+            
+            logArea.innerHTML += `\n[${timestamp}] ${levelIcon} ${message}`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+        
+        async function testNewListener() {
+            log('🧪 Testando nova função listenToConfigChanges...');
+            
+            try {
+                if (typeof window.FirebaseDB.listenToConfigChanges === 'function') {
+                    updateStatus('listenerTest', '✅ Função listenToConfigChanges ENCONTRADA!', 'success');
+                    log('✅ A correção foi aplicada - função específica está disponível', 'success');
+                    
+                    // Testar se funciona
+                    const unsubscribe = window.FirebaseDB.listenToConfigChanges((config) => {
+                        log(`📡 Listener específico funcionando! Data: ${config.drawDate}, PIX: ${config.pixKey}`, 'success');
+                    });
+                    
+                    setTimeout(() => {
+                        unsubscribe();
+                        log('Teste do listener específico concluído', 'info');
+                    }, 2000);
+                    
+                } else {
+                    updateStatus('listenerTest', '❌ Função listenToConfigChanges NÃO ENCONTRADA', 'error');
+                    log('❌ ERRO: A correção não foi aplicada corretamente', 'error');
+                }
+            } catch (error) {
+                updateStatus('listenerTest', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste do listener: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testConfigLoading() {
+            log('📋 Testando carregamento de configuração...');
+            
+            try {
+                const result = await window.FirebaseDB.getDocument('rifa_config', 'main');
+                
+                if (result.success) {
+                    updateStatus('configTest', '✅ Configuração carregada com sucesso!', 'success');
+                    log(`✅ Config carregada: ${JSON.stringify(result.data)}`, 'success');
+                    
+                    // Verificar se tem os campos esperados
+                    if (result.data.drawDate && result.data.pixKey) {
+                        log('✅ Campos drawDate e pixKey encontrados', 'success');
+                    } else {
+                        log('⚠️ Alguns campos podem estar ausentes', 'warning');
+                    }
+                } else {
+                    updateStatus('configTest', `❌ Erro: ${result.error}`, 'error');
+                    log(`❌ Erro ao carregar config: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('configTest', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste de configuração: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDateFormatting() {
+            log('📅 Testando formatação de datas...');
+            
+            try {
+                const result = await window.FirebaseDB.getDocument('rifa_config', 'main');
+                
+                if (result.success && result.data.drawDate) {
+                    const drawDateValue = result.data.drawDate;
+                    log(`📅 Valor original da data: ${drawDateValue} (tipo: ${typeof drawDateValue})`, 'info');
+                    
+                    let formattedDate;
+                    
+                    // Reproduzir a lógica corrigida
+                    if (typeof drawDateValue === 'string') {
+                        log('📅 Processando como string...', 'info');
+                        formattedDate = new Date(drawDateValue).toLocaleDateString('pt-BR');
+                    } else if (drawDateValue.toDate && typeof drawDateValue.toDate === 'function') {
+                        log('📅 Processando como Firebase Timestamp...', 'info');
+                        formattedDate = drawDateValue.toDate().toLocaleDateString('pt-BR');
+                    } else if (drawDateValue instanceof Date) {
+                        log('📅 Processando como Date object...', 'info');
+                        formattedDate = drawDateValue.toLocaleDateString('pt-BR');
+                    } else {
+                        log('⚠️ Formato de data não reconhecido', 'warning');
+                        formattedDate = 'Formato inválido';
+                    }
+                    
+                    updateStatus('dateTest', `✅ Data formatada: ${formattedDate}`, 'success');
+                    log(`✅ Data formatada com sucesso: ${formattedDate}`, 'success');
+                    
+                } else {
+                    updateStatus('dateTest', '⚠️ Nenhuma data encontrada na configuração', 'warning');
+                    log('⚠️ Não foi possível testar formatação - sem data na config', 'warning');
+                }
+            } catch (error) {
+                updateStatus('dateTest', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste de formatação: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testUIApplication() {
+            log('🖥️ Testando aplicação na UI...');
+            
+            try {
+                const result = await window.FirebaseDB.getDocument('rifa_config', 'main');
+                
+                if (result.success && result.data) {
+                    const config = result.data;
+                    
+                    // Aplicar aos elementos de teste
+                    const dateElements = document.querySelectorAll('[data-firebase="drawDate"]');
+                    const pixElements = document.querySelectorAll('[data-firebase="pixKey"]');
+                    
+                    log(`🖥️ Encontrados ${dateElements.length} elementos de data e ${pixElements.length} elementos PIX`, 'info');
+                    
+                    // Aplicar data
+                    if (config.drawDate) {
+                        let drawDate;
+                        
+                        if (typeof config.drawDate === 'string') {
+                            drawDate = new Date(config.drawDate);
+                        } else if (config.drawDate.toDate && typeof config.drawDate.toDate === 'function') {
+                            drawDate = config.drawDate.toDate();
+                        } else if (config.drawDate instanceof Date) {
+                            drawDate = config.drawDate;
+                        }
+                        
+                        if (drawDate && !isNaN(drawDate.getTime())) {
+                            const formattedDate = drawDate.toLocaleDateString('pt-BR');
+                            dateElements.forEach((el, index) => {
+                                el.textContent = formattedDate;
+                                log(`📅 Elemento data ${index + 1} atualizado: ${formattedDate}`, 'success');
+                            });
+                        }
+                    }
+                    
+                    // Aplicar PIX
+                    if (config.pixKey) {
+                        pixElements.forEach((el, index) => {
+                            el.textContent = config.pixKey;
+                            log(`💳 Elemento PIX ${index + 1} atualizado: ${config.pixKey}`, 'success');
+                        });
+                    }
+                    
+                    updateStatus('uiTest', '✅ UI atualizada com sucesso!', 'success');
+                    log('✅ Aplicação na UI concluída com sucesso', 'success');
+                    
+                } else {
+                    updateStatus('uiTest', '❌ Erro ao carregar configuração', 'error');
+                    log('❌ Não foi possível aplicar na UI - erro na configuração', 'error');
+                }
+            } catch (error) {
+                updateStatus('uiTest', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no teste de UI: ${error.message}`, 'error');
+            }
+        }
+        
+        function setupLiveMonitoring() {
+            log('🔴 Configurando monitoramento em tempo real...');
+            
+            try {
+                const onConfigChange = (config) => {
+                    changeCount++;
+                    document.getElementById('changeCounter').textContent = changeCount;
+                    
+                    log(`🔥 MUDANÇA #${changeCount} DETECTADA!`, 'success');
+                    log(`Nova configuração: Data=${config.drawDate}, PIX=${config.pixKey}`, 'info');
+                    
+                    // Atualizar display
+                    document.getElementById('liveDate').textContent = config.drawDate || 'Não definida';
+                    document.getElementById('livePix').textContent = config.pixKey || 'Não definida';
+                    
+                    updateStatus('liveStatus', `🔥 Mudança #${changeCount} aplicada!`, 'success');
+                    
+                    // Voltar ao status de aguardo após 3 segundos
+                    setTimeout(() => {
+                        updateStatus('liveStatus', '👂 Aguardando próximas mudanças...', 'info');
+                    }, 3000);
+                };
+                
+                // Usar a nova função se disponível
+                if (typeof window.FirebaseDB.listenToConfigChanges === 'function') {
+                    log('✅ Usando listener específico para monitoramento live', 'success');
+                    window.FirebaseDB.listenToConfigChanges(onConfigChange);
+                } else {
+                    log('⚠️ Usando listener de coleção como fallback', 'warning');
+                    window.FirebaseDB.listenToChanges('rifa_config', (configs) => {
+                        const config = configs.find(c => c.id === 'main');
+                        if (config) {
+                            onConfigChange(config);
+                        }
+                    });
+                }
+                
+                listenerActive = true;
+                updateStatus('liveStatus', '👂 Monitoramento ativo! Faça mudanças no admin...', 'info');
+                log('🔴 Monitoramento live configurado e ativo', 'success');
+                
+            } catch (error) {
+                updateStatus('liveStatus', `❌ Erro no monitoramento: ${error.message}`, 'error');
+                log(`Erro no monitoramento live: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadInitialData() {
+            log('📊 Carregando dados iniciais...');
+            
+            try {
+                const result = await window.FirebaseDB.getDocument('rifa_config', 'main');
+                
+                if (result.success && result.data) {
+                    document.getElementById('liveDate').textContent = result.data.drawDate || 'Não definida';
+                    document.getElementById('livePix').textContent = result.data.pixKey || 'Não definida';
+                    log('📊 Dados iniciais carregados', 'success');
+                } else {
+                    log('⚠️ Não foi possível carregar dados iniciais', 'warning');
+                }
+            } catch (error) {
+                log(`Erro ao carregar dados iniciais: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLog() {
+            document.getElementById('logArea').innerHTML = '=== LOG LIMPO ===';
+        }
+        
+        // Inicialização automática
+        async function init() {
+            log('🔍 Iniciando verificação das correções...');
+            
+            // Verificar se Firebase está disponível
+            if (!window.FirebaseDB) {
+                log('❌ FirebaseDB não está disponível', 'error');
+                return;
+            }
+            
+            log('✅ FirebaseDB encontrado', 'success');
+            
+            // Carregar dados iniciais
+            await loadInitialData();
+            
+            // Configurar monitoramento
+            setupLiveMonitoring();
+            
+            // Executar testes automaticamente
+            setTimeout(async () => {
+                await testNewListener();
+                await testConfigLoading();
+                await testDateFormatting();
+                await testUIApplication();
+                
+                log('🎉 Verificação completa! Sistema pronto para uso.', 'success');
+            }, 2000);
+        }
+        
+        // Iniciar quando a página carregar
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

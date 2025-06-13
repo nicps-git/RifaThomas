@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Diagnóstico do Salvamento de Configuração</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-section h3 {
+            color: #495057;
+            margin-top: 0;
+        }
+
+        .status-log {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin: 10px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-warning:hover { background: #e0a800; }
+
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+
+        .result {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Diagnóstico do Salvamento de Configuração</h1>
+        
+        <!-- Seção de Status do Sistema -->
+        <div class="test-section">
+            <h3>📊 Status do Sistema</h3>
+            <div class="status-log" id="status-log">
+                Aguardando teste...
+            </div>
+            <button class="btn" onclick="checkSystemStatus()">🔍 Verificar Status do Sistema</button>
+        </div>
+
+        <!-- Formulário de Teste -->
+        <div class="test-section">
+            <h3>📝 Teste de Salvamento</h3>
+            <form id="test-config-form">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label for="test-total-numbers">Total de Números:</label>
+                        <input type="number" id="test-total-numbers" min="100" max="10000" value="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="test-ticket-price">Preço (R$):</label>
+                        <input type="number" id="test-ticket-price" min="1" step="0.01" value="50.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="test-baby-name">Nome do Bebê:</label>
+                        <input type="text" id="test-baby-name" value="Thomas Teste">
+                    </div>
+                    <div class="form-group">
+                        <label for="test-contact-phone">Telefone:</label>
+                        <input type="tel" id="test-contact-phone" value="(11) 98765-4321">
+                    </div>
+                    <div class="form-group">
+                        <label for="test-pix-key">Chave PIX:</label>
+                        <input type="text" id="test-pix-key" value="teste@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="test-first-prize">1º Prêmio:</label>
+                        <input type="text" id="test-first-prize" value="R$ 150,00">
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn btn-success" onclick="testSaveConfiguration()">
+                        💾 Testar Salvamento
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="testLoadConfiguration()">
+                        📂 Testar Carregamento
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="clearStoredConfig()">
+                        🗑️ Limpar Dados Salvos
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Resultados -->
+        <div class="test-section">
+            <h3>📋 Resultados</h3>
+            <div id="test-results">
+                Nenhum teste executado ainda.
+            </div>
+        </div>
+
+        <!-- Dados Salvos -->
+        <div class="test-section">
+            <h3>💾 Dados Salvos Atualmente</h3>
+            <div class="status-log" id="stored-data">
+                Carregando...
+            </div>
+            <button class="btn" onclick="showStoredData()">🔍 Mostrar Dados Salvos</button>
+        </div>
+    </div>
+
+    <script>
+        let testLog = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            testLog.push(`[${timestamp}] ${message}`);
+            
+            const statusLog = document.getElementById('status-log');
+            statusLog.innerHTML = testLog.slice(-20).join('\n');
+            statusLog.scrollTop = statusLog.scrollHeight;
+            
+            console.log(`[TESTE] ${message}`);
+        }
+
+        function showResult(message, success = true) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${success ? 'success' : 'error'}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+            
+            // Manter apenas os últimos 5 resultados
+            while (resultsDiv.children.length > 5) {
+                resultsDiv.removeChild(resultsDiv.firstChild);
+            }
+        }
+
+        function checkSystemStatus() {
+            log('🔍 Iniciando verificação do sistema...');
+            
+            try {
+                // Verificar localStorage
+                const hasLocalStorage = typeof Storage !== 'undefined';
+                log(`📦 localStorage: ${hasLocalStorage ? '✅ Disponível' : '❌ Não disponível'}`);
+                
+                // Verificar se há dados salvos
+                const savedConfig = localStorage.getItem('adminConfig');
+                log(`💾 Configuração salva: ${savedConfig ? '✅ Encontrada' : '❌ Não encontrada'}`);
+                
+                if (savedConfig) {
+                    try {
+                        const config = JSON.parse(savedConfig);
+                        log(`📊 Dados válidos: ${config.totalNumbers || 'N/A'} números, R$ ${config.ticketPrice || 'N/A'}`);
+                    } catch (e) {
+                        log(`⚠️ Dados corrompidos: ${e.message}`);
+                    }
+                }
+                
+                // Verificar formulário principal
+                const mainForm = document.getElementById('config-form');
+                log(`📝 Formulário principal: ${mainForm ? '✅ Encontrado' : '❌ Não encontrado'}`);
+                
+                // Verificar se admin.js tem as funções
+                const hasSaveFunction = typeof window.saveConfiguration === 'function';
+                const hasLoadFunction = typeof window.loadConfiguration === 'function';
+                log(`⚙️ Função saveConfiguration: ${hasSaveFunction ? '✅ Disponível' : '❌ Não disponível'}`);
+                log(`📂 Função loadConfiguration: ${hasLoadFunction ? '✅ Disponível' : '❌ Não disponível'}`);
+                
+                showResult('✅ Verificação do sistema concluída - verifique o log para detalhes');
+                
+            } catch (error) {
+                log(`❌ Erro na verificação: ${error.message}`);
+                showResult('❌ Erro durante a verificação do sistema', false);
+            }
+        }
+
+        function testSaveConfiguration() {
+            log('💾 Iniciando teste de salvamento...');
+            
+            try {
+                // Coletar dados do formulário de teste
+                const testConfig = {
+                    totalNumbers: parseInt(document.getElementById('test-total-numbers').value),
+                    ticketPrice: parseFloat(document.getElementById('test-ticket-price').value),
+                    babyName: document.getElementById('test-baby-name').value,
+                    contactPhone: document.getElementById('test-contact-phone').value,
+                    pixKey: document.getElementById('test-pix-key').value,
+                    prizes: {
+                        first: document.getElementById('test-first-prize').value,
+                        second: 'R$ 100,00',
+                        third: 'Kit bebê'
+                    },
+                    drawDate: new Date('2025-07-15T16:00:00'),
+                    testMode: true,
+                    timestamp: new Date().toISOString()
+                };
+                
+                log(`📝 Dados coletados: ${testConfig.totalNumbers} números, R$ ${testConfig.ticketPrice}`);
+                
+                // Validações
+                if (testConfig.totalNumbers < 100 || testConfig.totalNumbers > 10000) {
+                    throw new Error('Total de números deve estar entre 100 e 10000');
+                }
+                
+                if (testConfig.ticketPrice < 1) {
+                    throw new Error('Preço deve ser maior que R$ 1,00');
+                }
+                
+                if (!testConfig.pixKey || !testConfig.contactPhone) {
+                    throw new Error('PIX e telefone são obrigatórios');
+                }
+                
+                log('✅ Validações passaram');
+                
+                // Salvar no localStorage
+                localStorage.setItem('adminConfig', JSON.stringify(testConfig));
+                log('💾 Dados salvos no localStorage');
+                
+                // Verificar se foi salvo corretamente
+                const saved = localStorage.getItem('adminConfig');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.testMode && parsed.timestamp === testConfig.timestamp) {
+                        log('✅ Verificação de integridade passou');
+                        showResult('✅ Configuração salva com sucesso!');
+                    } else {
+                        throw new Error('Dados salvos não coincidem');
+                    }
+                } else {
+                    throw new Error('Falha ao salvar no localStorage');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste de salvamento: ${error.message}`);
+                showResult(`❌ Erro no salvamento: ${error.message}`, false);
+            }
+        }
+
+        function testLoadConfiguration() {
+            log('📂 Iniciando teste de carregamento...');
+            
+            try {
+                const savedConfig = localStorage.getItem('adminConfig');
+                if (!savedConfig) {
+                    throw new Error('Nenhuma configuração salva encontrada');
+                }
+                
+                const config = JSON.parse(savedConfig);
+                log(`📊 Configuração carregada: ${config.totalNumbers} números, R$ ${config.ticketPrice}`);
+                
+                // Carregar nos campos do formulário de teste
+                document.getElementById('test-total-numbers').value = config.totalNumbers || 150;
+                document.getElementById('test-ticket-price').value = config.ticketPrice || 40.00;
+                document.getElementById('test-baby-name').value = config.babyName || 'Thomas';
+                document.getElementById('test-contact-phone').value = config.contactPhone || '(11) 99999-9999';
+                document.getElementById('test-pix-key').value = config.pixKey || 'contato@email.com';
+                document.getElementById('test-first-prize').value = config.prizes?.first || 'R$ 100,00';
+                
+                log('✅ Dados carregados nos campos do formulário');
+                showResult('✅ Configuração carregada com sucesso!');
+                
+            } catch (error) {
+                log(`❌ Erro no teste de carregamento: ${error.message}`);
+                showResult(`❌ Erro no carregamento: ${error.message}`, false);
+            }
+        }
+
+        function clearStoredConfig() {
+            log('🗑️ Limpando dados salvos...');
+            
+            try {
+                localStorage.removeItem('adminConfig');
+                log('✅ Dados removidos do localStorage');
+                showResult('✅ Dados salvos removidos com sucesso!');
+                showStoredData(); // Atualizar visualização
+                
+            } catch (error) {
+                log(`❌ Erro ao limpar dados: ${error.message}`);
+                showResult(`❌ Erro ao limpar: ${error.message}`, false);
+            }
+        }
+
+        function showStoredData() {
+            log('📋 Mostrando dados salvos...');
+            
+            try {
+                const savedConfig = localStorage.getItem('adminConfig');
+                const storedDataDiv = document.getElementById('stored-data');
+                
+                if (!savedConfig) {
+                    storedDataDiv.textContent = 'Nenhuma configuração salva encontrada.';
+                    return;
+                }
+                
+                const config = JSON.parse(savedConfig);
+                const formatted = JSON.stringify(config, null, 2);
+                storedDataDiv.textContent = formatted;
+                
+                log('✅ Dados exibidos');
+                
+            } catch (error) {
+                log(`❌ Erro ao exibir dados: ${error.message}`);
+                document.getElementById('stored-data').textContent = `Erro: ${error.message}`;
+            }
+        }
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de diagnóstico carregada');
+            checkSystemStatus();
+            showStoredData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - Save Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico - Save Configuration</h1>
+        
+        <div id="status-container"></div>
+        
+        <div class="test-section">
+            <h3>📋 Teste de Formulário</h3>
+            <form id="config-form">
+                <div class="form-group">
+                    <label for="config-total-numbers">Total de Números:</label>
+                    <input type="number" id="config-total-numbers" value="150">
+                </div>
+                <div class="form-group">
+                    <label for="config-ticket-price">Preço do Bilhete:</label>
+                    <input type="number" id="config-ticket-price" step="0.01" value="40.00">
+                </div>
+                <div class="form-group">
+                    <label for="config-contact-phone">Telefone:</label>
+                    <input type="text" id="config-contact-phone" value="(11) 99999-9999">
+                </div>
+                <div class="form-group">
+                    <label for="config-pix-key">PIX:</label>
+                    <input type="text" id="config-pix-key" value="contato@charifa.com">
+                </div>
+                <div class="form-group">
+                    <label for="config-baby-name">Nome do Bebê:</label>
+                    <input type="text" id="config-baby-name" value="Thomas">
+                </div>
+                <div class="form-group">
+                    <label for="config-first-prize">1º Prêmio:</label>
+                    <input type="text" id="config-first-prize" value="R$ 100,00">
+                </div>
+                <div class="form-group">
+                    <label for="config-second-prize">2º Prêmio:</label>
+                    <input type="text" id="config-second-prize" value="R$ 200,00">
+                </div>
+                <div class="form-group">
+                    <label for="config-third-prize">3º Prêmio:</label>
+                    <input type="text" id="config-third-prize" value="Fraldas por faixa">
+                </div>
+                <div class="form-group">
+                    <label for="config-draw-date">Data do Sorteio:</label>
+                    <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00">
+                </div>
+                
+                <button type="submit">💾 Salvar Configurações</button>
+            </form>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 Testes Diagnósticos</h3>
+            <button onclick="testFormElements()">🔍 Testar Elementos do Formulário</button>
+            <button onclick="testSaveFunction()">⚙️ Testar Função Save</button>
+            <button onclick="testEventListener()">🎯 Testar Event Listener</button>
+            <button onclick="testFirebase()">🔥 Testar Firebase</button>
+            <button onclick="clearLogs()">🧹 Limpar Logs</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Logs de Diagnóstico</h3>
+            <div id="log-area" class="log-area"></div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        // Override console.log para capturar logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addLog(message, type = 'info') {
+            const logArea = document.getElementById('log-area');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog(args.join(' '), 'warn');
+        };
+        
+        function showStatus(message, type = 'info') {
+            const container = document.getElementById('status-container');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            container.appendChild(div);
+            
+            // Remover após 5 segundos
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.parentNode.removeChild(div);
+                }
+            }, 5000);
+        }
+        
+        function testFormElements() {
+            console.log('🔍 Testando elementos do formulário...');
+            
+            const form = document.getElementById('config-form');
+            if (!form) {
+                console.error('❌ Formulário config-form não encontrado!');
+                showStatus('Formulário não encontrado!', 'error');
+                return;
+            }
+            
+            const requiredFields = [
+                'config-total-numbers',
+                'config-ticket-price',
+                'config-contact-phone',
+                'config-pix-key',
+                'config-baby-name',
+                'config-first-prize',
+                'config-second-prize',
+                'config-third-prize',
+                'config-draw-date'
+            ];
+            
+            let allFound = true;
+            requiredFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    console.log(`✅ Campo ${fieldId}: OK (valor: "${element.value}")`);
+                } else {
+                    console.error(`❌ Campo ${fieldId}: NÃO ENCONTRADO`);
+                    allFound = false;
+                }
+            });
+            
+            if (allFound) {
+                showStatus('Todos os elementos do formulário foram encontrados!', 'success');
+            } else {
+                showStatus('Alguns elementos estão faltando!', 'error');
+            }
+        }
+        
+        function testSaveFunction() {
+            console.log('⚙️ Testando função saveConfiguration...');
+            
+            if (typeof saveConfiguration === 'function') {
+                console.log('✅ Função saveConfiguration encontrada');
+                showStatus('Função saveConfiguration está disponível', 'success');
+            } else if (typeof window.saveConfiguration === 'function') {
+                console.log('✅ Função saveConfiguration encontrada no window');
+                showStatus('Função saveConfiguration está disponível no window', 'success');
+            } else {
+                console.error('❌ Função saveConfiguration NÃO encontrada');
+                showStatus('Função saveConfiguration não encontrada!', 'error');
+            }
+            
+            // Testar se adminData existe
+            if (typeof adminData !== 'undefined') {
+                console.log('✅ adminData encontrado:', adminData);
+                showStatus('adminData está disponível', 'success');
+            } else {
+                console.error('❌ adminData NÃO encontrado');
+                showStatus('adminData não encontrado!', 'error');
+            }
+        }
+        
+        function testEventListener() {
+            console.log('🎯 Testando event listener...');
+            
+            const form = document.getElementById('config-form');
+            if (!form) {
+                console.error('❌ Formulário não encontrado para testar event listener');
+                showStatus('Formulário não encontrado!', 'error');
+                return;
+            }
+            
+            // Verificar se há event listeners
+            const listeners = getEventListeners ? getEventListeners(form) : 'Não disponível no console';
+            console.log('📋 Event listeners no formulário:', listeners);
+            
+            // Teste de disparo manual
+            try {
+                const event = new Event('submit', { bubbles: true, cancelable: true });
+                form.dispatchEvent(event);
+                console.log('✅ Event listener test executado');
+                showStatus('Teste de event listener executado', 'info');
+            } catch (error) {
+                console.error('❌ Erro no teste de event listener:', error);
+                showStatus('Erro no teste de event listener: ' + error.message, 'error');
+            }
+        }
+        
+        function testFirebase() {
+            console.log('🔥 Testando Firebase...');
+            
+            if (typeof FirebaseDB !== 'undefined') {
+                console.log('✅ FirebaseDB encontrado:', FirebaseDB);
+                showStatus('Firebase está disponível', 'success');
+                
+                // Testar função saveConfig
+                if (typeof FirebaseDB.saveConfig === 'function') {
+                    console.log('✅ Função saveConfig encontrada');
+                    showStatus('Função saveConfig do Firebase está disponível', 'success');
+                } else {
+                    console.error('❌ Função saveConfig NÃO encontrada');
+                    showStatus('Função saveConfig não encontrada!', 'error');
+                }
+            } else {
+                console.error('❌ FirebaseDB NÃO encontrado');
+                showStatus('Firebase não está disponível!', 'error');
+            }
+        }
+        
+        function clearLogs() {
+            document.getElementById('log-area').textContent = '';
+            document.getElementById('status-container').innerHTML = '';
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página de diagnóstico carregada');
+            showStatus('Página de diagnóstico carregada', 'info');
+            
+            // Executar testes automáticos
+            setTimeout(() => {
+                testFormElements();
+                testSaveFunction();
+                testFirebase();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

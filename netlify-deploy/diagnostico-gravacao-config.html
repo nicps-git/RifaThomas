@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Diagnóstico - Gravação de Configurações</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-section h3 {
+            color: #495057;
+            margin-top: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .form-group {
+            margin: 10px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+
+        .btn-warning { background: #ffc107; color: #000; }
+        .btn-warning:hover { background: #e0a800; }
+
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+
+        .log-area {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .status-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .status-ok { border-left: 4px solid #28a745; }
+        .status-warning { border-left: 4px solid #ffc107; }
+        .status-error { border-left: 4px solid #dc3545; }
+
+        .data-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .data-source {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .data-source h4 {
+            margin-top: 0;
+            color: #495057;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+
+        .data-source pre {
+            font-size: 12px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Diagnóstico - Gravação de Configurações</h1>
+        
+        <!-- Status do Sistema -->
+        <div class="test-section">
+            <h3>📊 Status do Sistema</h3>
+            <div class="status-grid" id="status-grid">
+                <div class="status-card">
+                    <div><strong>Firebase</strong></div>
+                    <div id="firebase-status">Verificando...</div>
+                </div>
+                <div class="status-card">
+                    <div><strong>LocalStorage</strong></div>
+                    <div id="storage-status">Verificando...</div>
+                </div>
+                <div class="status-card">
+                    <div><strong>Admin Data</strong></div>
+                    <div id="admindata-status">Verificando...</div>
+                </div>
+                <div class="status-card">
+                    <div><strong>Formulário</strong></div>
+                    <div id="form-status">Verificando...</div>
+                </div>
+            </div>
+            <button class="btn" onclick="checkSystemStatus()">🔍 Verificar Status</button>
+        </div>
+
+        <!-- Formulário de Teste -->
+        <div class="test-section">
+            <h3>📝 Formulário de Configurações</h3>
+            <form id="config-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-total-numbers">Total de Números:</label>
+                        <input type="number" id="config-total-numbers" min="100" max="10000" value="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-ticket-price">Preço do Bilhete (R$):</label>
+                        <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-draw-date">Data do Sorteio:</label>
+                        <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-contact-phone">Telefone de Contato:</label>
+                        <input type="tel" id="config-contact-phone" value="(11) 99999-9999" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-pix-key">Chave PIX:</label>
+                        <input type="text" id="config-pix-key" value="contato@charifa.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-baby-name">Nome do Bebê:</label>
+                        <input type="text" id="config-baby-name" value="Thomas" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-first-prize">1º Prêmio:</label>
+                        <input type="text" id="config-first-prize" value="R$ 100,00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-second-prize">2º Prêmio:</label>
+                        <input type="text" id="config-second-prize" value="R$ 200,00" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="config-third-prize">3º Prêmio:</label>
+                    <input type="text" id="config-third-prize" value="Fraldas por faixa" required>
+                </div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <button type="submit" class="btn btn-success">💾 Salvar Configurações</button>
+                    <button type="button" class="btn btn-warning" onclick="loadConfigurationTest()">📂 Carregar do Banco</button>
+                    <button type="button" class="btn" onclick="testDirectSave()">🧪 Teste Direto</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Comparação de Dados -->
+        <div class="test-section">
+            <h3>🔄 Comparação de Dados</h3>
+            <div class="data-compare">
+                <div class="data-source">
+                    <h4>💾 LocalStorage</h4>
+                    <pre id="localStorage-data">Carregando...</pre>
+                </div>
+                <div class="data-source">
+                    <h4>🔥 Firebase</h4>
+                    <pre id="firebase-data">Carregando...</pre>
+                </div>
+                <div class="data-source">
+                    <h4>🧠 AdminData</h4>
+                    <pre id="admindata-data">Carregando...</pre>
+                </div>
+            </div>
+            <button class="btn" onclick="compareAllData()">🔄 Atualizar Comparação</button>
+            <button class="btn btn-danger" onclick="clearAllStoredData()">🗑️ Limpar Todos os Dados</button>
+        </div>
+
+        <!-- Log de Execução -->
+        <div class="test-section">
+            <h3>📝 Log de Execução</h3>
+            <div id="log-area" class="log-area">
+                Aguardando ações...
+            </div>
+            <button class="btn btn-warning" onclick="clearLog()">🧹 Limpar Log</button>
+        </div>
+    </div>
+
+    <!-- Scripts necessários -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        let diagnosticLog = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            diagnosticLog.push(`[${timestamp}] ${prefix} ${message}`);
+            document.getElementById('log-area').textContent = diagnosticLog.slice(-30).join('\n');
+            console.log(`[DIAGNÓSTICO] ${message}`);
+        }
+
+        function clearLog() {
+            diagnosticLog = [];
+            document.getElementById('log-area').textContent = 'Log limpo...';
+        }
+
+        function checkSystemStatus() {
+            log('🔍 Verificando status do sistema...');
+            
+            // Verificar Firebase
+            const firebaseOK = typeof window.FirebaseDB !== 'undefined';
+            document.getElementById('firebase-status').innerHTML = firebaseOK ? 
+                '<span style="color: #28a745;">✅ Conectado</span>' : 
+                '<span style="color: #dc3545;">❌ Desconectado</span>';
+            log(`Firebase: ${firebaseOK ? 'OK' : 'FALHA'}`, firebaseOK ? 'success' : 'error');
+
+            // Verificar LocalStorage
+            let storageOK = false;
+            try {
+                localStorage.setItem('test', 'ok');
+                localStorage.removeItem('test');
+                storageOK = true;
+            } catch (e) {
+                log(`Erro no localStorage: ${e.message}`, 'error');
+            }
+            document.getElementById('storage-status').innerHTML = storageOK ? 
+                '<span style="color: #28a745;">✅ Funcional</span>' : 
+                '<span style="color: #dc3545;">❌ Erro</span>';
+            log(`LocalStorage: ${storageOK ? 'OK' : 'FALHA'}`, storageOK ? 'success' : 'error');
+
+            // Verificar AdminData
+            const adminDataOK = typeof adminData !== 'undefined';
+            document.getElementById('admindata-status').innerHTML = adminDataOK ? 
+                '<span style="color: #28a745;">✅ Carregado</span>' : 
+                '<span style="color: #dc3545;">❌ Não encontrado</span>';
+            log(`AdminData: ${adminDataOK ? 'OK' : 'FALHA'}`, adminDataOK ? 'success' : 'error');
+
+            // Verificar Formulário
+            const formOK = document.getElementById('config-form') !== null;
+            document.getElementById('form-status').innerHTML = formOK ? 
+                '<span style="color: #28a745;">✅ Encontrado</span>' : 
+                '<span style="color: #dc3545;">❌ Não encontrado</span>';
+            log(`Formulário: ${formOK ? 'OK' : 'FALHA'}`, formOK ? 'success' : 'error');
+
+            // Atualizar classes CSS dos cards
+            const cards = document.querySelectorAll('.status-card');
+            cards[0].className = `status-card ${firebaseOK ? 'status-ok' : 'status-error'}`;
+            cards[1].className = `status-card ${storageOK ? 'status-ok' : 'status-error'}`;
+            cards[2].className = `status-card ${adminDataOK ? 'status-ok' : 'status-error'}`;
+            cards[3].className = `status-card ${formOK ? 'status-ok' : 'status-error'}`;
+        }
+
+        async function compareAllData() {
+            log('🔄 Comparando dados de todas as fontes...');
+
+            // LocalStorage
+            try {
+                const localData = localStorage.getItem('adminConfig');
+                document.getElementById('localStorage-data').textContent = localData ? 
+                    JSON.stringify(JSON.parse(localData), null, 2) : 
+                    'Nenhum dado encontrado';
+                log('LocalStorage verificado');
+            } catch (e) {
+                document.getElementById('localStorage-data').textContent = `Erro: ${e.message}`;
+                log(`Erro no localStorage: ${e.message}`, 'error');
+            }
+
+            // Firebase
+            try {
+                if (window.FirebaseDB && typeof window.FirebaseDB.loadConfig === 'function') {
+                    const firebaseResult = await window.FirebaseDB.loadConfig();
+                    document.getElementById('firebase-data').textContent = firebaseResult.success ? 
+                        JSON.stringify(firebaseResult.data, null, 2) : 
+                        `Erro: ${firebaseResult.error}`;
+                    log(`Firebase: ${firebaseResult.success ? 'Dados encontrados' : firebaseResult.error}`);
+                } else {
+                    document.getElementById('firebase-data').textContent = 'Firebase não disponível';
+                    log('Firebase não disponível', 'warning');
+                }
+            } catch (e) {
+                document.getElementById('firebase-data').textContent = `Erro: ${e.message}`;
+                log(`Erro no Firebase: ${e.message}`, 'error');
+            }
+
+            // AdminData
+            try {
+                if (typeof adminData !== 'undefined' && adminData.config) {
+                    document.getElementById('admindata-data').textContent = 
+                        JSON.stringify(adminData.config, null, 2);
+                    log('AdminData verificado');
+                } else {
+                    document.getElementById('admindata-data').textContent = 'AdminData não disponível';
+                    log('AdminData não disponível', 'warning');
+                }
+            } catch (e) {
+                document.getElementById('admindata-data').textContent = `Erro: ${e.message}`;
+                log(`Erro no AdminData: ${e.message}`, 'error');
+            }
+        }
+
+        async function loadConfigurationTest() {
+            log('📂 Testando carregamento de configurações...');
+            
+            try {
+                if (typeof window.loadConfiguration === 'function') {
+                    window.loadConfiguration();
+                    log('✅ Função loadConfiguration executada');
+                } else if (typeof loadConfiguration === 'function') {
+                    loadConfiguration();
+                    log('✅ Função loadConfiguration (local) executada');
+                } else {
+                    log('❌ Função loadConfiguration não encontrada', 'error');
+                }
+                
+                // Verificar se os campos foram preenchidos
+                setTimeout(() => {
+                    const totalNumbers = document.getElementById('config-total-numbers').value;
+                    const ticketPrice = document.getElementById('config-ticket-price').value;
+                    log(`Campos carregados: números=${totalNumbers}, preço=${ticketPrice}`);
+                }, 500);
+                
+            } catch (error) {
+                log(`❌ Erro no teste de carregamento: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDirectSave() {
+            log('🧪 Executando teste direto de salvamento...');
+            
+            try {
+                // Coletar dados atuais do formulário
+                const currentConfig = {
+                    totalNumbers: parseInt(document.getElementById('config-total-numbers').value),
+                    ticketPrice: parseFloat(document.getElementById('config-ticket-price').value),
+                    babyName: document.getElementById('config-baby-name').value,
+                    contactPhone: document.getElementById('config-contact-phone').value,
+                    pixKey: document.getElementById('config-pix-key').value,
+                    prizes: {
+                        first: document.getElementById('config-first-prize').value,
+                        second: document.getElementById('config-second-prize').value,
+                        third: document.getElementById('config-third-prize').value
+                    },
+                    timestamp: new Date().toISOString()
+                };
+
+                log(`Dados coletados: ${currentConfig.totalNumbers} números, R$ ${currentConfig.ticketPrice}`);
+
+                // Salvar no localStorage
+                localStorage.setItem('adminConfig', JSON.stringify(currentConfig));
+                log('✅ Salvo no localStorage');
+
+                // Tentar salvar no Firebase
+                if (window.FirebaseDB && typeof window.FirebaseDB.saveConfig === 'function') {
+                    const firebaseResult = await window.FirebaseDB.saveConfig(currentConfig);
+                    log(`Firebase: ${firebaseResult.success ? '✅ Salvo' : '❌ ' + firebaseResult.error}`);
+                } else {
+                    log('⚠️ Firebase não disponível para salvamento', 'warning');
+                }
+
+                // Atualizar adminData se disponível
+                if (typeof adminData !== 'undefined') {
+                    adminData.config = { ...adminData.config, ...currentConfig };
+                    log('✅ AdminData atualizado');
+                } else {
+                    log('⚠️ AdminData não disponível', 'warning');
+                }
+
+                log('🎉 Teste direto concluído!', 'success');
+                
+                // Atualizar comparação
+                setTimeout(() => {
+                    compareAllData();
+                }, 1000);
+
+            } catch (error) {
+                log(`❌ Erro no teste direto: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAllStoredData() {
+            log('🗑️ Limpando todos os dados armazenados...');
+            
+            try {
+                // Limpar localStorage
+                localStorage.removeItem('adminConfig');
+                log('✅ LocalStorage limpo');
+
+                // Resetar adminData se disponível
+                if (typeof adminData !== 'undefined') {
+                    adminData.config = {
+                        totalNumbers: 150,
+                        ticketPrice: 40.00,
+                        prizes: {
+                            first: 'R$ 100,00',
+                            second: 'R$ 200,00',
+                            third: 'Fraldas por faixa'
+                        }
+                    };
+                    log('✅ AdminData resetado');
+                }
+
+                log('🎉 Todos os dados foram limpos', 'success');
+                
+                // Atualizar comparação
+                setTimeout(() => {
+                    compareAllData();
+                }, 500);
+
+            } catch (error) {
+                log(`❌ Erro ao limpar dados: ${error.message}`, 'error');
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de diagnóstico carregada');
+            
+            // Configurar event listener para o formulário
+            const form = document.getElementById('config-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    log('📝 FORMULÁRIO SUBMETIDO - interceptado para análise');
+                    // Deixar o processamento normal continuar
+                });
+            }
+
+            // Executar verificações iniciais após um delay para aguardar o carregamento dos scripts
+            setTimeout(() => {
+                checkSystemStatus();
+                compareAllData();
+            }, 2000);
+        });
+
+        // Interceptar console.log para capturar logs do admin.js
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            const message = args.join(' ');
+            if (message.includes('💾') || message.includes('📋') || message.includes('✅') || message.includes('❌')) {
+                log(`[ADMIN.JS] ${message}`);
+            }
+            originalConsoleLog.apply(console, args);
+        };
+    </script>
+</body>
+</html>

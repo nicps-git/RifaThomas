@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ SAVE CONFIGURATION - SOLUÇÃO FINAL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .form-row .form-group {
+            flex: 1;
+            min-width: 250px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        button {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .save-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            padding: 20px;
+            font-size: 20px;
+            margin: 30px 0;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #000;
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 5px solid;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        h3 {
+            color: #333;
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ SAVE CONFIGURATION - SOLUÇÃO FINAL</h1>
+        
+        <div id="status-area"></div>
+        
+        <form id="config-form">
+            <h3>📊 Configurações Básicas</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="config-total-numbers">Total de Números:</label>
+                    <input type="number" id="config-total-numbers" min="100" max="10000" value="150" required>
+                </div>
+                <div class="form-group">
+                    <label for="config-ticket-price">Preço do Bilhete (R$):</label>
+                    <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="config-draw-date">Data do Sorteio:</label>
+                    <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00" required>
+                </div>
+                <div class="form-group">
+                    <label for="config-contact-phone">Telefone de Contato:</label>
+                    <input type="tel" id="config-contact-phone" value="(11) 99999-9999" required>
+                </div>
+            </div>
+            
+            <h3>💰 Configurações de Pagamento</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="config-pix-key">Chave PIX:</label>
+                    <input type="text" id="config-pix-key" value="contato@charifa.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="config-baby-name">Nome do Bebê:</label>
+                    <input type="text" id="config-baby-name" value="Thomas" required>
+                </div>
+            </div>
+            
+            <h3>🏆 Prêmios</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="config-first-prize">1º Prêmio:</label>
+                    <input type="text" id="config-first-prize" value="R$ 100,00" required>
+                </div>
+                <div class="form-group">
+                    <label for="config-second-prize">2º Prêmio:</label>
+                    <input type="text" id="config-second-prize" value="R$ 200,00" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="config-third-prize">3º Prêmio:</label>
+                    <input type="text" id="config-third-prize" value="Fraldas por faixa" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="save-btn">
+                💾 SALVAR CONFIGURAÇÕES
+            </button>
+        </form>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <button onclick="testarSave()" class="test-btn">🧪 Teste Manual</button>
+            <button onclick="verificarSistema()" class="test-btn">🔍 Verificar Sistema</button>
+            <button onclick="forcarSave()" class="test-btn">🚨 Forçar Save</button>
+        </div>
+        
+        <div id="log-area" class="log"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        let logArea;
+        let statusArea;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const emoji = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warn' ? '⚠️' : 'ℹ️';
+            logArea.textContent += `[${timestamp}] ${emoji} ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(message);
+        }
+        
+        function showStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            statusArea.appendChild(div);
+            
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.style.opacity = '0.5';
+                }
+            }, 5000);
+        }
+        
+        async function testarSave() {
+            log('🧪 Iniciando teste manual...', 'info');
+            
+            try {
+                if (typeof window.saveConfiguration === 'function') {
+                    log('✅ Função saveConfiguration encontrada', 'success');
+                    
+                    const form = document.getElementById('config-form');
+                    const event = {
+                        preventDefault: () => log('preventDefault() chamado'),
+                        target: form
+                    };
+                    
+                    log('📤 Executando saveConfiguration...', 'info');
+                    await window.saveConfiguration(event);
+                    log('✅ Teste concluído com sucesso!', 'success');
+                    showStatus('Teste manual executado com sucesso!', 'success');
+                    
+                } else {
+                    log('❌ Função saveConfiguration não encontrada!', 'error');
+                    showStatus('Função saveConfiguration não encontrada!', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`, 'error');
+                showStatus(`Erro no teste: ${error.message}`, 'error');
+            }
+        }
+        
+        function verificarSistema() {
+            log('🔍 Verificando sistema...', 'info');
+            
+            // AdminData
+            if (typeof adminData !== 'undefined') {
+                log(`✅ adminData: Firebase=${adminData.firebaseReady}, Purchases=${adminData.purchases?.length || 0}`, 'success');
+            } else {
+                log('❌ adminData não encontrado', 'error');
+            }
+            
+            // Firebase
+            if (typeof window.FirebaseDB !== 'undefined') {
+                log('✅ FirebaseDB disponível', 'success');
+                if (typeof window.FirebaseDB.saveConfig === 'function') {
+                    log('✅ saveConfig disponível', 'success');
+                } else {
+                    log('❌ saveConfig não encontrada', 'error');
+                }
+            } else {
+                log('❌ FirebaseDB não disponível', 'error');
+            }
+            
+            // Save function
+            if (typeof window.saveConfiguration === 'function') {
+                log('✅ saveConfiguration disponível', 'success');
+            } else {
+                log('❌ saveConfiguration não encontrada', 'error');
+            }
+            
+            // localStorage
+            try {
+                const config = localStorage.getItem('adminConfig');
+                if (config) {
+                    const parsed = JSON.parse(config);
+                    log(`✅ Config no localStorage: ${parsed.totalNumbers} números`, 'success');
+                } else {
+                    log('⚠️ Nenhuma config no localStorage', 'warn');
+                }
+            } catch (e) {
+                log('❌ Erro ao ler localStorage', 'error');
+            }
+        }
+        
+        function forcarSave() {
+            log('🚨 Forçando save de emergência...', 'warn');
+            
+            if (typeof window.forcarSaveConfiguration === 'function') {
+                const result = window.forcarSaveConfiguration();
+                if (result) {
+                    log('✅ Save de emergência configurado!', 'success');
+                    showStatus('Save de emergência configurado com sucesso!', 'success');
+                } else {
+                    log('❌ Falha no save de emergência', 'error');
+                    showStatus('Falha no save de emergência', 'error');
+                }
+            } else {
+                log('❌ Função de emergência não encontrada', 'error');
+                showStatus('Função de emergência não encontrada', 'error');
+            }
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            logArea = document.getElementById('log-area');
+            statusArea = document.getElementById('status-area');
+            
+            log('🚀 Página de teste carregada', 'info');
+            showStatus('Página de teste carregada - aguardando scripts...', 'info');
+            
+            // Configurar formulário
+            const form = document.getElementById('config-form');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    log('📝 Submit capturado!', 'info');
+                    
+                    if (typeof window.saveConfiguration === 'function') {
+                        log('🔄 Chamando saveConfiguration...', 'info');
+                        window.saveConfiguration(event).then(() => {
+                            log('✅ saveConfiguration executado!', 'success');
+                            showStatus('Configurações salvas com sucesso!', 'success');
+                        }).catch(error => {
+                            log(`❌ Erro: ${error.message}`, 'error');
+                            showStatus(`Erro: ${error.message}`, 'error');
+                        });
+                    } else {
+                        log('❌ saveConfiguration não encontrada!', 'error');
+                        showStatus('Função saveConfiguration não encontrada!', 'error');
+                    }
+                });
+                log('✅ Event listener configurado', 'success');
+            }
+            
+            // Verificações automáticas
+            setTimeout(() => {
+                verificarSistema();
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

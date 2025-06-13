@@ -25,6 +25,9 @@ let rifaState = {
     unsubscribe: null
 };
 
+// Configuração atual carregada do Firebase
+let currentConfig = { ...RIFA_CONFIG };
+
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 DOM carregado, iniciando aplicação...');
@@ -75,8 +78,9 @@ async function initializeWithFirebase() {
         
         rifaState.firebaseReady = true;
         
-        // Inicializar configurações básicas
-        initializeRifa();
+        // Inicializar configurações (carregando do Firebase)
+        console.log('⚙️ Carregando configurações...');
+        await initializeRifa();
         
         // Carregar números vendidos em tempo real
         console.log('📊 Carregando números vendidos...');
@@ -89,6 +93,73 @@ async function initializeWithFirebase() {
             updateSoldNumbersFromPurchases(purchases);
             updateStatistics();
         });
+        
+        // Escutar mudanças nas configurações (documento específico)
+        console.log('⚙️ Configurando listener específico para configurações...');
+        if (typeof window.FirebaseDB.listenToConfigChanges === 'function') {
+            window.FirebaseDB.listenToConfigChanges(async (configDoc) => {
+                if (configDoc) {
+                    console.log('🔧 Configuração atualizada via listener específico:', configDoc);
+                    
+                    // Mesclar configurações do Firebase com as padrões
+                    const mergedConfig = {
+                        ...RIFA_CONFIG,
+                        ...configDoc,
+                        // Garantir que certas propriedades existam
+                        prizes: {
+                            ...RIFA_CONFIG.prizes,
+                            ...(configDoc.prizes || {})
+                        }
+                    };
+                    
+                    // Atualizar configuração global
+                    currentConfig = mergedConfig;
+                    console.log('🔄 Configuração global atualizada via listener específico:', currentConfig);
+                    console.log('📅 Data do sorteio atualizada:', configDoc.drawDate);
+                    console.log('💳 Chave PIX atualizada:', configDoc.pixKey);
+                    
+                    // Aplicar na interface
+                    applyConfigurationToUI(mergedConfig);
+                } else {
+                    console.warn('⚠️ Configuração removida ou não encontrada');
+                }
+            });
+        } else {
+            // Fallback para o listener de coleção original
+            console.log('⚙️ Usando listener de coleção como fallback...');
+            window.FirebaseDB.listenToChanges('rifa_config', async (configs) => {
+                console.log('📋 Configurações recebidas do listener:', configs);
+                if (configs && configs.length > 0) {
+                    // Procurar pelo documento 'main' ou usar o primeiro documento
+                    const config = configs.find(c => c.id === 'main') || configs[0];
+                    if (config) {
+                        console.log('🔧 Configurações atualizadas do Firebase:', config);
+                        
+                        // Mesclar configurações do Firebase com as padrões
+                        const mergedConfig = {
+                            ...RIFA_CONFIG,
+                            ...config,
+                            // Garantir que certas propriedades existam
+                            prizes: {
+                                ...RIFA_CONFIG.prizes,
+                                ...(config.prizes || {})
+                            }
+                        };
+                        
+                        // Atualizar configuração global
+                        currentConfig = mergedConfig;
+                        console.log('🔄 Configuração global atualizada via listener:', currentConfig);
+                        
+                        // Aplicar na interface
+                        applyConfigurationToUI(mergedConfig);
+                    } else {
+                        console.warn('⚠️ Nenhuma configuração válida encontrada no listener');
+                    }
+                } else {
+                    console.warn('⚠️ Listener de configurações retornou dados vazios');
+                }
+            });
+        }
         
         console.log('🔥 Firebase conectado com sucesso!');
     } catch (error) {
@@ -245,28 +316,181 @@ function updateSoldNumbersFromPurchases(purchases) {
     console.log('✅ Sincronização em tempo real concluída!');
 }
 
-// Inicializar configurações da rifa (APENAS FIREBASE)
-function initializeRifa() {
-    console.log('🎯 Inicializando configurações da rifa - MODO FIREBASE APENAS...');
+// Carregar configurações do Firebase
+async function loadConfigurationFromFirebase() {
+    try {
+        console.log('⚙️ Carregando configurações do Firebase...');
+        
+        if (typeof window.FirebaseDB === 'undefined') {
+            console.warn('⚠️ Firebase não disponível, usando configurações padrão');
+            return RIFA_CONFIG;
+        }
+        
+        const result = await window.FirebaseDB.loadConfig();
+        
+        if (result.success && result.data) {
+            console.log('✅ Configurações carregadas do Firebase:', result.data);
+            
+            // Mesclar configurações do Firebase com as padrões
+            const firebaseConfig = {
+                ...RIFA_CONFIG,
+                ...result.data,
+                // Garantir que certas propriedades existam
+                prizes: {
+                    ...RIFA_CONFIG.prizes,
+                    ...(result.data.prizes || {})
+                }
+            };
+            
+            console.log('🔧 Configurações finais aplicadas:', firebaseConfig);
+            console.log('📅 Data do sorteio Firebase:', result.data.drawDate);
+            console.log('💳 Chave PIX Firebase:', result.data.pixKey);
+            
+            return firebaseConfig;
+            
+        } else {
+            console.warn('⚠️ Configurações não encontradas no Firebase, usando padrão:', result.error);
+            return RIFA_CONFIG;
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar configurações do Firebase:', error);
+        return RIFA_CONFIG;
+    }
+}
+
+// Aplicar configurações na interface
+function applyConfigurationToUI(config) {
+    console.log('🎨 Aplicando configurações na interface:', config);
+    
+    try {
+        // Atualizar elementos básicos
+        const totalTicketsEl = document.getElementById('total-tickets');
+        const ticketPriceEl = document.getElementById('ticket-price');
+        const drawDateEl = document.getElementById('draw-date');
+        
+        if (totalTicketsEl) {
+            totalTicketsEl.textContent = config.totalNumbers || 150;
+        }
+        
+        if (ticketPriceEl) {
+            const price = config.ticketPrice || 40.00;
+            ticketPriceEl.textContent = `R$ ${price.toFixed(2)}`;
+        }
+        
+        if (drawDateEl) {
+            // Usar data do Firebase se disponível
+            let dateText = 'Sorteio: 11 de Julho de 2025 às 16h';
+            if (config.drawDate) {
+                try {
+                    // Tentar múltiplos formatos de data
+                    let drawDate;
+                    if (typeof config.drawDate === 'string') {
+                        drawDate = new Date(config.drawDate);
+                    } else if (config.drawDate.toDate && typeof config.drawDate.toDate === 'function') {
+                        // Firebase Timestamp
+                        drawDate = config.drawDate.toDate();
+                    } else if (config.drawDate instanceof Date) {
+                        drawDate = config.drawDate;
+                    } else {
+                        throw new Error('Formato de data não reconhecido');
+                    }
+                    
+                    if (!isNaN(drawDate.getTime())) {
+                        dateText = `Sorteio: ${drawDate.toLocaleDateString('pt-BR')} às ${drawDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+                        console.log(`📅 Data do sorteio formatada: ${dateText}`);
+                    } else {
+                        throw new Error('Data inválida');
+                    }
+                } catch (dateError) {
+                    console.warn('⚠️ Erro ao formatar data do sorteio:', dateError);
+                    console.log('📅 Valor da data recebida:', config.drawDate);
+                }
+            }
+            drawDateEl.textContent = dateText;
+            console.log(`📅 Elemento data do sorteio atualizado para: ${dateText}`);
+        }
+        
+        // Atualizar informações de PIX se disponível
+        if (config.pixKey) {
+            const pixElements = document.querySelectorAll('[data-pix-key], .pix-key');
+            console.log(`💳 Encontrados ${pixElements.length} elementos PIX para atualizar`);
+            pixElements.forEach((el, index) => {
+                const oldValue = el.textContent;
+                el.textContent = config.pixKey;
+                el.setAttribute('data-pix-key', config.pixKey);
+                console.log(`💳 PIX elemento ${index + 1}: "${oldValue}" → "${config.pixKey}"`);
+            });
+            console.log(`🔑 PIX key atualizada para: ${config.pixKey}`);
+        } else {
+            console.warn('⚠️ Nenhuma chave PIX encontrada na configuração');
+        }
+        
+        // Atualizar informações de contato se disponível
+        if (config.contactPhone) {
+            const phoneElements = document.querySelectorAll('[data-contact-phone]');
+            phoneElements.forEach(el => {
+                el.textContent = config.contactPhone;
+                el.setAttribute('href', `tel:${config.contactPhone}`);
+            });
+            console.log(`📞 Telefone atualizado para: ${config.contactPhone}`);
+        }
+
+        // Atualizar email de contato se disponível
+        if (config.contactEmail) {
+            const emailElements = document.querySelectorAll('[data-contact-email]');
+            emailElements.forEach(el => {
+                el.textContent = config.contactEmail;
+                el.setAttribute('href', `mailto:${config.contactEmail}`);
+            });
+            console.log(`📧 Email atualizado para: ${config.contactEmail}`);
+        }
+        
+        // Atualizar nome do bebê se disponível
+        if (config.babyName) {
+            const babyNameElements = document.querySelectorAll('[data-baby-name], .baby-name');
+            babyNameElements.forEach(el => {
+                el.textContent = config.babyName;
+            });
+            console.log(`👶 Nome do bebê atualizado para: ${config.babyName}`);
+        }
+        
+        console.log('✅ Configurações aplicadas na interface com sucesso');
+        
+    } catch (error) {
+        console.error('❌ Erro ao aplicar configurações na interface:', error);
+    }
+}
+
+// Inicializar configurações da rifa (FIREBASE + UI)
+async function initializeRifa() {
+    console.log('🎯 Inicializando configurações da rifa...');
     
     // Limpar estado local
     rifaState.selectedNumbers = new Set();
     rifaState.soldNumbers = new Set();
     rifaState.reservedNumbers = new Set();
     
-    // Configurar informações na página
-    document.getElementById('total-tickets').textContent = RIFA_CONFIG.totalNumbers;
-    document.getElementById('ticket-price').textContent = `R$ ${RIFA_CONFIG.ticketPrice.toFixed(2)}`;
-    document.getElementById('draw-date').textContent = 'Sorteio: 11 de Julho de 2025 às 16h';
+    // Carregar configurações do Firebase
+    const config = await loadConfigurationFromFirebase();
+    
+    // Atualizar configuração global
+    currentConfig = { ...config };
+    console.log('🔧 Configuração global atualizada:', currentConfig);
+    
+    // Aplicar configurações na interface
+    applyConfigurationToUI(config);
     
     // Verificar se os números já foram gerados
     const grid = document.getElementById('numbers-grid');
     if (grid && grid.children.length === 0) {
-        console.log('🔢 Gerando grade de números...');
-        generateNumbers();
+        console.log('🔢 Gerando grade de números com configurações carregadas...');
+        generateNumbers(config);  // Passar configuração
     }
     
-    console.log('✅ Rifa inicializada - aguardando dados do Firebase');
+    console.log('✅ Rifa inicializada com configurações carregadas');
+    
+    // Retornar configurações para uso posterior se necessário
+    return config;
 }
 
 // Configurar event listeners
@@ -309,23 +533,27 @@ function setupEventListeners() {
     });
 }
 
-// Gerar grade de números
-function generateNumbers() {
+// Gerar grade de números (com configuração dinâmica)
+function generateNumbers(config = null) {
     const grid = document.getElementById('numbers-grid');
     if (!grid) {
         console.error('❌ Elemento numbers-grid não encontrado!');
         return;
     }
     
+    // Usar configuração fornecida ou padrão
+    const totalNumbers = config?.totalNumbers || RIFA_CONFIG.totalNumbers;
+    
     console.log('🎲 Iniciando geração de números da rifa...');
+    console.log(`📊 Total de números: ${totalNumbers}`);
     grid.innerHTML = '';
     
-    for (let i = 1; i <= RIFA_CONFIG.totalNumbers; i++) {
+    for (let i = 1; i <= totalNumbers; i++) {
         const numberCard = createNumberCard(i);
         grid.appendChild(numberCard);
     }
     
-    console.log(`✅ ${RIFA_CONFIG.totalNumbers} números gerados com sucesso!`);
+    console.log(`✅ ${totalNumbers} números gerados com sucesso!`);
 }
 
 // Criar card de número
@@ -385,7 +613,7 @@ function updateNumberDisplay(number) {
 // Atualizar resumo da seleção
 function updateSelectionSummary() {
     const selectedCount = rifaState.selectedNumbers.size;
-    const totalAmount = selectedCount * RIFA_CONFIG.ticketPrice;
+    const totalAmount = selectedCount * currentConfig.ticketPrice;
     
     document.getElementById('selected-count').textContent = selectedCount;
     document.getElementById('total-amount').textContent = totalAmount.toFixed(2);
@@ -467,7 +695,7 @@ function searchNumber() {
     const searchInput = document.getElementById('search-number');
     const number = parseInt(searchInput.value);
     
-    if (number >= 1 && number <= RIFA_CONFIG.totalNumbers) {
+    if (number >= 1 && number <= currentConfig.totalNumbers) {
         const card = document.querySelector(`[data-number="${number}"]`);
         if (card) {
             // Mostrar todos os números primeiro
@@ -505,7 +733,7 @@ function closePurchaseModal() {
 
 function updateModalSummary() {
     const selectedNumbers = Array.from(rifaState.selectedNumbers).sort((a, b) => a - b);
-    const totalAmount = selectedNumbers.length * RIFA_CONFIG.ticketPrice;
+    const totalAmount = selectedNumbers.length * currentConfig.ticketPrice;
     
     const numbersDiv = document.getElementById('modal-selected-numbers');
     numbersDiv.innerHTML = selectedNumbers.map(num => 
@@ -527,7 +755,7 @@ async function handlePurchase(e) {
         buyerPhone: formData.get('buyer-phone') || document.getElementById('buyer-phone').value,
         paymentMethod: formData.get('payment-method') || document.getElementById('payment-method').value,
         numbers: Array.from(rifaState.selectedNumbers),
-        totalAmount: rifaState.selectedNumbers.size * RIFA_CONFIG.ticketPrice,
+        totalAmount: rifaState.selectedNumbers.size * currentConfig.ticketPrice,
         date: new Date().toISOString(),
         status: 'pending'
     };
@@ -660,7 +888,7 @@ function updateNumbersDisplay() {
         let selectedCount = 0;
         
         // Atualizar visibilidade de cada número com base no estado atual
-        for (let i = 1; i <= RIFA_CONFIG.totalNumbers; i++) {
+        for (let i = 1; i <= currentConfig.totalNumbers; i++) {
             const element = document.getElementById(`number-${i}`);
             if (!element) {
                 console.warn(`⚠️ Elemento number-${i} não encontrado`);
@@ -707,7 +935,7 @@ function updateNumbersDisplay() {
         console.log(`  🟡 ${reservedCount} números marcados como reservados`);
         console.log(`  🔵 ${selectedCount} números selecionados pelo usuário`);
         console.log(`  ⚪ ${availableCount} números disponíveis`);
-        console.log(`  📈 Total atualizado: ${updatedCount}/${RIFA_CONFIG.totalNumbers}`);
+        console.log(`  📈 Total atualizado: ${updatedCount}/${currentConfig.totalNumbers}`);
         
         if (soldCount > 0) {
             console.log(`  🔢 Números vendidos: [${Array.from(rifaState.soldNumbers).sort((a,b) => a-b).join(', ')}]`);
@@ -756,7 +984,7 @@ Forma de Pagamento: ${data.paymentMethod === 'pix' ? 'PIX' : 'Doação de Fralda
 
 📱 Envie o comprovante de pagamento para confirmar.
 
-Chave PIX: ${RIFA_CONFIG.pixKey}
+Chave PIX: ${currentConfig.pixKey || RIFA_CONFIG.pixKey}
 Sorteio: 11 de Julho às 16h
 
 Obrigado por ajudar na chegada do pequeno astronauta Thomas! 🌟`;
@@ -768,7 +996,7 @@ Obrigado por ajudar na chegada do pequeno astronauta Thomas! 🌟`;
 function startCountdown() {
     function updateCountdown() {
         const now = new Date().getTime();
-        const distance = RIFA_CONFIG.drawDate.getTime() - now;
+        const distance = (currentConfig.drawDate || RIFA_CONFIG.drawDate).getTime() - now;
         
         if (distance < 0) {
             document.getElementById('countdown').innerHTML = 'SORTEIO REALIZADO!';
@@ -796,7 +1024,7 @@ function updateStatistics() {
     // Atualizar barra de progresso (se existir)
     const progressBar = document.getElementById('progress-bar');
     if (progressBar) {
-        const percentage = (soldCount / RIFA_CONFIG.totalNumbers) * 100;
+        const percentage = (soldCount / currentConfig.totalNumbers) * 100;
         progressBar.style.width = `${percentage}%`;
     }
 }

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Simples de Config</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .config-display { background: #f9f9f9; padding: 10px; border-radius: 4px; font-family: monospace; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .log { background: #000; color: #0f0; padding: 10px; height: 200px; overflow-y: auto; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Simples de Configurações</h1>
+        
+        <div class="section">
+            <h3>Status</h3>
+            <div id="status">Verificando Firebase...</div>
+        </div>
+
+        <div class="section">
+            <h3>Configuração Atual</h3>
+            <div id="config-display" class="config-display">Carregando...</div>
+        </div>
+
+        <div class="section">
+            <h3>Ações</h3>
+            <button onclick="loadConfig()">🔄 Carregar Config</button>
+            <button onclick="saveTestConfig()">💾 Salvar Config Teste</button>
+            <button onclick="startListener()">👂 Ativar Listener</button>
+        </div>
+
+        <div class="section">
+            <h3>Log</h3>
+            <div id="log" class="log">Iniciando...\n</div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        let listener = null;
+
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function displayConfig(config) {
+            document.getElementById('config-display').textContent = JSON.stringify(config, null, 2);
+        }
+
+        async function checkFirebase() {
+            if (typeof window.FirebaseDB !== 'undefined') {
+                updateStatus('✅ Firebase disponível');
+                log('Firebase carregado com sucesso');
+                
+                try {
+                    await window.FirebaseDB.initAuth();
+                    log('Autenticação inicializada');
+                    loadConfig();
+                } catch (error) {
+                    log(`Erro na autenticação: ${error.message}`);
+                }
+            } else {
+                updateStatus('❌ Firebase não disponível');
+                log('Firebase não carregado');
+                setTimeout(checkFirebase, 1000);
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                log('Carregando configuração...');
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success) {
+                    log('✅ Configuração carregada');
+                    displayConfig(result.data);
+                } else {
+                    log(`❌ Erro ao carregar: ${result.error}`);
+                    displayConfig({ error: result.error });
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+            }
+        }
+
+        async function saveTestConfig() {
+            try {
+                const testConfig = {
+                    totalNumbers: Math.floor(Math.random() * 100) + 100,
+                    ticketPrice: Math.floor(Math.random() * 50) + 20,
+                    babyName: "Thomas TESTE " + Date.now(),
+                    pixKey: "teste@" + Date.now() + ".com",
+                    testTimestamp: new Date().toISOString()
+                };
+
+                log('Salvando configuração de teste...');
+                const result = await window.FirebaseDB.saveConfig(testConfig);
+                
+                if (result.success) {
+                    log('✅ Configuração salva');
+                    setTimeout(loadConfig, 1000); // Recarregar após salvar
+                } else {
+                    log(`❌ Erro ao salvar: ${result.error}`);
+                }
+            } catch (error) {
+                log(`❌ Erro: ${error.message}`);
+            }
+        }
+
+        function startListener() {
+            if (listener) {
+                log('⚠️ Listener já ativo');
+                return;
+            }
+
+            try {
+                log('Iniciando listener para configurações...');
+                listener = window.FirebaseDB.listenToChanges('rifa_config', (configs) => {
+                    log(`🔄 Mudança detectada! ${configs.length} configurações`);
+                    
+                    const mainConfig = configs.find(c => c.id === 'main');
+                    if (mainConfig) {
+                        log('✅ Configuração principal atualizada');
+                        displayConfig(mainConfig);
+                    } else {
+                        log('⚠️ Configuração principal não encontrada');
+                    }
+                });
+                
+                if (listener) {
+                    log('✅ Listener ativo');
+                } else {
+                    log('❌ Falha ao criar listener');
+                }
+            } catch (error) {
+                log(`❌ Erro no listener: ${error.message}`);
+            }
+        }
+
+        // Verificar Firebase quando a página carregar
+        window.addEventListener('DOMContentLoaded', checkFirebase);
+        window.addEventListener('firebaseReady', () => {
+            log('🎉 Evento firebaseReady recebido');
+            checkFirebase();
+        });
+    </script>
+</body>
+</html>

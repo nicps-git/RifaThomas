@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Direto - Save Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste Direto - Save Configuration</h1>
+        
+        <div id="status-area"></div>
+        
+        <form id="config-form">
+            <div class="form-group">
+                <label for="config-total-numbers">Total de Números:</label>
+                <input type="number" id="config-total-numbers" value="150">
+            </div>
+            <div class="form-group">
+                <label for="config-ticket-price">Preço do Bilhete:</label>
+                <input type="number" id="config-ticket-price" step="0.01" value="40.00">
+            </div>
+            <div class="form-group">
+                <label for="config-contact-phone">Telefone:</label>
+                <input type="text" id="config-contact-phone" value="(11) 99999-9999">
+            </div>
+            <div class="form-group">
+                <label for="config-pix-key">PIX:</label>
+                <input type="text" id="config-pix-key" value="contato@charifa.com">
+            </div>
+            <div class="form-group">
+                <label for="config-baby-name">Nome do Bebê:</label>
+                <input type="text" id="config-baby-name" value="Thomas">
+            </div>
+            <div class="form-group">
+                <label for="config-first-prize">1º Prêmio:</label>
+                <input type="text" id="config-first-prize" value="R$ 100,00">
+            </div>
+            <div class="form-group">
+                <label for="config-second-prize">2º Prêmio:</label>
+                <input type="text" id="config-second-prize" value="R$ 200,00">
+            </div>
+            <div class="form-group">
+                <label for="config-third-prize">3º Prêmio:</label>
+                <input type="text" id="config-third-prize" value="Fraldas por faixa">
+            </div>
+            <div class="form-group">
+                <label for="config-draw-date">Data do Sorteio:</label>
+                <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00">
+            </div>
+            
+            <button type="submit">💾 Salvar Configurações</button>
+        </form>
+        
+        <div>
+            <button onclick="testSaveManual()">🧪 Teste Manual Save</button>
+            <button onclick="verifyForm()">🔍 Verificar Formulário</button>
+            <button onclick="checkAdminData()">📊 Verificar AdminData</button>
+            <button onclick="clearLog()">🧹 Limpar Log</button>
+        </div>
+        
+        <div id="log-area" class="log"></div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        let logArea;
+        let statusArea;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            logArea.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(message);
+        }
+        
+        function showStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            statusArea.appendChild(div);
+            
+            setTimeout(() => {
+                if (div.parentNode) {
+                    div.parentNode.removeChild(div);
+                }
+            }, 5000);
+        }
+        
+        function verifyForm() {
+            log('🔍 Verificando elementos do formulário...');
+            
+            const form = document.getElementById('config-form');
+            if (!form) {
+                log('❌ Formulário config-form não encontrado!', 'error');
+                return;
+            }
+            log('✅ Formulário encontrado', 'success');
+            
+            const fields = [
+                'config-total-numbers',
+                'config-ticket-price', 
+                'config-contact-phone',
+                'config-pix-key',
+                'config-baby-name',
+                'config-first-prize',
+                'config-second-prize',
+                'config-third-prize',
+                'config-draw-date'
+            ];
+            
+            fields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element) {
+                    log(`✅ Campo ${fieldId}: "${element.value}"`, 'success');
+                } else {
+                    log(`❌ Campo ${fieldId}: NÃO ENCONTRADO`, 'error');
+                }
+            });
+        }
+        
+        function checkAdminData() {
+            log('📊 Verificando adminData...');
+            
+            if (typeof adminData !== 'undefined') {
+                log('✅ adminData encontrado', 'success');
+                log(`📋 Config atual: ${JSON.stringify(adminData.config, null, 2)}`);
+                log(`🛒 Purchases: ${adminData.purchases?.length || 0} itens`);
+                log(`🔥 Firebase ready: ${adminData.firebaseReady}`);
+            } else {
+                log('❌ adminData não encontrado!', 'error');
+            }
+            
+            if (typeof window.FirebaseDB !== 'undefined') {
+                log('✅ FirebaseDB disponível', 'success');
+                if (typeof window.FirebaseDB.saveConfig === 'function') {
+                    log('✅ Função saveConfig disponível', 'success');
+                } else {
+                    log('❌ Função saveConfig não encontrada', 'error');
+                }
+            } else {
+                log('❌ FirebaseDB não disponível', 'error');
+            }
+        }
+        
+        async function testSaveManual() {
+            log('🧪 Iniciando teste manual de salvamento...');
+            
+            try {
+                // Verificar se a função saveConfiguration existe
+                if (typeof saveConfiguration !== 'function' && typeof window.saveConfiguration !== 'function') {
+                    log('❌ Função saveConfiguration não encontrada!', 'error');
+                    showStatus('Função saveConfiguration não encontrada!', 'error');
+                    return;
+                }
+                
+                log('✅ Função saveConfiguration encontrada', 'success');
+                
+                // Criar evento de submit fake
+                const form = document.getElementById('config-form');
+                const fakeEvent = {
+                    preventDefault: () => log('preventDefault() chamado'),
+                    target: form
+                };
+                
+                log('📤 Chamando saveConfiguration manualmente...');
+                
+                // Chamar a função
+                const saveFunc = typeof saveConfiguration === 'function' ? saveConfiguration : window.saveConfiguration;
+                await saveFunc(fakeEvent);
+                
+                log('✅ Teste manual concluído!', 'success');
+                showStatus('Teste manual executado com sucesso!', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro no teste manual: ${error.message}`, 'error');
+                showStatus(`Erro no teste: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLog() {
+            logArea.textContent = '';
+            statusArea.innerHTML = '';
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            logArea = document.getElementById('log-area');
+            statusArea = document.getElementById('status-area');
+            
+            log('🚀 Página de teste carregada');
+            
+            // Configurar listener para o formulário
+            const form = document.getElementById('config-form');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    log('📝 Evento submit capturado!');
+                    log('🔄 Tentando chamar saveConfiguration...');
+                    
+                    if (typeof saveConfiguration === 'function') {
+                        log('✅ Chamando saveConfiguration do escopo global');
+                        saveConfiguration(event);
+                    } else if (typeof window.saveConfiguration === 'function') {
+                        log('✅ Chamando saveConfiguration do window');
+                        window.saveConfiguration(event);
+                    } else {
+                        log('❌ saveConfiguration não encontrada!', 'error');
+                        showStatus('Função saveConfiguration não encontrada!', 'error');
+                    }
+                });
+                log('✅ Event listener configurado');
+            } else {
+                log('❌ Formulário não encontrado para configurar listener', 'error');
+            }
+            
+            // Executar verificações iniciais após delay
+            setTimeout(() => {
+                verifyForm();
+                checkAdminData();
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

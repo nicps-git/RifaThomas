@@ -72,7 +72,7 @@ async function initializeAdminSystem() {
         await loadPurchaseData();
         
         // 4. Atualizar interface
-        updateInterface();
+        await updateInterface();
         
         systemInitialized = true;
         console.log('✅ Sistema admin inicializado com sucesso!');
@@ -85,7 +85,7 @@ async function initializeAdminSystem() {
         if (adminData.initializationAttempts < 3) {
             console.log('🔄 Tentando novamente com dados locais...');
             await loadLocalData();
-            updateInterface();
+            await updateInterface();
         }
     } finally {
         initializationInProgress = false;
@@ -257,6 +257,34 @@ function setupEventListeners() {
     // Event delegation para botões dinâmicos
     document.addEventListener('click', handleGlobalClick);
     
+    // Configurar formulário de configurações com retry
+    const configureFormListener = () => {
+        const configForm = document.getElementById('config-form');
+        if (configForm) {
+            // Remover listeners existentes para evitar duplicatas
+            const newForm = configForm.cloneNode(true);
+            configForm.parentNode.replaceChild(newForm, configForm);
+            
+            // Adicionar novo listener
+            newForm.addEventListener('submit', saveConfiguration);
+            console.log('✅ Event listener do formulário de configurações configurado');
+            return true;
+        } else {
+            console.warn('⚠️ Formulário config-form não encontrado');
+            return false;
+        }
+    };
+    
+    // Tentar configurar imediatamente
+    if (!configureFormListener()) {
+        // Se falhou, tentar novamente após delay
+        setTimeout(() => {
+            if (!configureFormListener()) {
+                console.error('❌ Falha ao configurar listener do formulário após retry');
+            }
+        }, 1000);
+    }
+    
     // Filtros de status
     const filterButtons = document.querySelectorAll('[data-filter]');
     filterButtons.forEach(button => {
@@ -315,6 +343,7 @@ function updateInterface() {
     try {
         updateDashboard();
         loadParticipants();
+        loadConfiguration(); // Carregar configurações no formulário
         
         // Verificação adicional: se não há dados após carregar, criar dados de teste
         setTimeout(() => {
@@ -534,686 +563,601 @@ function getPaymentMethodText(method) {
     return methods[method] || method || 'N/A';
 }
 
-function formatCurrency(value) {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-    }).format(value || 0);
-}
+// ========================================================================================
+// FUNÇÃO DE SALVAR CONFIGURAÇÕES
+// ========================================================================================
 
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
+// Carregar configurações no formulário
+async function loadConfiguration() {
+    console.log('⚙️ Carregando configurações no formulário...');
     
     try {
-        const date = new Date(dateString);
-        return date.toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    } catch {
-        return 'Data inválida';
-    }
-}
-
-function updateElement(id, value) {
-    const element = document.getElementById(id);
-    if (element) {
-        element.textContent = value;
-    } else {
-        console.warn(`⚠️ Elemento ${id} não encontrado`);
-    }
-}
-
-function showError(message) {
-    console.error('❌', message);
-    // Implementar notificação visual se necessário
-}
-
-// Ações dos botões
-async function confirmDonation(purchaseId) {
-    console.log(`✅ Confirmando doação: ${purchaseId}`);
-    
-    const purchase = adminData.purchases.find(p => p.id === purchaseId);
-    if (!purchase) {
-        alert('❌ Compra não encontrada!');
-        return;
-    }
-    
-    // Preparar dados para confirmação
-    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
-    const numbers = purchase.numbers || [];
-    const total = purchase.totalAmount || 0;
-    
-    const confirmMessage = `✅ CONFIRMAR DOAÇÃO\n\n` +
-        `👤 Cliente: ${buyerName}\n` +
-        `🎯 Números: ${numbers.join(', ')}\n` +
-        `💰 Valor: R$ ${total.toFixed(2)}\n\n` +
-        `⚠️ Esta ação não pode ser desfeita.\n` +
-        `Confirmar doação?`;
-    
-    if (!confirm(confirmMessage)) {
-        console.log('❌ Confirmação cancelada pelo usuário');
-        return;
-    }
-    
-    try {
-        // Atualizar status localmente primeiro
-        purchase.status = 'confirmed';
-        purchase.confirmedAt = new Date().toISOString();
-        purchase.confirmedBy = 'admin';
+        let config = {};
         
-        // Salvar no localStorage
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        console.log('💾 Dados salvos no localStorage');
-        
-        // Tentar atualizar no Firebase se disponível
+        // 1. Tentar carregar do Firebase primeiro
         if (typeof window.FirebaseDB !== 'undefined') {
             try {
-                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed', {
-                    confirmedAt: purchase.confirmedAt,
-                    confirmedBy: purchase.confirmedBy
-                });
-                
-                if (result.success) {
-                    console.log('✅ Status atualizado no Firebase');
+                console.log('🔥 Tentando carregar configurações do Firebase...');
+                const firebaseResult = await window.FirebaseDB.loadConfig();
+                if (firebaseResult.success && firebaseResult.data) {
+                    config = firebaseResult.data;
+                    console.log('✅ Configurações carregadas do Firebase:', config);
+                    
+                    // Atualizar adminData com as configurações do Firebase
+                    adminData.config = { ...adminData.config, ...config };
+                    
+                    // Salvar backup no localStorage
+                    try {
+                        localStorage.setItem('adminConfig', JSON.stringify(config));
+                        console.log('💾 Backup das configurações salvo no localStorage');
+                    } catch (backupError) {
+                        console.warn('⚠️ Erro ao salvar backup das configurações:', backupError);
+                    }
                 } else {
-                    console.warn('⚠️ Erro no Firebase:', result.error);
+                    throw new Error(firebaseResult.error || 'Configurações não encontradas no Firebase');
                 }
             } catch (firebaseError) {
-                console.warn('⚠️ Firebase indisponível:', firebaseError);
+                console.warn('⚠️ Erro ao carregar do Firebase:', firebaseError);
+                console.log('📦 Tentando carregar do localStorage...');
+                
+                // 2. Fallback para localStorage
+                try {
+                    const localConfig = localStorage.getItem('adminConfig');
+                    if (localConfig) {
+                        config = JSON.parse(localConfig);
+                        console.log('✅ Configurações carregadas do localStorage:', config);
+                        adminData.config = { ...adminData.config, ...config };
+                    } else {
+                        console.log('⚠️ Nenhuma configuração encontrada no localStorage, usando padrões');
+                    }
+                } catch (localError) {
+                    console.warn('⚠️ Erro ao carregar do localStorage:', localError);
+                }
+            }
+        } else {
+            // Se Firebase não estiver disponível, tentar localStorage
+            try {
+                const localConfig = localStorage.getItem('adminConfig');
+                if (localConfig) {
+                    config = JSON.parse(localConfig);
+                    console.log('✅ Configurações carregadas do localStorage (Firebase indisponível):', config);
+                    adminData.config = { ...adminData.config, ...config };
+                }
+            } catch (localError) {
+                console.warn('⚠️ Erro ao carregar do localStorage:', localError);
             }
         }
         
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
+        // 3. Usar valores das configurações carregadas ou padrões
+        const finalConfig = config.totalNumbers ? config : adminData.config || {};
         
-        // Notificação de sucesso
-        alert('✅ DOAÇÃO CONFIRMADA!\n\nNúmeros foram marcados como vendidos.');
-        console.log('✅ CONFIRMAÇÃO CONCLUÍDA COM SUCESSO!');
+        // Carregar valores nos campos do formulário
+        const configFields = {
+            'config-total-numbers': finalConfig.totalNumbers || 150,
+            'config-ticket-price': finalConfig.ticketPrice || 40.00,
+            'config-contact-phone': finalConfig.contactPhone || '(11) 99999-9999',
+            'config-contact-email': finalConfig.contactEmail || 'contato@rifaonline.com',
+            'config-pix-key': finalConfig.pixKey || 'contato@charifa.com',
+            'config-baby-name': finalConfig.babyName || 'Thomas',
+            'config-first-prize': finalConfig.prizes?.first || 'R$ 100,00',
+            'config-second-prize': finalConfig.prizes?.second || 'R$ 200,00',
+            'config-third-prize': finalConfig.prizes?.third || 'Fraldas por faixa',
+            'config-draw-date': finalConfig.drawDate ? new Date(finalConfig.drawDate).toISOString().slice(0, 16) : '2025-07-11T16:00'
+        };
         
-    } catch (error) {
-        console.error('❌ Erro ao confirmar doação:', error);
-        alert(`❌ Erro ao confirmar: ${error.message}`);
-        showError(`Erro ao confirmar: ${error.message}`);
-    }
-}
-
-async function rejectDonation(purchaseId) {
-    console.log(`❌ Rejeitando doação: ${purchaseId}`);
-    
-    const purchase = adminData.purchases.find(p => p.id === purchaseId);
-    if (!purchase) {
-        alert('❌ Compra não encontrada!');
-        return;
-    }
-    
-    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
-    const reason = prompt(`❌ REJEITAR DOAÇÃO\n\nCliente: ${buyerName}\n\nMotivo da rejeição (opcional):`);
-    
-    if (reason === null) {
-        console.log('❌ Rejeição cancelada pelo usuário');
-        return;
-    }
-    
-    try {
-        // Atualizar status localmente primeiro
-        purchase.status = 'rejected';
-        purchase.rejectedAt = new Date().toISOString();
-        purchase.rejectionReason = reason || 'Sem motivo especificado';
-        purchase.rejectedBy = 'admin';
-        
-        // Salvar no localStorage
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        console.log('💾 Dados salvos no localStorage');
-        
-        // Tentar atualizar no Firebase se disponível
-        if (typeof window.FirebaseDB !== 'undefined') {
-            try {
-                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected', {
-                    rejectedAt: purchase.rejectedAt,
-                    rejectionReason: purchase.rejectionReason,
-                    rejectedBy: purchase.rejectedBy
-                });
-                
-                if (result.success) {
-                    console.log('✅ Status atualizado no Firebase');
-                } else {
-                    console.warn('⚠️ Erro no Firebase:', result.error);
-                }
-            } catch (firebaseError) {
-                console.warn('⚠️ Firebase indisponível:', firebaseError);
-            }
-        }
-        
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
-        
-        // Notificação de rejeição
-        alert('❌ DOAÇÃO REJEITADA!\n\nNúmeros foram liberados para venda.');
-        console.log('✅ REJEIÇÃO CONCLUÍDA COM SUCESSO!');
-        
-    } catch (error) {
-        console.error('❌ Erro ao rejeitar doação:', error);
-        alert(`❌ Erro ao rejeitar: ${error.message}`);
-        showError(`Erro ao rejeitar: ${error.message}`);
-    }
-}
-
-function editParticipant(purchaseId) {
-    console.log(`✏️ Editando participante: ${purchaseId}`);
-    
-    const purchase = adminData.purchases.find(p => p.id === purchaseId);
-    if (!purchase) {
-        alert('❌ Participante não encontrado!');
-        return;
-    }
-    
-    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
-    const buyerPhone = purchase.buyerPhone || purchase.phone || '';
-    
-    const newName = prompt(`Editar nome do participante:\n\nNome atual: ${buyerName}`, buyerName);
-    if (newName && newName.trim() !== '') {
-        const newPhone = prompt(`Editar telefone do participante:\n\nTelefone atual: ${buyerPhone}`, buyerPhone);
-        if (newPhone && newPhone.trim() !== '') {
-            // Atualizar dados
-            purchase.buyerName = newName.trim();
-            purchase.name = newName.trim(); // Para compatibilidade
-            purchase.buyerPhone = newPhone.trim();
-            purchase.phone = newPhone.trim(); // Para compatibilidade
-            
-            // Salvar no localStorage
-            localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-            
-            // Atualizar interface
-            loadParticipants();
-            updateDashboard();
-            
-            alert('✅ Dados do participante atualizados com sucesso!');
-            console.log('✅ Edição concluída com sucesso');
-        }
-    }
-}
-
-// Adicionar função para criar dados de teste
-function createSampleData() {
-    console.log('🎭 Criando dados de exemplo...');
-    
-    adminData.purchases = [
-        {
-            id: 'demo-1',
-            buyerName: 'Maria Silva',
-            name: 'Maria Silva', // Para compatibilidade
-            buyerPhone: '(11) 99999-1111',
-            phone: '(11) 99999-1111', // Para compatibilidade
-            buyerEmail: 'maria@demo.com',
-            numbers: [1, 2, 3],
-            totalAmount: 120.00,
-            paymentMethod: 'doacao',
-            status: 'pending_donation',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 'demo-2',
-            buyerName: 'João Santos',
-            name: 'João Santos', // Para compatibilidade
-            buyerPhone: '(11) 98888-2222',
-            phone: '(11) 98888-2222', // Para compatibilidade
-            buyerEmail: 'joao@demo.com',
-            numbers: [10, 20, 30],
-            totalAmount: 120.00,
-            paymentMethod: 'pix',
-            status: 'confirmed',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 'demo-3',
-            buyerName: 'Ana Costa',
-            name: 'Ana Costa', // Para compatibilidade
-            buyerPhone: '(11) 97777-3333',
-            phone: '(11) 97777-3333', // Para compatibilidade
-            buyerEmail: 'ana@demo.com',
-            numbers: [50, 51, 52],
-            totalAmount: 120.00,
-            paymentMethod: 'doacao',
-            status: 'pending_donation',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString()
-        },
-        {
-            id: 'demo-4',
-            buyerName: 'Carlos Oliveira',
-            name: 'Carlos Oliveira', // Para compatibilidade
-            buyerPhone: '(11) 96666-4444',
-            phone: '(11) 96666-4444', // Para compatibilidade
-            buyerEmail: 'carlos@demo.com',
-            numbers: [75, 76, 77],
-            totalAmount: 120.00,
-            paymentMethod: 'doacao',
-            status: 'rejected',
-            date: new Date().toISOString(),
-            timestamp: new Date().toISOString(),
-            rejectedAt: new Date().toISOString(),
-            rejectionReason: 'Teste de rejeição'
-        }
-    ];
-    
-    // Salvar os dados de exemplo
-    try {
-        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
-        console.log(`🎭 ${adminData.purchases.length} dados de exemplo criados e salvos`);
-        
-        // Atualizar interface
-        loadParticipants();
-        updateDashboard();
-        
-        alert(`✅ Dados de teste criados com sucesso!\n\n📊 Total: ${adminData.purchases.length} compras\n🍼 Pendentes: 2 doações\n✅ Confirmados: 1 compra\n❌ Rejeitados: 1 compra\n\nTeste os botões de confirmação agora!`);
-        
-    } catch (error) {
-        console.error('❌ Erro ao salvar dados de exemplo:', error);
-        alert('❌ Erro ao criar dados de teste: ' + error.message);
-    }
-}
-
-// Expor funções globais para debug e compatibilidade
-window.adminDebug = {
-    adminData,
-    loadPurchaseData,
-    loadParticipants,
-    updateDashboard,
-    createSampleData,
-    confirmDonation,
-    rejectDonation,
-    editParticipant
-};
-
-// Expor funções essenciais globalmente para os botões
-window.confirmDonation = confirmDonation;
-window.rejectDonation = rejectDonation;
-window.editParticipant = editParticipant;
-window.createSampleData = createSampleData;
-window.loadParticipants = loadParticipants;
-window.updateDashboard = updateDashboard;
-
-// Função de emergência para forçar botões aparecerem
-window.forcarBotoesEmergencia = function() {
-    console.log('🚨 FUNÇÃO DE EMERGÊNCIA: Forçando aparição dos botões...');
-    
-    // Garantir que adminData existe
-    if (!window.adminData) {
-        window.adminData = { purchases: [], firebaseReady: false, initializationAttempts: 1 };
-    }
-    
-    // Criar dados de teste se não existirem
-    if (adminData.purchases.length === 0) {
-        console.log('📊 Nenhum dado encontrado, criando dados de teste...');
-        createSampleData();
-    }
-    
-    // Forçar carregamento da tabela
-    setTimeout(() => {
-        console.log('🔄 Forçando reload da tabela...');
-        loadParticipants();
-        console.log('🚨 EMERGÊNCIA: Botões forçados!');
-        
-        // Verificar se os botões apareceram
-        setTimeout(() => {
-            const buttons = document.querySelectorAll('[data-action]');
-            console.log(`🔍 Verificação pós-emergência: ${buttons.length} botões encontrados`);
-            if (buttons.length > 0) {
-                console.log('✅ SUCESSO: Botões apareceram após emergência!');
-                alert(`✅ EMERGÊNCIA RESOLVIDA!\n\n${buttons.length} botões de ação foram criados.\nVerifique a tabela de participantes.`);
+        let fieldsLoaded = 0;
+        Object.entries(configFields).forEach(([fieldId, value]) => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.value = value;
+                fieldsLoaded++;
             } else {
-                console.log('❌ FALHA: Botões ainda não apareceram');
-                alert('❌ Emergência falhou. Verifique o console (F12) para mais detalhes.');
+                console.warn(`⚠️ Campo ${fieldId} não encontrado no formulário`);
             }
-        }, 1000);
-    }, 500);
-};
-
-// Verificação automática após carregamento COMPLETO da página
-setTimeout(() => {
-    console.log('🔍 Verificação automática pós-carregamento...');
-    
-    const tbody = document.getElementById('participants-tbody');
-    if (tbody) {
-        const buttons = tbody.querySelectorAll('[data-action]');
-        console.log(`📊 Status atual: ${buttons.length} botões encontrados na tabela`);
+        });
         
-        if (buttons.length === 0 && tbody.innerHTML.includes('Carregando dados')) {
-            console.log('🚨 DETECTADO: Tabela ainda está carregando após 10 segundos, ativando emergência');
-            window.forcarBotoesEmergencia();
-        } else if (buttons.length === 0) {
-            console.log('⚠️ DETECTADO: Tabela carregada mas sem botões, ativando emergência');
-            window.forcarBotoesEmergencia();
-        } else {
-            console.log('✅ VERIFICAÇÃO: Botões estão presentes, sistema funcionando normalmente');
-        }
-    } else {
-        console.log('❌ ERRO: Tabela de participantes não encontrada');
-    }
-}, 10000); // 10 segundos para dar tempo da página carregar completamente
-
-// ========================================================================================
-// SISTEMA DE ATUALIZAÇÃO AUTOMÁTICA E SINCRONIZAÇÃO EM TEMPO REAL
-// ========================================================================================
-
-// Configuração da sincronização automática
-let autoSyncConfig = {
-    enabled: true,
-    interval: 30000, // 30 segundos
-    timer: null,
-    lastUpdate: null,
-    isUpdating: false
-};
-
-// Inicializar sistema de auto-sync
-function initializeAutoSync() {
-    console.log('🔄 Inicializando sistema de auto-sync...');
-    
-    // Atualizar display do último update
-    updateLastUpdateDisplay();
-    
-    // Iniciar auto-sync se habilitado
-    if (autoSyncConfig.enabled) {
-        startAutoSync();
-    }
-    
-    // Configurar indicadores visuais
-    updateSyncIndicators();
-}
-
-// Função principal de atualização de dados
-async function refreshData() {
-    if (autoSyncConfig.isUpdating) {
-        console.log('⚠️ Atualização já em andamento...');
-        return;
-    }
-    
-    console.log('🔄 Iniciando atualização manual de dados...');
-    autoSyncConfig.isUpdating = true;
-    
-    try {
-        // Mostrar progresso
-        showSyncProgress('Conectando...', 10);
-        
-        // Carregar dados atualizados
-        showSyncProgress('Carregando dados...', 30);
-        await loadPurchaseData();
-        
-        // Atualizar interface
-        showSyncProgress('Atualizando interface...', 60);
-        updateDashboard();
-        loadParticipants();
-        
-        // Forçar criação de botões se necessário
-        showSyncProgress('Verificando botões...', 80);
-        setTimeout(() => {
-            const buttons = document.querySelectorAll('[data-action]');
-            if (buttons.length === 0) {
-                console.log('⚠️ Botões não encontrados após atualização, forçando criação...');
-                window.forcarBotoesEmergencia?.();
-            }
-        }, 1000);
-        
-        // Finalizar
-        showSyncProgress('Concluído!', 100);
-        autoSyncConfig.lastUpdate = new Date();
-        updateLastUpdateDisplay();
-        
-        console.log('✅ Dados atualizados com sucesso!');
-        showNotification('📊 Dados atualizados com sucesso!', 'success');
+        console.log(`✅ ${fieldsLoaded} campos de configuração carregados no formulário`);
+        console.log('📋 Configurações finais aplicadas:', finalConfig);
         
     } catch (error) {
-        console.error('❌ Erro ao atualizar dados:', error);
-        showNotification('❌ Erro ao atualizar dados: ' + error.message, 'error');
-        showSyncProgress('Erro na atualização', 0);
-    } finally {
-        autoSyncConfig.isUpdating = false;
-        setTimeout(hideSyncProgress, 2000);
-    }
-}
-
-// Auto-sync automático
-function startAutoSync() {
-    if (autoSyncConfig.timer) {
-        clearInterval(autoSyncConfig.timer);
-    }
-    
-    console.log(`🔄 Auto-sync iniciado (intervalo: ${autoSyncConfig.interval/1000}s)`);
-    
-    autoSyncConfig.timer = setInterval(async () => {
-        if (!autoSyncConfig.isUpdating && document.visibilityState === 'visible') {
-            console.log('🔄 Auto-sync executando...');
-            await refreshData();
-        }
-    }, autoSyncConfig.interval);
-    
-    updateSyncIndicators();
-}
-
-function stopAutoSync() {
-    if (autoSyncConfig.timer) {
-        clearInterval(autoSyncConfig.timer);
-        autoSyncConfig.timer = null;
-    }
-    console.log('⏸️ Auto-sync pausado');
-    updateSyncIndicators();
-}
-
-// Toggle do auto-sync
-function toggleAutoSync() {
-    autoSyncConfig.enabled = !autoSyncConfig.enabled;
-    
-    if (autoSyncConfig.enabled) {
-        startAutoSync();
-        showNotification('🔄 Auto-sync ativado', 'success');
-    } else {
-        stopAutoSync();
-        showNotification('⏸️ Auto-sync pausado', 'warning');
-    }
-    
-    updateSyncIndicators();
-}
-
-// Recarregamento completo forçado
-function forceFullRefresh() {
-    console.log('🔃 Forçando recarregamento completo...');
-    
-    if (confirm('🔃 Recarregar página completamente?\n\nIsso irá recarregar toda a página e pode interromper ações em andamento.')) {
-        // Salvar estado do auto-sync
-        localStorage.setItem('autoSyncEnabled', autoSyncConfig.enabled);
+        console.error('❌ Erro ao carregar configurações:', error);
         
-        // Recarregar página
-        window.location.reload();
-    }
-}
-
-// Mostrar estatísticas dos dados
-function showDataStats() {
-    console.log('📊 Mostrando estatísticas dos dados...');
-    
-    const stats = {
-        total: adminData.purchases?.length || 0,
-        pending: adminData.purchases?.filter(p => p.status === 'pending_donation').length || 0,
-        confirmed: adminData.purchases?.filter(p => p.status === 'confirmed').length || 0,
-        rejected: adminData.purchases?.filter(p => p.status === 'rejected').length || 0,
-        lastUpdate: autoSyncConfig.lastUpdate ? autoSyncConfig.lastUpdate.toLocaleString('pt-BR') : 'Nunca',
-        autoSyncStatus: autoSyncConfig.enabled ? 'Ativo' : 'Pausado',
-        firebaseStatus: adminData.firebaseReady ? 'Conectado' : 'Desconectado'
-    };
-    
-    const revenue = adminData.purchases?.reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
-    
-    const message = `📊 ESTATÍSTICAS DOS DADOS\n\n` +
-        `👥 Total de Participantes: ${stats.total}\n` +
-        `🍼 Doações Pendentes: ${stats.pending}\n` +
-        `✅ Confirmados: ${stats.confirmed}\n` +
-        `❌ Rejeitados: ${stats.rejected}\n` +
-        `💰 Receita Total: R$ ${revenue.toFixed(2)}\n\n` +
-        `🔄 Auto-sync: ${stats.autoSyncStatus}\n` +
-        `🔥 Firebase: ${stats.firebaseStatus}\n` +
-        `⏰ Última Atualização: ${stats.lastUpdate}`;
-    
-    alert(message);
-}
-
-// Funções auxiliares de interface
-function showSyncProgress(message, percent) {
-    const progressDiv = document.getElementById('sync-progress');
-    const progressBar = document.getElementById('sync-progress-bar');
-    const statusText = document.getElementById('sync-status-text');
-    
-    if (progressDiv && progressBar && statusText) {
-        progressDiv.style.display = 'block';
-        progressBar.style.width = percent + '%';
-        statusText.textContent = message;
-    }
-}
-
-function hideSyncProgress() {
-    const progressDiv = document.getElementById('sync-progress');
-    if (progressDiv) {
-        progressDiv.style.display = 'none';
-    }
-}
-
-function updateLastUpdateDisplay() {
-    const timeElement = document.getElementById('last-update-time');
-    if (timeElement) {
-        if (autoSyncConfig.lastUpdate) {
-            const time = autoSyncConfig.lastUpdate.toLocaleTimeString('pt-BR');
-            timeElement.textContent = `Última atualização: ${time}`;
-        } else {
-            timeElement.textContent = 'Primeira execução...';
-        }
-    }
-}
-
-function updateSyncIndicators() {
-    const statusElement = document.getElementById('auto-sync-status');
-    const buttonElement = document.getElementById('auto-sync-btn');
-    
-    if (statusElement) {
-        if (autoSyncConfig.enabled) {
-            statusElement.textContent = '🟢 Auto-sync Ativo';
-            statusElement.style.background = '#28a745';
-        } else {
-            statusElement.textContent = '🔴 Auto-sync Pausado';
-            statusElement.style.background = '#dc3545';
-        }
-    }
-    
-    if (buttonElement) {
-        if (autoSyncConfig.enabled) {
-            buttonElement.textContent = '⏸️ Pausar Auto-sync';
-            buttonElement.style.background = '#ffc107';
-            buttonElement.style.color = '#000';
-        } else {
-            buttonElement.textContent = '▶️ Ativar Auto-sync';
-            buttonElement.style.background = '#28a745';
-            buttonElement.style.color = 'white';
-        }
-    }
-}
-
-// Função de notificação simples
-function showNotification(message, type = 'info') {
-    console.log(`📢 ${type.toUpperCase()}: ${message}`);
-    
-    // Criar ou atualizar elemento de notificação
-    let notification = document.getElementById('admin-notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'admin-notification';
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            z-index: 9999;
-            max-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-        `;
-        document.body.appendChild(notification);
-    }
-    
-    // Definir cor baseada no tipo
-    const colors = {
-        success: '#28a745',
-        error: '#dc3545',
-        warning: '#ffc107',
-        info: '#007bff'
-    };
-    
-    notification.style.background = colors[type] || colors.info;
-    notification.textContent = message;
-    notification.style.opacity = '1';
-    notification.style.transform = 'translateY(0)';
-    
-    // Auto-remover após 4 segundos
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateY(-20px)';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
+        // Em caso de erro, carregar valores padrão
+        const defaultFields = {
+            'config-total-numbers': 150,
+            'config-ticket-price': 40.00,
+            'config-contact-phone': '(11) 99999-9999',
+            'config-pix-key': 'contato@charifa.com',
+            'config-baby-name': 'Thomas',
+            'config-first-prize': 'R$ 100,00',
+            'config-second-prize': 'R$ 200,00',
+            'config-third-prize': 'Fraldas por faixa',
+            'config-draw-date': '2025-07-11T16:00'
+        };
+        
+        Object.entries(defaultFields).forEach(([fieldId, value]) => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.value = value;
             }
-        }, 300);
-    }, 4000);
+        });
+        
+        console.log('✅ Valores padrão carregados devido ao erro');
+    }
 }
 
-// Expor funções globalmente
-window.refreshData = refreshData;
-window.toggleAutoSync = toggleAutoSync;
-window.forceFullRefresh = forceFullRefresh;
-window.showDataStats = showDataStats;
-window.initializeAutoSync = initializeAutoSync;
-
-// Pausar auto-sync quando página não está visível
-document.addEventListener('visibilitychange', function() {
-    if (document.visibilityState === 'hidden') {
-        console.log('👁️ Página oculta, pausando auto-sync temporariamente');
-    } else {
-        console.log('👁️ Página visível, retomando auto-sync');
-        if (autoSyncConfig.enabled && !autoSyncConfig.timer) {
-            startAutoSync();
-        }
-    }
-});
-
-// Inicializar auto-sync quando admin estiver pronto
-setTimeout(() => {
-    if (systemInitialized) {
-        console.log('🔄 Inicializando sistema de auto-sync...');
+// Salvar configurações do formulário
+async function saveConfiguration(event) {
+    event.preventDefault();
+    console.log('💾 Salvando configurações...');
+    
+    try {
+        // Coletar dados do formulário
+        const newConfig = {
+            totalNumbers: parseInt(document.getElementById('config-total-numbers').value),
+            ticketPrice: parseFloat(document.getElementById('config-ticket-price').value),
+            drawDate: new Date(document.getElementById('config-draw-date').value),
+            contactPhone: document.getElementById('config-contact-phone').value,
+            contactEmail: document.getElementById('config-contact-email').value,
+            pixKey: document.getElementById('config-pix-key').value,
+            babyName: document.getElementById('config-baby-name').value,
+            prizes: {
+                first: document.getElementById('config-first-prize').value,
+                second: document.getElementById('config-second-prize').value,
+                third: document.getElementById('config-third-prize').value
+            },
+            lastUpdated: new Date().toISOString()
+        };
         
-        // Restaurar estado do auto-sync se foi salvo
-        const savedState = localStorage.getItem('autoSyncEnabled');
-        if (savedState !== null) {
-            autoSyncConfig.enabled = savedState === 'true';
+        // Validações básicas
+        if (newConfig.totalNumbers < 100 || newConfig.totalNumbers > 10000) {
+            throw new Error('Total de números deve estar entre 100 e 10000');
         }
         
-        initializeAutoSync();
+        if (newConfig.ticketPrice < 1) {
+            throw new Error('Preço do bilhete deve ser maior que R$ 1,00');
+        }
         
-        // Primeira atualização
-        setTimeout(() => {
-            refreshData();
-        }, 2000);
+        if (!newConfig.pixKey || !newConfig.contactPhone || !newConfig.contactEmail) {
+            throw new Error('PIX, telefone e email são obrigatórios');
+        }
+        
+        console.log('📋 Configurações coletadas:', newConfig);
+        
+        let firebaseSaved = false;
+        let localStorageSaved = false;
+        
+        // Tentar salvar no Firebase primeiro
+        if (typeof window.FirebaseDB !== 'undefined' && adminData.firebaseReady) {
+            try {
+                console.log('🔥 Salvando no Firebase...');
+                const result = await window.FirebaseDB.saveConfig(newConfig);
+                if (result.success) {
+                    firebaseSaved = true;
+                    console.log('✅ Configurações salvas no Firebase com sucesso');
+                } else {
+                    throw new Error(result.error || 'Erro desconhecido no Firebase');
+                }
+            } catch (firebaseError) {
+                console.error('❌ Erro ao salvar no Firebase:', firebaseError);
+                console.warn('⚠️ Continuando com salvamento local...');
+            }
+        } else {
+            console.warn('⚠️ Firebase não disponível, salvando apenas localmente');
+        }
+        
+        // Sempre salvar no localStorage como backup
+        try {
+            localStorage.setItem('adminConfig', JSON.stringify(newConfig));
+            localStorageSaved = true;
+            console.log('💾 Configurações salvas no localStorage');
+        } catch (storageError) {
+            console.error('❌ Erro ao salvar no localStorage:', storageError);
+        }
+        
+        // Verificar se pelo menos um método de salvamento funcionou
+        if (!firebaseSaved && !localStorageSaved) {
+            throw new Error('Falha ao salvar em qualquer local de armazenamento');
+        }
+        
+        // Atualizar configurações em memória
+        adminData.config = { ...adminData.config, ...newConfig };
+        console.log('🧠 AdminData atualizado:', adminData.config);
+        
+        // Atualizar dashboard com novas configurações
+        try {
+            updateDashboard();
+            console.log('📊 Dashboard atualizado');
+        } catch (dashboardError) {
+            console.warn('⚠️ Erro ao atualizar dashboard:', dashboardError);
+        }
+        
+        // Recarregar as configurações no formulário para confirmar salvamento
+        setTimeout(async () => {
+            try {
+                await loadConfiguration();
+                console.log('🔄 Configurações recarregadas no formulário');
+            } catch (reloadError) {
+                console.warn('⚠️ Erro ao recarregar configurações:', reloadError);
+            }
+        }, 500);
+        
+        // Notificação de sucesso detalhada
+        const statusMessage = [];
+        if (firebaseSaved) statusMessage.push('Firebase ✅');
+        if (localStorageSaved) statusMessage.push('LocalStorage ✅');
+        
+        showNotification(`⚙️ Configurações salvas com sucesso! (${statusMessage.join(', ')})`, 'success');
+        console.log('✅ Configurações salvas com sucesso!');
+        
+        // Mostrar mensagem detalhada
+        alert(`✅ CONFIGURAÇÕES SALVAS!\n\n` +
+            `💾 Salvamento: ${statusMessage.join(', ')}\n\n` +
+            `📊 Total de números: ${newConfig.totalNumbers}\n` +
+            `💰 Preço por bilhete: R$ ${newConfig.ticketPrice.toFixed(2)}\n` +
+            `👶 Nome do bebê: ${newConfig.babyName}\n` +
+            `📱 Telefone: ${newConfig.contactPhone}\n` +
+            `📧 Email: ${newConfig.contactEmail}\n` +
+            `💳 PIX: ${newConfig.pixKey}\n\n` +
+            `🏆 Prêmios:\n` +
+            `   1º: ${newConfig.prizes.first}\n` +
+            `   2º: ${newConfig.prizes.second}\n` +
+            `   3º: ${newConfig.prizes.third}`);
+        
+    } catch (error) {
+        console.error('❌ Erro ao salvar configurações:', error);
+        showNotification('❌ Erro ao salvar configurações: ' + error.message, 'error');
+        alert('❌ Erro ao salvar configurações:\n\n' + error.message);
     }
-}, 3000);
+}
 
-console.log('✅ Admin.js carregado completamente - versão corrigida para confirmação de botões');
-console.log('🎯 Event delegation ativo e funções expostas globalmente');
-console.log('🧪 Use createSampleData() para criar dados de teste');
-console.log('🚨 EMERGÊNCIA: Use forcarBotoesEmergencia() se botões não aparecerem');
-console.log('🔄 Sistema de auto-sync implementado - Use refreshData() para atualizar manualmente');
+// ===== AÇÕES RÁPIDAS =====
+
+/**
+ * Reseta todos os números e apaga todos os dados de participantes
+ */
+async function resetAllNumbers() {
+    console.log('🔄 Iniciando reset de todos os números...');
+    
+    // Confirmação dupla para segurança
+    const confirmMessage = `⚠️ ATENÇÃO: Esta ação irá APAGAR PERMANENTEMENTE todos os dados de participantes!
+
+Isso inclui:
+• Todas as compras/participações
+• Todos os números vendidos
+• Histórico de pagamentos
+• Dados de contato dos participantes
+
+Esta ação NÃO PODE SER DESFEITA!
+
+Digite "CONFIRMAR RESET" para prosseguir:`;
+
+    const userConfirmation = prompt(confirmMessage);
+    
+    if (userConfirmation !== 'CONFIRMAR RESET') {
+        console.log('❌ Reset cancelado pelo usuário');
+        showNotification('Reset cancelado', 'warning');
+        return;
+    }
+
+    // Segunda confirmação
+    const finalConfirm = confirm('⚠️ ÚLTIMA CONFIRMAÇÃO: Tem certeza absoluta que deseja apagar TODOS os dados de participantes? Esta ação é IRREVERSÍVEL!');
+    
+    if (!finalConfirm) {
+        console.log('❌ Reset cancelado na confirmação final');
+        showNotification('Reset cancelado', 'warning');
+        return;
+    }
+
+    try {
+        showNotification('🔄 Iniciando reset completo...', 'info');
+        console.log('🗑️ Iniciando exclusão de todos os dados...');
+
+        let deletedCount = 0;
+        let errorCount = 0;
+
+        // Verificar se Firebase está disponível
+        if (window.FirebaseDB && typeof window.FirebaseDB.deleteAllDocuments === 'function') {
+            console.log('🔥 Conectando ao Firebase para exclusão em massa...');
+            
+            // Usar função otimizada para deletar todos os documentos
+            const result = await window.FirebaseDB.deleteAllDocuments('purchases');
+            
+            if (result.success) {
+                deletedCount = result.deletedCount || 0;
+                errorCount = result.errorCount || 0;
+                console.log(`✅ Exclusão em massa concluída: ${deletedCount} deletados, ${errorCount} erros`);
+            } else {
+                console.error('❌ Erro na exclusão em massa:', result.error);
+                errorCount = 1;
+            }
+        } else if (window.FirebaseDB && typeof window.FirebaseDB.getAllDocuments === 'function') {
+            console.log('🔥 Conectando ao Firebase (método individual)...');
+            
+            // Fallback: buscar e deletar individualmente
+            const result = await window.FirebaseDB.getAllDocuments('purchases');
+            
+            if (result.success && result.data && result.data.length > 0) {
+                console.log(`📊 Encontrados ${result.data.length} registros para deletar`);
+                
+                // Deletar cada documento individualmente
+                for (const purchase of result.data) {
+                    try {
+                        console.log(`🗑️ Deletando compra ID: ${purchase.id}`);
+                        
+                        const deleteResult = await window.FirebaseDB.deleteDocument('purchases', purchase.id);
+                        
+                        if (deleteResult.success) {
+                            deletedCount++;
+                            console.log(`✅ Compra ${purchase.id} deletada com sucesso`);
+                        } else {
+                            errorCount++;
+                            console.error(`❌ Erro ao deletar compra ${purchase.id}:`, deleteResult.error);
+                        }
+                    } catch (deleteError) {
+                        errorCount++;
+                        console.error(`❌ Erro ao deletar compra ${purchase.id}:`, deleteError);
+                    }
+                }
+                
+                console.log(`📊 Reset completo: ${deletedCount} deletados, ${errorCount} erros`);
+            } else {
+                console.log('ℹ️ Nenhum registro encontrado no Firebase');
+            }
+        } else {
+            console.warn('⚠️ Firebase não disponível, limpando apenas dados locais');
+        }
+
+        // Limpar dados locais
+        try {
+            localStorage.removeItem('adminData');
+            localStorage.removeItem('purchases');
+            localStorage.removeItem('participants');
+            console.log('🧹 Dados locais limpos');
+        } catch (localError) {
+            console.warn('⚠️ Erro ao limpar dados locais:', localError);
+        }
+
+        // Resetar dados em memória
+        adminData.purchases = [];
+        adminData.participants = [];
+
+        // Atualizar interface
+        updateInterface();
+        updateDashboard();
+        loadParticipants();
+
+        // Notificação de sucesso
+        const successMessage = deletedCount > 0 
+            ? `✅ Reset completo! ${deletedCount} registros deletados${errorCount > 0 ? `, ${errorCount} erros` : ''}`
+            : '✅ Reset completo! Todos os dados foram limpos';
+
+        showNotification(successMessage, 'success');
+        console.log('🎉 Reset de todos os números concluído com sucesso');
+
+    } catch (error) {
+        console.error('❌ Erro durante o reset:', error);
+        showNotification(`❌ Erro durante o reset: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Exporta lista de participantes
+ */
+function exportParticipants() {
+    console.log('📥 Iniciando exportação de participantes...');
+    
+    try {
+        // Verificar se há dados para exportar
+        const purchases = adminData.purchases || [];
+        
+        if (purchases.length === 0) {
+            showNotification('⚠️ Nenhum participante para exportar', 'warning');
+            return;
+        }
+
+        // Preparar dados para exportação
+        const exportData = purchases.map(purchase => ({
+            'Nome': purchase.name || 'N/A',
+            'Telefone': purchase.phone || 'N/A',
+            'Números': Array.isArray(purchase.numbers) ? purchase.numbers.join(', ') : 'N/A',
+            'Método de Pagamento': getPaymentMethodText(purchase.paymentMethod),
+            'Status': getStatusText(purchase.status),
+            'Data da Compra': purchase.timestamp ? formatDate(purchase.timestamp) : 'N/A',
+            'Total': purchase.total ? formatCurrency(purchase.total) : 'N/A'
+        }));
+
+        // Converter para CSV
+        const headers = Object.keys(exportData[0]);
+        const csvContent = [
+            headers.join(','),
+            ...exportData.map(row => 
+                headers.map(header => `"${row[header] || ''}"`).join(',')
+            )
+        ].join('\n');
+
+        // Criar arquivo para download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `participantes_rifa_thomas_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        showNotification(`✅ Lista de ${purchases.length} participantes exportada com sucesso!`, 'success');
+        console.log('📥 Exportação concluída com sucesso');
+
+    } catch (error) {
+        console.error('❌ Erro na exportação:', error);
+        showNotification(`❌ Erro na exportação: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Realiza o sorteio dos prêmios
+ */
+async function performDraw() {
+    console.log('🎲 Iniciando sorteio...');
+    
+    try {
+        // Buscar números vendidos e confirmados
+        const confirmedPurchases = (adminData.purchases || []).filter(purchase => 
+            purchase.status === 'confirmed' && purchase.numbers && purchase.numbers.length > 0
+        );
+
+        if (confirmedPurchases.length === 0) {
+            showNotification('⚠️ Nenhum número confirmado para o sorteio', 'warning');
+            return;
+        }
+
+        // Coletar todos os números confirmados
+        const allConfirmedNumbers = [];
+        confirmedPurchases.forEach(purchase => {
+            purchase.numbers.forEach(number => {
+                allConfirmedNumbers.push({
+                    number: number,
+                    participant: purchase.name,
+                    phone: purchase.phone,
+                    purchaseId: purchase.id
+                });
+            });
+        });
+
+        if (allConfirmedNumbers.length === 0) {
+            showNotification('⚠️ Nenhum número válido para o sorteio', 'warning');
+            return;
+        }
+
+        // Confirmação do sorteio
+        const confirmDraw = confirm(`🎲 Realizar sorteio agora?\n\nTotal de números participantes: ${allConfirmedNumbers.length}\nTotal de participantes: ${confirmedPurchases.length}\n\nEsta ação não pode ser desfeita!`);
+        
+        if (!confirmDraw) {
+            console.log('❌ Sorteio cancelado pelo usuário');
+            return;
+        }
+
+        // Realizar sorteio
+        const shuffled = allConfirmedNumbers.sort(() => 0.5 - Math.random());
+        
+        const firstPrize = shuffled[0];
+        const secondPrize = shuffled[1];
+
+        // Criar resultado do sorteio
+        const drawResult = {
+            date: new Date().toISOString(),
+            timestamp: Date.now(),
+            totalParticipants: confirmedPurchases.length,
+            totalNumbers: allConfirmedNumbers.length,
+            firstPrize: {
+                number: firstPrize.number,
+                participant: firstPrize.participant,
+                phone: firstPrize.phone,
+                prize: 'R$ 200,00'
+            },
+            secondPrize: {
+                number: secondPrize.number,
+                participant: secondPrize.participant,
+                phone: secondPrize.phone,
+                prize: 'R$ 100,00'
+            }
+        };
+
+        // Salvar resultado do sorteio
+        if (window.FirebaseDB && typeof window.FirebaseDB.saveDocument === 'function') {
+            try {
+                await window.FirebaseDB.saveDocument('draw_results', 'latest', drawResult);
+                console.log('💾 Resultado do sorteio salvo no Firebase');
+            } catch (saveError) {
+                console.warn('⚠️ Erro ao salvar no Firebase:', saveError);
+            }
+        }
+
+        // Salvar localmente também
+        localStorage.setItem('lastDrawResult', JSON.stringify(drawResult));
+
+        // Mostrar resultado
+        const resultMessage = `🎉 SORTEIO REALIZADO COM SUCESSO! 🎉
+
+🥇 1º PRÊMIO (R$ 200,00):
+   Número: ${firstPrize.number}
+   Ganhador: ${firstPrize.participant}
+   Telefone: ${firstPrize.phone}
+
+🥈 2º PRÊMIO (R$ 100,00):
+   Número: ${secondPrize.number}
+   Ganhador: ${secondPrize.participant}
+   Telefone: ${secondPrize.phone}
+
+Total de participantes: ${confirmedPurchases.length}
+Total de números: ${allConfirmedNumbers.length}
+Data: ${new Date().toLocaleString('pt-BR')}`;
+
+        alert(resultMessage);
+        showNotification('🎉 Sorteio realizado com sucesso!', 'success');
+        console.log('🎲 Sorteio concluído:', drawResult);
+
+    } catch (error) {
+        console.error('❌ Erro durante o sorteio:', error);
+        showNotification(`❌ Erro durante o sorteio: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Deleta um participante específico
+ */
+async function deleteParticipant(purchaseId) {
+    console.log(`🗑️ Iniciando exclusão do participante: ${purchaseId}`);
+    
+    try {
+        // Buscar dados do participante
+        const purchase = adminData.purchases.find(p => p.id === purchaseId);
+        
+        if (!purchase) {
+            showNotification('❌ Participante não encontrado', 'error');
+            return;
+        }
+
+        // Confirmação
+        const confirmDelete = confirm(`⚠️ Confirmar exclusão?\n\nParticipante: ${purchase.name}\nTelefone: ${purchase.phone}\nNúmeros: ${purchase.numbers?.join(', ') || 'N/A'}\n\nEsta ação não pode ser desfeita!`);
+        
+        if (!confirmDelete) {
+            console.log('❌ Exclusão cancelada pelo usuário');
+            return;
+        }
+
+        // Deletar do Firebase
+        if (window.FirebaseDB && typeof window.FirebaseDB.deleteDocument === 'function') {
+            try {
+                const result = await window.FirebaseDB.deleteDocument('purchases', purchaseId);
+                if (result.success) {
+                    console.log('✅ Participante deletado do Firebase');
+                } else {
+                    console.warn('⚠️ Erro ao deletar do Firebase:', result.error);
+                }
+            } catch (firebaseError) {
+                console.warn('⚠️ Erro na conexão com Firebase:', firebaseError);
+            }
+        }
+
+        // Remover dos dados locais
+        adminData.purchases = adminData.purchases.filter(p => p.id !== purchaseId);
+
+        // Atualizar interface
+        updateInterface();
+        updateDashboard();
+        loadParticipants();
+
+        showNotification('✅ Participante excluído com sucesso', 'success');
+        console.log(`✅ Participante ${purchaseId} excluído com sucesso`);
+
+    } catch (error) {
+        console.error('❌ Erro ao excluir participante:', error);
+        showNotification(`❌ Erro ao excluir: ${error.message}`, 'error');
+    }
+}

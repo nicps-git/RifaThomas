@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Teste - Ações Rápidas Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .warning { background-color: #fff3cd; color: #856404; }
+        
+        .test-section {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        .danger-btn {
+            background-color: #dc3545 !important;
+        }
+        
+        .danger-btn:hover {
+            background-color: #c82333 !important;
+        }
+        
+        .success-btn {
+            background-color: #28a745 !important;
+        }
+        
+        .success-btn:hover {
+            background-color: #218838 !important;
+        }
+        
+        .log {
+            background-color: #212529;
+            color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .function-info {
+            background: linear-gradient(45deg, #17a2b8, #138496);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste das Ações Rápidas do Admin</h1>
+        <p>Este teste verifica se as funções <code>resetAllNumbers()</code>, <code>exportParticipants()</code> e <code>performDraw()</code> foram implementadas corretamente.</p>
+        
+        <div id="connectionStatus" class="status info">
+            🔄 Verificando funções...
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Status das Funções</h2>
+        
+        <div class="test-section">
+            <h3>🗑️ resetAllNumbers()</h3>
+            <div id="resetStatus" class="status info">Verificando...</div>
+            <p><strong>Função:</strong> Apaga todos os dados de participantes permanentemente</p>
+            <p><strong>Segurança:</strong> Dupla confirmação obrigatória</p>
+            <button onclick="testResetFunction()" class="danger-btn">⚠️ Testar Função Reset</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📥 exportParticipants()</h3>
+            <div id="exportStatus" class="status info">Verificando...</div>
+            <p><strong>Função:</strong> Exporta lista de participantes em CSV</p>
+            <p><strong>Formato:</strong> Nome, telefone, números, pagamento, status</p>
+            <button onclick="testExportFunction()" class="success-btn">📥 Testar Exportação</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎲 performDraw()</h3>
+            <div id="drawStatus" class="status info">Verificando...</div>
+            <p><strong>Função:</strong> Realiza sorteio dos prêmios automaticamente</p>
+            <p><strong>Critério:</strong> Apenas números confirmados participam</p>
+            <button onclick="testDrawFunction()">🎲 Testar Sorteio</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🗑️ deleteParticipant()</h3>
+            <div id="deleteStatus" class="status info">Verificando...</div>
+            <p><strong>Função:</strong> Remove participante específico</p>
+            <p><strong>Uso:</strong> Chamada automaticamente pelos botões de ação</p>
+            <button onclick="testDeleteFunction()">🧪 Testar Exclusão</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔗 Links de Teste</h2>
+        <div style="text-align: center;">
+            <button onclick="openAdmin()">🔧 Abrir Painel Admin</button>
+            <button onclick="openMainPage()">🏠 Página Principal</button>
+            <button onclick="createTestData()">🧪 Criar Dados de Teste</button>
+        </div>
+        
+        <div class="function-info">
+            <h3>💡 Como Usar as Funções:</h3>
+            <ul>
+                <li><strong>Reset:</strong> Use com EXTREMA cautela - apaga TODOS os dados</li>
+                <li><strong>Export:</strong> Gera arquivo CSV com lista completa de participantes</li>
+                <li><strong>Sorteio:</strong> Seleciona vencedores automaticamente entre números confirmados</li>
+                <li><strong>Delete:</strong> Remove participante individual (usado pelos botões de ação)</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 Log de Teste</h2>
+        <div id="logArea" class="log">
+            === TESTE DAS FUNÇÕES INICIADO ===
+        </div>
+        <button onclick="clearLog()">🗑️ Limpar Log</button>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+    <script>
+        function log(message, level = 'info') {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const levelIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            }[level] || 'ℹ️';
+            
+            logArea.innerHTML += `\n[${timestamp}] ${levelIcon} ${message}`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+        
+        function checkFunction(functionName) {
+            if (typeof window[functionName] === 'function') {
+                log(`✅ Função ${functionName} encontrada e disponível`, 'success');
+                return true;
+            } else {
+                log(`❌ Função ${functionName} NÃO encontrada`, 'error');
+                return false;
+            }
+        }
+        
+        function testResetFunction() {
+            log('🧪 Testando função resetAllNumbers...');
+            
+            if (checkFunction('resetAllNumbers')) {
+                updateStatus('resetStatus', '✅ Função resetAllNumbers disponível', 'success');
+                
+                const testReset = confirm('⚠️ ATENÇÃO: Deseja realmente testar a função de reset?\n\nIsso pode apagar dados reais se houver algum!\n\nRecomendo testar apenas com dados de teste.');
+                
+                if (testReset) {
+                    log('🚨 Usuário confirmou teste de reset', 'warning');
+                    try {
+                        window.resetAllNumbers();
+                        log('✅ Função resetAllNumbers executada', 'success');
+                    } catch (error) {
+                        log(`❌ Erro ao executar resetAllNumbers: ${error.message}`, 'error');
+                    }
+                } else {
+                    log('ℹ️ Teste de reset cancelado pelo usuário', 'info');
+                }
+            } else {
+                updateStatus('resetStatus', '❌ Função resetAllNumbers NÃO encontrada', 'error');
+            }
+        }
+        
+        function testExportFunction() {
+            log('🧪 Testando função exportParticipants...');
+            
+            if (checkFunction('exportParticipants')) {
+                updateStatus('exportStatus', '✅ Função exportParticipants disponível', 'success');
+                
+                try {
+                    window.exportParticipants();
+                    log('✅ Função exportParticipants executada', 'success');
+                } catch (error) {
+                    log(`❌ Erro ao executar exportParticipants: ${error.message}`, 'error');
+                }
+            } else {
+                updateStatus('exportStatus', '❌ Função exportParticipants NÃO encontrada', 'error');
+            }
+        }
+        
+        function testDrawFunction() {
+            log('🧪 Testando função performDraw...');
+            
+            if (checkFunction('performDraw')) {
+                updateStatus('drawStatus', '✅ Função performDraw disponível', 'success');
+                
+                const testDraw = confirm('🎲 Deseja testar a função de sorteio?\n\nSe houver dados reais, um sorteio real será realizado!');
+                
+                if (testDraw) {
+                    log('🎲 Usuário confirmou teste de sorteio', 'info');
+                    try {
+                        window.performDraw();
+                        log('✅ Função performDraw executada', 'success');
+                    } catch (error) {
+                        log(`❌ Erro ao executar performDraw: ${error.message}`, 'error');
+                    }
+                } else {
+                    log('ℹ️ Teste de sorteio cancelado pelo usuário', 'info');
+                }
+            } else {
+                updateStatus('drawStatus', '❌ Função performDraw NÃO encontrada', 'error');
+            }
+        }
+        
+        function testDeleteFunction() {
+            log('🧪 Testando função deleteParticipant...');
+            
+            if (checkFunction('deleteParticipant')) {
+                updateStatus('deleteStatus', '✅ Função deleteParticipant disponível', 'success');
+                log('ℹ️ Função deleteParticipant encontrada (usada pelos botões de ação)', 'info');
+            } else {
+                updateStatus('deleteStatus', '❌ Função deleteParticipant NÃO encontrada', 'error');
+            }
+        }
+        
+        function createTestData() {
+            log('🧪 Tentando criar dados de teste...');
+            
+            if (checkFunction('createSampleData')) {
+                try {
+                    window.createSampleData();
+                    log('✅ Dados de teste criados', 'success');
+                } catch (error) {
+                    log(`❌ Erro ao criar dados de teste: ${error.message}`, 'error');
+                }
+            } else {
+                log('⚠️ Função createSampleData não encontrada', 'warning');
+            }
+        }
+        
+        function openAdmin() {
+            window.open('admin.html', '_blank');
+            log('🔧 Painel admin aberto', 'info');
+        }
+        
+        function openMainPage() {
+            window.open('index.html', '_blank');
+            log('🏠 Página principal aberta', 'info');
+        }
+        
+        function clearLog() {
+            document.getElementById('logArea').innerHTML = '=== LOG LIMPO ===';
+        }
+        
+        // Verificação inicial
+        function init() {
+            log('🔧 Iniciando verificação das funções de ações rápidas...');
+            
+            // Verificar todas as funções
+            const functions = ['resetAllNumbers', 'exportParticipants', 'performDraw', 'deleteParticipant'];
+            let allFound = true;
+            
+            functions.forEach(funcName => {
+                if (!checkFunction(funcName)) {
+                    allFound = false;
+                }
+            });
+            
+            if (allFound) {
+                updateStatus('connectionStatus', '✅ Todas as funções estão disponíveis!', 'success');
+                log('🎉 Todas as funções de ações rápidas estão implementadas', 'success');
+            } else {
+                updateStatus('connectionStatus', '⚠️ Algumas funções estão faltando', 'warning');
+                log('⚠️ Nem todas as funções estão disponíveis', 'warning');
+            }
+            
+            // Verificar status individual
+            setTimeout(() => {
+                testResetFunction();
+                testExportFunction();
+                testDrawFunction();
+                testDeleteFunction();
+            }, 1000);
+        }
+        
+        // Iniciar quando carregar
+        window.addEventListener('load', () => {
+            setTimeout(init, 500);
+        });
+    </script>
+</body>
+</html>

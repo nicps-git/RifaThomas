@@ -252,6 +252,105 @@
                 });
             },
 
+            // Salvar configuração da rifa
+            async saveConfig(config) {
+                try {
+                    console.log('💾 Salvando configuração...', config);
+                    const docRef = db.collection('rifa_config').doc('main');
+                    
+                    const configWithTimestamp = {
+                        ...config,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastModified: new Date().toISOString()
+                    };
+                    
+                    await docRef.set(configWithTimestamp, { merge: true });
+                    console.log('✅ Configuração salva');
+                    return { success: true };
+                } catch (error) {
+                    console.error('❌ Erro ao salvar configuração:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            // Carregar configuração da rifa
+            async loadConfig() {
+                try {
+                    console.log('📖 Carregando configuração...');
+                    const docRef = db.collection('rifa_config').doc('main');
+                    const doc = await docRef.get();
+                    
+                    if (doc.exists) {
+                        console.log('✅ Configuração carregada');
+                        return { success: true, data: doc.data() };
+                    } else {
+                        console.log('⚠️ Configuração não encontrada');
+                        return { success: false, error: 'Configuração não encontrada' };
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao carregar configuração:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            // Escutar mudanças em tempo real
+            listenToChanges(collection, callback) {
+                try {
+                    console.log(`👂 Escutando mudanças em: ${collection}`);
+                    
+                    let query = db.collection(collection);
+                    
+                    // Aplicar ordenação apenas para coleções que têm timestamp
+                    if (collection === 'purchases') {
+                        query = query.orderBy('timestamp', 'desc');
+                    }
+                    
+                    const unsubscribe = query.onSnapshot(snapshot => {
+                        console.log(`📥 Snapshot recebido: ${snapshot.size} documentos em ${collection}`);
+                        const data = [];
+                        
+                        snapshot.forEach(doc => {
+                            const docData = doc.data();
+                            data.push({
+                                id: doc.id,
+                                ...docData
+                            });
+                            
+                            // Log detalhado para debug
+                            if (collection === 'purchases') {
+                                console.log(`📋 Doc ${doc.id}:`, {
+                                    status: docData.status,
+                                    numbers: docData.numbers,
+                                    buyerName: docData.buyerName
+                                });
+                            } else if (collection === 'rifa_config') {
+                                console.log(`⚙️ Config ${doc.id}:`, {
+                                    totalNumbers: docData.totalNumbers,
+                                    ticketPrice: docData.ticketPrice,
+                                    pixKey: docData.pixKey
+                                });
+                            }
+                        });
+                        
+                        console.log(`🔄 Chamando callback com ${data.length} itens`);
+                        callback(data);
+                    }, error => {
+                        console.error('❌ Erro no listener:', error);
+                        // Tentar reconectar em caso de erro
+                        setTimeout(() => {
+                            console.log('🔄 Tentando reconectar listener...');
+                            this.listenToChanges(collection, callback);
+                        }, 5000);
+                    });
+                    
+                    console.log('✅ Listener configurado com ordenação e error handling');
+                    return unsubscribe;
+                } catch (error) {
+                    console.error('❌ Erro ao configurar listener:', error);
+                    return null;
+                }
+            },
+
             // Atualizar status da compra
             async updatePurchaseStatus(purchaseId, status, additionalData = {}) {
                 try {
@@ -433,6 +532,105 @@
                 });
             },
 
+            // Salvar configuração da rifa
+            async saveConfig(config) {
+                try {
+                    console.log('💾 Salvando configuração...', config);
+                    const docRef = doc(db, 'rifa_config', 'main');
+                    
+                    const configWithTimestamp = {
+                        ...config,
+                        updatedAt: new Date(),
+                        lastModified: new Date().toISOString()
+                    };
+                    
+                    await setDoc(docRef, configWithTimestamp, { merge: true });
+                    console.log('✅ Configuração salva');
+                    return { success: true };
+                } catch (error) {
+                    console.error('❌ Erro ao salvar configuração:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            // Carregar configuração da rifa
+            async loadConfig() {
+                try {
+                    console.log('📖 Carregando configuração...');
+                    const docRef = doc(db, 'rifa_config', 'main');
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        console.log('✅ Configuração carregada');
+                        return { success: true, data: docSnap.data() };
+                    } else {
+                        console.log('⚠️ Configuração não encontrada');
+                        return { success: false, error: 'Configuração não encontrada' };
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao carregar configuração:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            // Escutar mudanças em tempo real
+            listenToChanges(collectionName, callback) {
+                try {
+                    console.log(`👂 Escutando mudanças em: ${collectionName}`);
+                    
+                    let queryRef = collection(db, collectionName);
+                    
+                    // Aplicar ordenação apenas para coleções que têm timestamp
+                    if (collectionName === 'purchases') {
+                        queryRef = query(queryRef, orderBy('createdAt', 'desc'));
+                    }
+                    
+                    const unsubscribe = onSnapshot(queryRef, (snapshot) => {
+                        console.log(`📥 Snapshot recebido: ${snapshot.size} documentos em ${collectionName}`);
+                        const data = [];
+                        
+                        snapshot.forEach(docSnapshot => {
+                            const docData = docSnapshot.data();
+                            data.push({
+                                id: docSnapshot.id,
+                                ...docData
+                            });
+                            
+                            // Log detalhado para debug
+                            if (collectionName === 'purchases') {
+                                console.log(`📋 Doc ${docSnapshot.id}:`, {
+                                    status: docData.status,
+                                    numbers: docData.numbers,
+                                    buyerName: docData.buyerName
+                                });
+                            } else if (collectionName === 'rifa_config') {
+                                console.log(`⚙️ Config ${docSnapshot.id}:`, {
+                                    totalNumbers: docData.totalNumbers,
+                                    ticketPrice: docData.ticketPrice,
+                                    pixKey: docData.pixKey
+                                });
+                            }
+                        });
+                        
+                        console.log(`🔄 Chamando callback com ${data.length} itens`);
+                        callback(data);
+                    }, (error) => {
+                        console.error('❌ Erro no listener:', error);
+                        // Tentar reconectar em caso de erro
+                        setTimeout(() => {
+                            console.log('🔄 Tentando reconectar listener...');
+                            this.listenToChanges(collectionName, callback);
+                        }, 5000);
+                    });
+                    
+                    console.log('✅ Listener configurado com ordenação e error handling');
+                    return unsubscribe;
+                } catch (error) {
+                    console.error('❌ Erro ao configurar listener:', error);
+                    return null;
+                }
+            },
+
             async updatePurchaseStatus(purchaseId, status, additionalData = {}) {
                 try {
                     console.log(`🔄 Atualizando compra ${purchaseId} para ${status}`);
@@ -520,6 +718,74 @@
                     const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
                     callback(purchases);
                 }, 100);
+                return () => {}; // mock unsubscribe
+            },
+
+            // Salvar configuração da rifa (mock)
+            async saveConfig(config) {
+                try {
+                    console.log('💾 Salvando configuração no localStorage...', config);
+                    const configWithTimestamp = {
+                        ...config,
+                        updatedAt: new Date(),
+                        lastModified: new Date().toISOString()
+                    };
+                    localStorage.setItem('rifa_config', JSON.stringify(configWithTimestamp));
+                    console.log('✅ Configuração salva no localStorage');
+                    return { success: true };
+                } catch (error) {
+                    console.error('❌ Erro ao salvar configuração:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            // Carregar configuração da rifa (mock)
+            async loadConfig() {
+                try {
+                    console.log('📖 Carregando configuração do localStorage...');
+                    const configData = localStorage.getItem('rifa_config');
+                    
+                    if (configData) {
+                        console.log('✅ Configuração carregada do localStorage');
+                        return { success: true, data: JSON.parse(configData) };
+                    } else {
+                        console.log('⚠️ Configuração não encontrada no localStorage');
+                        return { success: false, error: 'Configuração não encontrada' };
+                    }
+                } catch (error) {
+                    console.error('❌ Erro ao carregar configuração:', error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            // Escutar mudanças em tempo real (mock)
+            listenToChanges(collectionName, callback) {
+                console.log(`👂 Mock listener para: ${collectionName}`);
+                
+                if (collectionName === 'rifa_config') {
+                    // Para configurações, simular listener
+                    const checkConfig = () => {
+                        const configData = localStorage.getItem('rifa_config');
+                        if (configData) {
+                            const config = JSON.parse(configData);
+                            callback([{ id: 'main', ...config }]);
+                        } else {
+                            callback([]);
+                        }
+                    };
+                    
+                    // Chamar imediatamente
+                    setTimeout(checkConfig, 100);
+                    
+                    // Simular listener periódico
+                    const interval = setInterval(checkConfig, 2000);
+                    
+                    return () => clearInterval(interval); // mock unsubscribe
+                } else if (collectionName === 'purchases') {
+                    // Para compras, usar listener existente
+                    return this.onPurchasesChange(callback);
+                }
+                
                 return () => {}; // mock unsubscribe
             },
 

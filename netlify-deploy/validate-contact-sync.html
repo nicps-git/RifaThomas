@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validação de Sincronização de Contatos - Teste Completo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        .test-section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .test-card h3 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        .status.warning {
+            background: #fef2c7;
+            color: #744210;
+            border: 1px solid #f6e05e;
+        }
+        .test-button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        .test-button:hover {
+            background: #3182ce;
+        }
+        .contact-display {
+            padding: 15px;
+            background: #edf2f7;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .contact-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #4299e1;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4a5568;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        .log-area {
+            background: #1a202c;
+            color: #a0aec0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Validação de Sincronização de Contatos</h1>
+        
+        <div class="test-section">
+            <h2>📋 Status Atual dos Contatos</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>🏠 Página Principal (index.html)</h3>
+                    <div class="contact-display" id="main-page-contacts">
+                        <div class="contact-item">
+                            📱 Telefone: <span id="main-phone">Carregando...</span>
+                        </div>
+                        <div class="contact-item">
+                            📧 Email: <span id="main-email">Carregando...</span>
+                        </div>
+                        <div class="contact-item">
+                            💳 PIX: <span id="main-pix">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="test-card">
+                    <h3>🔥 Firebase/Config</h3>
+                    <div class="contact-display" id="firebase-contacts">
+                        <div class="contact-item">
+                            📱 Telefone: <span id="firebase-phone">Carregando...</span>
+                        </div>
+                        <div class="contact-item">
+                            📧 Email: <span id="firebase-email">Carregando...</span>
+                        </div>
+                        <div class="contact-item">
+                            💳 PIX: <span id="firebase-pix">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🧪 Teste de Configuração</h2>
+            <div class="form-group">
+                <label for="test-phone">Telefone de Teste:</label>
+                <input type="tel" id="test-phone" value="(11) 98765-4321" placeholder="(11) 99999-9999">
+            </div>
+            <div class="form-group">
+                <label for="test-email">Email de Teste:</label>
+                <input type="email" id="test-email" value="teste@novocontato.com" placeholder="contato@exemplo.com">
+            </div>
+            <div class="form-group">
+                <label for="test-pix">PIX de Teste:</label>
+                <input type="text" id="test-pix" value="pix@testekey.com" placeholder="chave@pix.com">
+            </div>
+            <button class="test-button" onclick="testConfigurationSync()">🔄 Testar Sincronização</button>
+            <button class="test-button" onclick="reloadCurrentConfig()">🔄 Recarregar Config Atual</button>
+            <button class="test-button" onclick="validateMainPageElements()">✅ Validar Elementos da Página</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Status da Validação</h2>
+            <div id="validation-status"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Log de Debug</h2>
+            <div class="log-area" id="debug-log"></div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        let debugLog = '';
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            debugLog += `[${timestamp}] ${message}\n`;
+            document.getElementById('debug-log').textContent = debugLog;
+            document.getElementById('debug-log').scrollTop = document.getElementById('debug-log').scrollHeight;
+            console.log(message);
+        }
+        
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('validation-status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        async function loadCurrentContactInfo() {
+            addLog('🔍 Carregando informações de contato atuais...');
+            
+            try {
+                // Carregar da página principal
+                const mainPageFrame = document.createElement('iframe');
+                mainPageFrame.style.display = 'none';
+                mainPageFrame.src = 'index.html';
+                document.body.appendChild(mainPageFrame);
+                
+                mainPageFrame.onload = function() {
+                    try {
+                        const frameDoc = mainPageFrame.contentDocument || mainPageFrame.contentWindow.document;
+                        
+                        const phoneEl = frameDoc.querySelector('[data-contact-phone]');
+                        const emailEl = frameDoc.querySelector('[data-contact-email]');
+                        const pixEl = frameDoc.querySelector('[data-pix-key]');
+                        
+                        document.getElementById('main-phone').textContent = phoneEl ? phoneEl.textContent : 'Não encontrado';
+                        document.getElementById('main-email').textContent = emailEl ? emailEl.textContent : 'Não encontrado';
+                        document.getElementById('main-pix').textContent = pixEl ? pixEl.textContent : 'Não encontrado';
+                        
+                        addLog('✅ Informações da página principal carregadas');
+                        document.body.removeChild(mainPageFrame);
+                    } catch (error) {
+                        addLog('❌ Erro ao carregar da página principal: ' + error.message);
+                        document.body.removeChild(mainPageFrame);
+                    }
+                };
+                
+                // Carregar do Firebase/Config
+                if (typeof loadConfig === 'function') {
+                    const config = await loadConfig();
+                    if (config) {
+                        document.getElementById('firebase-phone').textContent = config.contactPhone || 'Não definido';
+                        document.getElementById('firebase-email').textContent = config.contactEmail || 'Não definido';
+                        document.getElementById('firebase-pix').textContent = config.pixKey || 'Não definido';
+                        addLog('✅ Configuração do Firebase carregada');
+                    } else {
+                        addLog('⚠️ Nenhuma configuração encontrada no Firebase');
+                    }
+                } else {
+                    addLog('⚠️ Função loadConfig não disponível - usando mock');
+                    // Mock para teste local
+                    document.getElementById('firebase-phone').textContent = '(11) 99999-9999';
+                    document.getElementById('firebase-email').textContent = 'contato@rifaonline.com';
+                    document.getElementById('firebase-pix').textContent = 'contato@rifaonline.com';
+                }
+                
+            } catch (error) {
+                addLog('❌ Erro ao carregar informações: ' + error.message);
+                showStatus('Erro ao carregar informações de contato: ' + error.message, 'error');
+            }
+        }
+        
+        async function testConfigurationSync() {
+            addLog('🧪 Iniciando teste de sincronização...');
+            
+            const testPhone = document.getElementById('test-phone').value;
+            const testEmail = document.getElementById('test-email').value;
+            const testPix = document.getElementById('test-pix').value;
+            
+            if (!testPhone || !testEmail || !testPix) {
+                showStatus('Por favor, preencha todos os campos de teste', 'error');
+                return;
+            }
+            
+            const testConfig = {
+                contactPhone: testPhone,
+                contactEmail: testEmail,
+                pixKey: testPix,
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                addLog('📤 Salvando configuração de teste...');
+                
+                if (typeof saveConfig === 'function') {
+                    await saveConfig(testConfig);
+                    addLog('✅ Configuração salva no Firebase');
+                } else {
+                    addLog('⚠️ Função saveConfig não disponível - simulando save');
+                }
+                
+                // Aguardar um pouco para a sincronização
+                setTimeout(() => {
+                    addLog('🔄 Recarregando informações após teste...');
+                    loadCurrentContactInfo();
+                    showStatus('Teste de sincronização concluído! Verifique se os valores foram atualizados.', 'success');
+                }, 2000);
+                
+            } catch (error) {
+                addLog('❌ Erro no teste de sincronização: ' + error.message);
+                showStatus('Erro no teste: ' + error.message, 'error');
+            }
+        }
+        
+        async function reloadCurrentConfig() {
+            addLog('🔄 Recarregando configuração atual...');
+            await loadCurrentContactInfo();
+            showStatus('Configuração recarregada', 'success');
+        }
+        
+        function validateMainPageElements() {
+            addLog('✅ Validando elementos da página principal...');
+            
+            // Criar iframe para verificar elementos
+            const validationFrame = document.createElement('iframe');
+            validationFrame.style.display = 'none';
+            validationFrame.src = 'index.html';
+            document.body.appendChild(validationFrame);
+            
+            validationFrame.onload = function() {
+                try {
+                    const frameDoc = validationFrame.contentDocument || validationFrame.contentWindow.document;
+                    
+                    const phoneEl = frameDoc.querySelector('[data-contact-phone]');
+                    const emailEl = frameDoc.querySelector('[data-contact-email]');
+                    const pixEl = frameDoc.querySelector('[data-pix-key]');
+                    
+                    let validation = [];
+                    
+                    if (phoneEl) {
+                        validation.push('✅ Elemento [data-contact-phone] encontrado');
+                        addLog(`📱 Telefone atual: ${phoneEl.textContent}`);
+                    } else {
+                        validation.push('❌ Elemento [data-contact-phone] NÃO encontrado');
+                    }
+                    
+                    if (emailEl) {
+                        validation.push('✅ Elemento [data-contact-email] encontrado');
+                        addLog(`📧 Email atual: ${emailEl.textContent}`);
+                    } else {
+                        validation.push('❌ Elemento [data-contact-email] NÃO encontrado');
+                    }
+                    
+                    if (pixEl) {
+                        validation.push('✅ Elemento [data-pix-key] encontrado');
+                        addLog(`💳 PIX atual: ${pixEl.textContent}`);
+                    } else {
+                        validation.push('❌ Elemento [data-pix-key] NÃO encontrado');
+                    }
+                    
+                    const successCount = validation.filter(v => v.includes('✅')).length;
+                    const totalChecks = validation.length;
+                    
+                    if (successCount === totalChecks) {
+                        showStatus(`Validação completa: ${successCount}/${totalChecks} elementos encontrados`, 'success');
+                    } else {
+                        showStatus(`Validação parcial: ${successCount}/${totalChecks} elementos encontrados`, 'warning');
+                    }
+                    
+                    validation.forEach(v => addLog(v));
+                    document.body.removeChild(validationFrame);
+                    
+                } catch (error) {
+                    addLog('❌ Erro na validação: ' + error.message);
+                    showStatus('Erro na validação: ' + error.message, 'error');
+                    document.body.removeChild(validationFrame);
+                }
+            };
+        }
+        
+        // Carregar informações ao inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('🚀 Iniciando validação de sincronização de contatos...');
+            setTimeout(loadCurrentContactInfo, 1000);
+        });
+    </script>
+</body>
+</html>

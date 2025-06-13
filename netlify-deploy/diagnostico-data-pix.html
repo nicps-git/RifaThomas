@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnóstico: Data do Sorteio e PIX</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        .test-section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .data-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .data-card h3 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        .data-value {
+            font-weight: bold;
+            padding: 10px;
+            background: #edf2f7;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        .status.warning {
+            background: #fef2c7;
+            color: #744210;
+            border: 1px solid #f6e05e;
+        }
+        .test-button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        .test-button:hover {
+            background: #3182ce;
+        }
+        .log-area {
+            background: #1a202c;
+            color: #a0aec0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .highlight {
+            background: #fff5b5;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico: Data do Sorteio e PIX</h1>
+        
+        <div class="test-section">
+            <h2>🎯 Problema Identificado</h2>
+            <div class="status warning">
+                <strong>PROBLEMA:</strong> Data do Sorteio e Chave PIX não atualizam de acordo com Firebase
+            </div>
+            <p>A página principal está usando valores hardcoded ao invés dos dados do Firebase.</p>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Comparação de Dados</h2>
+            <div class="comparison-grid">
+                <div class="data-card">
+                    <h3>🏠 Página Principal (HTML)</h3>
+                    <div>
+                        <strong>Data do Sorteio:</strong>
+                        <div class="data-value" id="html-draw-date">Carregando...</div>
+                    </div>
+                    <div>
+                        <strong>Chave PIX:</strong>
+                        <div class="data-value" id="html-pix-key">Carregando...</div>
+                    </div>
+                </div>
+                
+                <div class="data-card">
+                    <h3>🔥 Firebase</h3>
+                    <div>
+                        <strong>Data do Sorteio:</strong>
+                        <div class="data-value" id="firebase-draw-date">Carregando...</div>
+                    </div>
+                    <div>
+                        <strong>Chave PIX:</strong>
+                        <div class="data-value" id="firebase-pix-key">Carregando...</div>
+                    </div>
+                </div>
+                
+                <div class="data-card">
+                    <h3>📜 Código Hardcoded</h3>
+                    <div>
+                        <strong>Data do Sorteio:</strong>
+                        <div class="data-value" id="hardcoded-draw-date">11 de Julho de 2025 às 16h</div>
+                    </div>
+                    <div>
+                        <strong>Chave PIX:</strong>
+                        <div class="data-value" id="hardcoded-pix-key">contato@charifa.com</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔧 Testes de Sincronização</h2>
+            <button class="test-button" onclick="testFirebaseConnection()">📡 Testar Conexão Firebase</button>
+            <button class="test-button" onclick="testConfigLoad()">📖 Testar Carregamento Config</button>
+            <button class="test-button" onclick="testUISync()">🔄 Testar Sincronização UI</button>
+            <button class="test-button" onclick="simulateConfigChange()">⚡ Simular Mudança Config</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>💡 Análise do Problema</h2>
+            <div id="problem-analysis"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Log de Debug</h2>
+            <div class="log-area" id="debug-log"></div>
+        </div>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let debugLog = '';
+        let currentConfig = {};
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            debugLog += `[${timestamp}] ${message}\n`;
+            document.getElementById('debug-log').textContent = debugLog;
+            document.getElementById('debug-log').scrollTop = document.getElementById('debug-log').scrollHeight;
+            console.log(message);
+        }
+        
+        function updateAnalysis(problems) {
+            const analysisDiv = document.getElementById('problem-analysis');
+            let html = '';
+            
+            if (problems.length === 0) {
+                html = '<div class="status success">✅ Nenhum problema detectado! A sincronização está funcionando corretamente.</div>';
+            } else {
+                html = '<div class="status error">❌ Problemas detectados:</div>';
+                problems.forEach(problem => {
+                    html += `<div style="margin: 10px 0; padding: 10px; background: #fed7d7; border-radius: 5px;">• ${problem}</div>`;
+                });
+                
+                html += '<div class="status warning"><strong>Solução:</strong> Implementar sincronização correta entre Firebase e página principal.</div>';
+            }
+            
+            analysisDiv.innerHTML = html;
+        }
+        
+        async function loadMainPageData() {
+            addLog('🏠 Carregando dados da página principal...');
+            
+            try {
+                // Criar iframe para capturar dados da index.html
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = 'index.html';
+                document.body.appendChild(iframe);
+                
+                iframe.onload = function() {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        
+                        // Capturar data do sorteio
+                        const drawDateEl = iframeDoc.getElementById('draw-date');
+                        const drawDate = drawDateEl ? drawDateEl.textContent : 'Não encontrado';
+                        document.getElementById('html-draw-date').textContent = drawDate;
+                        
+                        // Capturar chave PIX
+                        const pixKeyEl = iframeDoc.querySelector('[data-pix-key], .pix-key');
+                        const pixKey = pixKeyEl ? pixKeyEl.textContent : 'Não encontrado';
+                        document.getElementById('html-pix-key').textContent = pixKey;
+                        
+                        addLog(`📅 Data do sorteio na página: ${drawDate}`);
+                        addLog(`💳 Chave PIX na página: ${pixKey}`);
+                        
+                        document.body.removeChild(iframe);
+                        analyzeProblems();
+                        
+                    } catch (error) {
+                        addLog(`❌ Erro ao capturar dados da página: ${error.message}`);
+                        document.body.removeChild(iframe);
+                    }
+                };
+                
+            } catch (error) {
+                addLog(`❌ Erro ao carregar página principal: ${error.message}`);
+            }
+        }
+        
+        async function testFirebaseConnection() {
+            addLog('📡 Testando conexão com Firebase...');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    addLog('❌ FirebaseDB não está disponível');
+                    return false;
+                }
+                
+                addLog('✅ FirebaseDB disponível');
+                return true;
+                
+            } catch (error) {
+                addLog(`❌ Erro na conexão Firebase: ${error.message}`);
+                return false;
+            }
+        }
+        
+        async function testConfigLoad() {
+            addLog('📖 Testando carregamento de configurações do Firebase...');
+            
+            try {
+                if (!await testFirebaseConnection()) {
+                    return;
+                }
+                
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success && result.data) {
+                    currentConfig = result.data;
+                    addLog('✅ Configurações carregadas do Firebase:');
+                    addLog(`   📅 Data do sorteio: ${result.data.drawDate || 'Não definida'}`);
+                    addLog(`   💳 Chave PIX: ${result.data.pixKey || 'Não definida'}`);
+                    
+                    // Atualizar interface
+                    document.getElementById('firebase-draw-date').textContent = 
+                        result.data.drawDate ? new Date(result.data.drawDate).toLocaleString('pt-BR') : 'Não definida';
+                    document.getElementById('firebase-pix-key').textContent = 
+                        result.data.pixKey || 'Não definida';
+                        
+                    analyzeProblems();
+                    
+                } else {
+                    addLog(`❌ Erro ao carregar configurações: ${result.error}`);
+                    document.getElementById('firebase-draw-date').textContent = 'Erro no carregamento';
+                    document.getElementById('firebase-pix-key').textContent = 'Erro no carregamento';
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro no teste de carregamento: ${error.message}`);
+            }
+        }
+        
+        async function testUISync() {
+            addLog('🔄 Testando sincronização da interface...');
+            
+            if (!currentConfig.drawDate && !currentConfig.pixKey) {
+                addLog('⚠️ Nenhuma configuração carregada. Execute primeiro o teste de carregamento.');
+                return;
+            }
+            
+            try {
+                // Simular função applyConfigurationToUI
+                addLog('🎨 Simulando aplicação de configurações na UI...');
+                
+                // Verificar se a função existe no script.js
+                if (typeof window.applyConfigurationToUI === 'function') {
+                    addLog('✅ Função applyConfigurationToUI encontrada');
+                    window.applyConfigurationToUI(currentConfig);
+                    addLog('🔄 Configurações aplicadas na UI');
+                } else {
+                    addLog('❌ Função applyConfigurationToUI não encontrada no script.js');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro na sincronização UI: ${error.message}`);
+            }
+        }
+        
+        async function simulateConfigChange() {
+            addLog('⚡ Simulando mudança de configuração...');
+            
+            try {
+                const testConfig = {
+                    drawDate: new Date('2025-12-25T20:00:00'),
+                    pixKey: 'pix-teste@exemplo.com',
+                    ticketPrice: 50.00,
+                    totalNumbers: 200
+                };
+                
+                addLog('💾 Salvando configuração de teste no Firebase...');
+                
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    const result = await window.FirebaseDB.saveConfig(testConfig);
+                    
+                    if (result.success) {
+                        addLog('✅ Configuração de teste salva no Firebase');
+                        
+                        // Aguardar um pouco e recarregar
+                        setTimeout(async () => {
+                            addLog('🔄 Recarregando configurações...');
+                            await testConfigLoad();
+                            await loadMainPageData();
+                        }, 2000);
+                        
+                    } else {
+                        addLog(`❌ Erro ao salvar configuração: ${result.error}`);
+                    }
+                } else {
+                    addLog('❌ Firebase não disponível para teste');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro na simulação: ${error.message}`);
+            }
+        }
+        
+        function analyzeProblems() {
+            const problems = [];
+            
+            const htmlDrawDate = document.getElementById('html-draw-date').textContent;
+            const htmlPixKey = document.getElementById('html-pix-key').textContent;
+            const firebaseDrawDate = document.getElementById('firebase-draw-date').textContent;
+            const firebasePixKey = document.getElementById('firebase-pix-key').textContent;
+            const hardcodedDrawDate = document.getElementById('hardcoded-draw-date').textContent;
+            const hardcodedPixKey = document.getElementById('hardcoded-pix-key').textContent;
+            
+            // Verificar se a data do sorteio está sincronizada
+            if (htmlDrawDate === hardcodedDrawDate) {
+                problems.push('Data do sorteio na página principal está usando valor hardcoded ao invés do Firebase');
+            }
+            
+            // Verificar se a chave PIX está sincronizada
+            if (htmlPixKey === hardcodedPixKey || htmlPixKey.includes('charifa.com')) {
+                problems.push('Chave PIX na página principal está usando valor hardcoded ao invés do Firebase');
+            }
+            
+            // Verificar se Firebase tem dados válidos
+            if (firebaseDrawDate === 'Não definida' || firebaseDrawDate === 'Erro no carregamento') {
+                problems.push('Data do sorteio não está definida no Firebase');
+            }
+            
+            if (firebasePixKey === 'Não definida' || firebasePixKey === 'Erro no carregamento') {
+                problems.push('Chave PIX não está definida no Firebase');
+            }
+            
+            updateAnalysis(problems);
+            
+            if (problems.length > 0) {
+                addLog(`🔍 Análise concluída: ${problems.length} problema(s) detectado(s)`);
+            } else {
+                addLog('🎉 Análise concluída: Nenhum problema detectado!');
+            }
+        }
+        
+        // Aguardar Firebase carregar
+        window.addEventListener('firebaseReady', async () => {
+            addLog('🔥 Firebase carregado, iniciando diagnóstico...');
+            await testFirebaseConnection();
+            await testConfigLoad();
+            setTimeout(loadMainPageData, 1000);
+        });
+        
+        // Se Firebase já estiver carregado
+        if (typeof window.FirebaseDB !== 'undefined') {
+            setTimeout(async () => {
+                addLog('🔥 Firebase já disponível, iniciando diagnóstico...');
+                await testFirebaseConnection();
+                await testConfigLoad();
+                setTimeout(loadMainPageData, 1000);
+            }, 1000);
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('🚀 Diagnóstico iniciado...');
+            addLog('📋 Problema reportado: Data do Sorteio e Chave PIX não atualizam do Firebase');
+            
+            // Timeout de segurança
+            setTimeout(() => {
+                if (document.getElementById('firebase-draw-date').textContent === 'Carregando...') {
+                    addLog('⏰ Timeout: Firebase pode não estar respondendo');
+                    document.getElementById('firebase-draw-date').textContent = 'Timeout';
+                    document.getElementById('firebase-pix-key').textContent = 'Timeout';
+                    analyzeProblems();
+                }
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

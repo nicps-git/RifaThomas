@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 TESTE: Salvar Configurações Admin</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .test-section.success {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .test-section.error {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .config-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); color: #000; }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); }
+        .btn-info { background: linear-gradient(135deg, #17a2b8, #138496); }
+        
+        .save-config-btn {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            font-size: 18px;
+            padding: 15px 30px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .log-container {
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+            margin: 20px 0;
+        }
+        
+        .status-display {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        
+        .result-box {
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 5px solid #007bff;
+            background: #f8f9fa;
+        }
+        
+        .result-box.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .result-box.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cog"></i> 🔧 Teste: Salvar Configurações</h1>
+            <p>Testando o sistema de salvamento de configurações do admin</p>
+        </div>
+
+        <!-- Status do Sistema -->
+        <div class="test-section" id="system-status">
+            <h3><i class="fas fa-info-circle"></i> Status do Sistema</h3>
+            <div class="status-display" id="status-display">
+                Verificando sistema...
+            </div>
+            <button onclick="checkSystemStatus()" class="btn-info">
+                <i class="fas fa-sync"></i> Verificar Status
+            </button>
+        </div>
+
+        <!-- Formulário de Configurações -->
+        <div class="test-section">
+            <h3><i class="fas fa-edit"></i> Formulário de Teste</h3>
+            <form id="config-form" class="config-form">
+                <h4>📊 Configurações Básicas</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-total-numbers">Total de Números:</label>
+                        <input type="number" id="config-total-numbers" min="100" max="10000" value="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-ticket-price">Preço do Bilhete (R$):</label>
+                        <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-draw-date">Data do Sorteio:</label>
+                        <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-contact-phone">Telefone de Contato:</label>
+                        <input type="tel" id="config-contact-phone" value="(11) 99999-9999" required>
+                    </div>
+                </div>
+
+                <h4>💰 Configurações de Pagamento</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-pix-key">Chave PIX:</label>
+                        <input type="text" id="config-pix-key" value="contato@charifa.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-baby-name">Nome do Bebê:</label>
+                        <input type="text" id="config-baby-name" value="Thomas" required>
+                    </div>
+                </div>
+                
+                <h4>🏆 Prêmios</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-first-prize">1º Prêmio:</label>
+                        <input type="text" id="config-first-prize" value="R$ 100,00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-second-prize">2º Prêmio:</label>
+                        <input type="text" id="config-second-prize" value="R$ 200,00" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-third-prize">3º Prêmio:</label>
+                        <input type="text" id="config-third-prize" value="Fraldas por faixa" required>
+                    </div>
+                    <div class="form-group">
+                        <!-- Espaço vazio para alinhamento -->
+                    </div>
+                </div>
+                
+                <button type="submit" class="save-config-btn">
+                    <i class="fas fa-save"></i> Salvar Configurações
+                </button>
+            </form>
+        </div>
+
+        <!-- Controles de Teste -->
+        <div class="test-section">
+            <h3><i class="fas fa-play-circle"></i> Controles de Teste</h3>
+            <button onclick="testDirectSave()" class="btn-success">
+                <i class="fas fa-save"></i> Teste Direto
+            </button>
+            <button onclick="testValidation()" class="btn-warning">
+                <i class="fas fa-shield-alt"></i> Teste Validação
+            </button>
+            <button onclick="loadStoredConfig()" class="btn-info">
+                <i class="fas fa-download"></i> Carregar Salvo
+            </button>
+            <button onclick="clearLogs()" class="btn-danger">
+                <i class="fas fa-trash"></i> Limpar Logs
+            </button>
+        </div>
+
+        <!-- Resultados -->
+        <div class="test-section">
+            <h3><i class="fas fa-chart-line"></i> Resultados dos Testes</h3>
+            <div id="test-results">
+                <div class="result-box">
+                    📋 Nenhum teste executado ainda
+                </div>
+            </div>
+        </div>
+
+        <!-- Log de Atividades -->
+        <div class="test-section">
+            <h3><i class="fas fa-terminal"></i> Log de Atividades</h3>
+            <div class="log-container" id="activity-log">
+                <div>🚀 Sistema de teste de configurações carregado...</div>
+                <div>⏳ Aguardando testes...</div>
+            </div>
+        </div>
+
+        <!-- Voltar para Admin -->
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="window.location.href='admin.html'" class="btn-info">
+                <i class="fas fa-arrow-left"></i> Voltar para Admin
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        // Log de atividades
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const icons = {
+                info: '📝',
+                success: '✅',
+                error: '❌',
+                warning: '⚠️'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${icons[type] || '📝'} ${message}`;
+            
+            if (type === 'error') logEntry.style.color = '#ff6b6b';
+            else if (type === 'success') logEntry.style.color = '#51cf66';
+            else if (type === 'warning') logEntry.style.color = '#ffd43b';
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Mostrar resultado do teste
+        function showTestResult(title, message, success = true) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultBox = document.createElement('div');
+            resultBox.className = `result-box ${success ? 'success' : 'error'}`;
+            resultBox.innerHTML = `
+                <h4>${success ? '✅' : '❌'} ${title}</h4>
+                <p>${message}</p>
+                <small>Horário: ${new Date().toLocaleTimeString('pt-BR')}</small>
+            `;
+            resultsDiv.appendChild(resultBox);
+        }
+
+        // Verificar status do sistema
+        function checkSystemStatus() {
+            log('🔍 Verificando status do sistema...');
+            
+            const statusDiv = document.getElementById('status-display');
+            let status = [];
+            
+            // Verificar Firebase
+            if (typeof window.FirebaseDB !== 'undefined') {
+                status.push('✅ Firebase: Conectado');
+                log('✅ Firebase: Conectado', 'success');
+            } else {
+                status.push('❌ Firebase: Desconectado');
+                log('❌ Firebase: Desconectado', 'error');
+            }
+            
+            // Verificar Admin Data
+            if (typeof window.adminData !== 'undefined') {
+                status.push('✅ Admin Data: Disponível');
+                log('✅ Admin Data: Disponível', 'success');
+            } else {
+                status.push('❌ Admin Data: Não disponível');
+                log('❌ Admin Data: Não disponível', 'error');
+            }
+            
+            // Verificar função de salvar
+            if (typeof window.saveConfiguration === 'function') {
+                status.push('✅ Função saveConfiguration: Disponível');
+                log('✅ Função saveConfiguration: Disponível', 'success');
+            } else {
+                status.push('❌ Função saveConfiguration: Não encontrada');
+                log('❌ Função saveConfiguration: Não encontrada', 'error');
+            }
+            
+            // Verificar formulário
+            const form = document.getElementById('config-form');
+            if (form) {
+                status.push('✅ Formulário: Encontrado');
+                log('✅ Formulário: Encontrado', 'success');
+            } else {
+                status.push('❌ Formulário: Não encontrado');
+                log('❌ Formulário: Não encontrado', 'error');
+            }
+            
+            statusDiv.innerHTML = status.join('<br>');
+            
+            const allGood = !status.some(s => s.includes('❌'));
+            showTestResult('Verificação do Sistema', 
+                allGood ? 'Todos os componentes estão funcionando!' : 'Alguns componentes apresentam problemas',
+                allGood);
+        }
+
+        // Teste direto de salvamento
+        async function testDirectSave() {
+            log('🧪 Iniciando teste direto de salvamento...', 'info');
+            
+            try {
+                if (typeof window.saveConfiguration !== 'function') {
+                    throw new Error('Função saveConfiguration não encontrada');
+                }
+                
+                // Criar evento simulado
+                const form = document.getElementById('config-form');
+                const event = new Event('submit', { bubbles: true, cancelable: true });
+                
+                log('📝 Executando saveConfiguration...', 'info');
+                await window.saveConfiguration(event);
+                
+                log('✅ Teste direto concluído com sucesso!', 'success');
+                showTestResult('Teste Direto', 'Função de salvamento executada com sucesso!', true);
+                
+            } catch (error) {
+                log(`❌ Erro no teste direto: ${error.message}`, 'error');
+                showTestResult('Teste Direto', `Erro: ${error.message}`, false);
+            }
+        }
+
+        // Teste de validação
+        async function testValidation() {
+            log('🛡️ Testando validações...', 'info');
+            
+            try {
+                // Teste 1: Números inválidos
+                document.getElementById('config-total-numbers').value = '50'; // Abaixo do mínimo
+                
+                const form = document.getElementById('config-form');
+                const event = new Event('submit', { bubbles: true, cancelable: true });
+                
+                try {
+                    await window.saveConfiguration(event);
+                    log('❌ Validação falhou: deveria ter rejeitado número baixo', 'error');
+                    showTestResult('Teste de Validação', 'FALHA: Validação não funcionou para números baixos', false);
+                } catch (validationError) {
+                    log('✅ Validação funcionou: rejeitou número baixo', 'success');
+                    showTestResult('Teste de Validação', 'SUCESSO: Validação rejeitou corretamente valores inválidos', true);
+                }
+                
+                // Restaurar valor válido
+                document.getElementById('config-total-numbers').value = '150';
+                
+            } catch (error) {
+                log(`❌ Erro no teste de validação: ${error.message}`, 'error');
+                showTestResult('Teste de Validação', `Erro: ${error.message}`, false);
+            }
+        }
+
+        // Carregar configuração salva
+        function loadStoredConfig() {
+            log('📥 Carregando configuração salva...', 'info');
+            
+            try {
+                const stored = localStorage.getItem('adminConfig');
+                if (stored) {
+                    const config = JSON.parse(stored);
+                    log('✅ Configuração encontrada no localStorage', 'success');
+                    log(`📊 Total de números: ${config.totalNumbers}`, 'info');
+                    log(`💰 Preço: R$ ${config.ticketPrice}`, 'info');
+                    log(`👶 Bebê: ${config.babyName}`, 'info');
+                    
+                    showTestResult('Carregar Configuração', 
+                        `Configuração encontrada! Total: ${config.totalNumbers}, Preço: R$ ${config.ticketPrice}, Bebê: ${config.babyName}`, 
+                        true);
+                } else {
+                    log('⚠️ Nenhuma configuração salva encontrada', 'warning');
+                    showTestResult('Carregar Configuração', 'Nenhuma configuração salva encontrada', false);
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao carregar configuração: ${error.message}`, 'error');
+                showTestResult('Carregar Configuração', `Erro: ${error.message}`, false);
+            }
+        }
+
+        // Limpar logs
+        function clearLogs() {
+            document.getElementById('activity-log').innerHTML = 
+                '<div>🧹 Logs limpos...</div>';
+            document.getElementById('test-results').innerHTML = 
+                '<div class="result-box">📋 Resultados limpos - execute novos testes</div>';
+            log('Sistema de teste reiniciado');
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Sistema de teste de configurações carregado');
+            
+            // Verificar status inicial
+            setTimeout(checkSystemStatus, 2000);
+            
+            // Configurar event listener do formulário se a função admin.js não fizer isso
+            const form = document.getElementById('config-form');
+            if (form && typeof window.saveConfiguration === 'function') {
+                // Verificar se já tem listener
+                form.addEventListener('submit', function(e) {
+                    log('📝 Formulário submetido via event listener', 'info');
+                });
+            }
+        });
+
+        // Aguardar Firebase
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 Firebase ready event recebido', 'success');
+            setTimeout(checkSystemStatus, 1000);
+        });
+    </script>
+</body>
+</html>

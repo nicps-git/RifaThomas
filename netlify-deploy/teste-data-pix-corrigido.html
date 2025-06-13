@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Teste: Sincronização Data e PIX - CORRIGIDO</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        .test-section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+        .status.warning {
+            background: #fef2c7;
+            color: #744210;
+            border: 1px solid #f6e05e;
+        }
+        .test-button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        .test-button:hover {
+            background: #3182ce;
+        }
+        .test-button.success {
+            background: #38a169;
+        }
+        .test-button.danger {
+            background: #e53e3e;
+        }
+        .data-display {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .log-area {
+            background: #1a202c;
+            color: #a0aec0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste: Sincronização Data e PIX - CORRIGIDO</h1>
+        
+        <div class="test-section">
+            <h2>✅ Correções Aplicadas</h2>
+            <div class="status success">
+                <strong>CORREÇÕES IMPLEMENTADAS:</strong><br>
+                • Listener específico para documento de configuração<br>
+                • Melhor tratamento de formatos de data (String, Date, Firebase Timestamp)<br>
+                • Logs detalhados para debug<br>
+                • Fallback para listener de coleção<br>
+                • Forçar atualização visual dos elementos
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Status Atual</h2>
+            <div class="data-display">
+                <div><strong>Data do Sorteio:</strong> <span id="current-draw-date">Carregando...</span></div>
+                <div><strong>Chave PIX:</strong> <span id="current-pix-key">Carregando...</span></div>
+                <div><strong>Status Firebase:</strong> <span id="firebase-status">Verificando...</span></div>
+                <div><strong>Listener Ativo:</strong> <span id="listener-status">Verificando...</span></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>🧪 Testes de Sincronização</h2>
+            <button class="test-button" onclick="testFirebaseConnection()">🔥 Testar Firebase</button>
+            <button class="test-button" onclick="testConfigLoad()">📖 Carregar Config</button>
+            <button class="test-button" onclick="testListener()">👂 Testar Listener</button>
+            <button class="test-button success" onclick="testSaveNewConfig()">💾 Salvar Config Teste</button>
+            <button class="test-button" onclick="forceReload()">🔄 Recarregar Página</button>
+            <button class="test-button danger" onclick="clearLogs()">🗑️ Limpar Logs</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>⚡ Teste de Mudança em Tempo Real</h2>
+            <p>Use este teste para verificar se as mudanças no admin aparecem automaticamente aqui:</p>
+            <div>
+                <label>Nova Data (YYYY-MM-DD HH:MM): </label>
+                <input type="datetime-local" id="test-date" value="2025-12-25T20:00">
+            </div>
+            <div style="margin: 10px 0;">
+                <label>Nova Chave PIX: </label>
+                <input type="text" id="test-pix" value="pix.teste@exemplo.com" style="width: 300px;">
+            </div>
+            <button class="test-button success" onclick="saveTestConfig()">🚀 Aplicar Teste em Tempo Real</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📝 Log de Debug Detalhado</h2>
+            <div class="log-area" id="debug-log"></div>
+        </div>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let debugLog = '';
+        let configListener = null;
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const typeIcon = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            debugLog += `[${timestamp}] ${typeIcon} ${message}\n`;
+            document.getElementById('debug-log').textContent = debugLog;
+            document.getElementById('debug-log').scrollTop = document.getElementById('debug-log').scrollHeight;
+            console.log(`${typeIcon} ${message}`);
+        }
+        
+        function clearLogs() {
+            debugLog = '';
+            document.getElementById('debug-log').textContent = '';
+            addLog('Logs limpos', 'info');
+        }
+        
+        function updateStatus(element, text, type = 'info') {
+            document.getElementById(element).textContent = text;
+            if (type === 'success') {
+                document.getElementById(element).style.color = '#22543d';
+            } else if (type === 'error') {
+                document.getElementById(element).style.color = '#742a2a';
+            } else {
+                document.getElementById(element).style.color = '#744210';
+            }
+        }
+        
+        async function testFirebaseConnection() {
+            addLog('🔥 Testando conexão com Firebase...', 'info');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    updateStatus('firebase-status', 'Firebase não disponível', 'error');
+                    addLog('❌ FirebaseDB não está disponível', 'error');
+                    return false;
+                }
+                
+                updateStatus('firebase-status', 'Firebase conectado', 'success');
+                addLog('✅ Firebase está disponível e conectado', 'success');
+                
+                // Verificar se o novo listener existe
+                if (typeof window.FirebaseDB.listenToConfigChanges === 'function') {
+                    addLog('✅ Novo listener específico de configuração disponível', 'success');
+                } else {
+                    addLog('⚠️ Usando listener de coleção como fallback', 'warning');
+                }
+                
+                return true;
+                
+            } catch (error) {
+                updateStatus('firebase-status', 'Erro de conexão', 'error');
+                addLog(`❌ Erro na conexão Firebase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testConfigLoad() {
+            addLog('📖 Testando carregamento de configurações...', 'info');
+            
+            if (!await testFirebaseConnection()) {
+                return;
+            }
+            
+            try {
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success && result.data) {
+                    addLog('✅ Configurações carregadas com sucesso', 'success');
+                    addLog(`📅 Data do sorteio: ${result.data.drawDate}`, 'info');
+                    addLog(`💳 Chave PIX: ${result.data.pixKey}`, 'info');
+                    
+                    // Atualizar interface
+                    if (result.data.drawDate) {
+                        const date = new Date(result.data.drawDate);
+                        updateStatus('current-draw-date', date.toLocaleString('pt-BR'), 'success');
+                    }
+                    
+                    if (result.data.pixKey) {
+                        updateStatus('current-pix-key', result.data.pixKey, 'success');
+                    }
+                } else {
+                    addLog(`❌ Erro ao carregar configurações: ${result.error}`, 'error');
+                    updateStatus('current-draw-date', 'Erro no carregamento', 'error');
+                    updateStatus('current-pix-key', 'Erro no carregamento', 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro no teste de carregamento: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testListener() {
+            addLog('👂 Configurando listener de configurações...', 'info');
+            
+            if (!await testFirebaseConnection()) {
+                return;
+            }
+            
+            try {
+                // Parar listener anterior se existir
+                if (configListener) {
+                    configListener();
+                    addLog('🛑 Listener anterior parado', 'info');
+                }
+                
+                // Usar novo listener específico se disponível
+                if (typeof window.FirebaseDB.listenToConfigChanges === 'function') {
+                    addLog('🎯 Usando listener específico para configurações', 'info');
+                    configListener = window.FirebaseDB.listenToConfigChanges((configDoc) => {
+                        if (configDoc) {
+                            addLog('🔄 Configuração atualizada via listener específico!', 'success');
+                            addLog(`📅 Nova data: ${configDoc.drawDate}`, 'info');
+                            addLog(`💳 Nova chave PIX: ${configDoc.pixKey}`, 'info');
+                            
+                            // Atualizar interface
+                            if (configDoc.drawDate) {
+                                const date = new Date(configDoc.drawDate);
+                                updateStatus('current-draw-date', date.toLocaleString('pt-BR'), 'success');
+                            }
+                            
+                            if (configDoc.pixKey) {
+                                updateStatus('current-pix-key', configDoc.pixKey, 'success');
+                            }
+                        } else {
+                            addLog('⚠️ Configuração removida ou não encontrada', 'warning');
+                        }
+                    });
+                } else {
+                    addLog('🎯 Usando listener de coleção como fallback', 'warning');
+                    configListener = window.FirebaseDB.listenToChanges('rifa_config', (configs) => {
+                        addLog(`📥 Listener de coleção ativado - ${configs.length} documentos`, 'info');
+                        
+                        if (configs && configs.length > 0) {
+                            const config = configs.find(c => c.id === 'main') || configs[0];
+                            if (config) {
+                                addLog('🔄 Configuração atualizada via listener de coleção!', 'success');
+                                addLog(`📅 Nova data: ${config.drawDate}`, 'info');
+                                addLog(`💳 Nova chave PIX: ${config.pixKey}`, 'info');
+                                
+                                // Atualizar interface
+                                if (config.drawDate) {
+                                    const date = new Date(config.drawDate);
+                                    updateStatus('current-draw-date', date.toLocaleString('pt-BR'), 'success');
+                                }
+                                
+                                if (config.pixKey) {
+                                    updateStatus('current-pix-key', config.pixKey, 'success');
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                updateStatus('listener-status', 'Listener ativo', 'success');
+                addLog('✅ Listener configurado com sucesso', 'success');
+                
+            } catch (error) {
+                updateStatus('listener-status', 'Erro no listener', 'error');
+                addLog(`❌ Erro ao configurar listener: ${error.message}`, 'error');
+            }
+        }
+        
+        async function saveTestConfig() {
+            const testDate = document.getElementById('test-date').value;
+            const testPix = document.getElementById('test-pix').value;
+            
+            if (!testDate || !testPix) {
+                addLog('❌ Por favor, preencha data e PIX para o teste', 'error');
+                return;
+            }
+            
+            addLog('🚀 Salvando configuração de teste...', 'info');
+            
+            try {
+                const testConfig = {
+                    drawDate: new Date(testDate),
+                    pixKey: testPix,
+                    totalNumbers: 150,
+                    ticketPrice: 40.00,
+                    contactPhone: '(11) 99999-9999',
+                    contactEmail: 'teste@exemplo.com',
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                addLog(`📅 Data de teste: ${testConfig.drawDate.toLocaleString('pt-BR')}`, 'info');
+                addLog(`💳 PIX de teste: ${testConfig.pixKey}`, 'info');
+                
+                const result = await window.FirebaseDB.saveConfig(testConfig);
+                
+                if (result.success) {
+                    addLog('✅ Configuração de teste salva com sucesso!', 'success');
+                    addLog('🔄 Aguardando sincronização automática...', 'info');
+                } else {
+                    addLog(`❌ Erro ao salvar configuração: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro no teste de salvamento: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSaveNewConfig() {
+            addLog('💾 Salvando configuração padrão de teste...', 'info');
+            
+            const defaultConfig = {
+                drawDate: new Date('2025-07-11T16:00:00'),
+                pixKey: 'contato@rifaonline.com',
+                totalNumbers: 150,
+                ticketPrice: 40.00,
+                contactPhone: '(11) 99999-9999',
+                contactEmail: 'contato@rifaonline.com',
+                lastUpdated: new Date().toISOString()
+            };
+            
+            try {
+                const result = await window.FirebaseDB.saveConfig(defaultConfig);
+                
+                if (result.success) {
+                    addLog('✅ Configuração padrão salva com sucesso!', 'success');
+                } else {
+                    addLog(`❌ Erro ao salvar: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function forceReload() {
+            addLog('🔄 Recarregando página...', 'info');
+            window.location.reload();
+        }
+        
+        // Aguardar Firebase carregar
+        window.addEventListener('firebaseReady', async () => {
+            addLog('🔥 Firebase carregado, iniciando testes automáticos...', 'success');
+            await testFirebaseConnection();
+            await testConfigLoad();
+            await testListener();
+        });
+        
+        // Se Firebase já estiver carregado
+        if (typeof window.FirebaseDB !== 'undefined') {
+            setTimeout(async () => {
+                addLog('🔥 Firebase já disponível, iniciando testes...', 'success');
+                await testFirebaseConnection();
+                await testConfigLoad();
+                await testListener();
+            }, 1000);
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog('🚀 Teste de sincronização iniciado...', 'info');
+            addLog('🔧 Versão: CORRIGIDA com listener específico', 'info');
+            
+            // Timeout de segurança
+            setTimeout(() => {
+                if (document.getElementById('firebase-status').textContent === 'Verificando...') {
+                    updateStatus('firebase-status', 'Timeout - Firebase não respondeu', 'error');
+                    addLog('⏰ Timeout: Firebase pode não estar respondendo', 'error');
+                }
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

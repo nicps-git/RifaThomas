@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Teste - Data Corrigida</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        
+        .test-result {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .big-text {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .date-text {
+            color: #007bff;
+        }
+        
+        .pix-text {
+            color: #28a745;
+        }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste - Correção da Data Hardcoded</h1>
+        <p>Verificando se a data e PIX agora são carregados dinamicamente do Firebase em vez de valores fixos.</p>
+        
+        <div id="connectionStatus" class="status info">
+            🔄 Verificando conexão...
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Valores Atuais do Firebase</h2>
+        <div class="test-result">
+            <h3>📅 Data do Sorteio</h3>
+            <div class="big-text date-text" id="firebaseDate">Carregando...</div>
+            <p><strong>Tipo:</strong> <span id="dateType">-</span></p>
+        </div>
+        
+        <div class="test-result">
+            <h3>💳 Chave PIX</h3>
+            <div class="big-text pix-text" id="firebasePix">Carregando...</div>
+            <p><strong>Comprimento:</strong> <span id="pixLength">-</span> caracteres</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🧪 Simulação da Página Principal</h2>
+        <p>Estes elementos simulam exatamente os que foram corrigidos na página principal:</p>
+        
+        <div class="test-result">
+            <h3>Elemento 1: Data na seção info</h3>
+            <p><strong>Valor:</strong> <span data-firebase="drawDate" id="testDate1">Data não carregada</span></p>
+        </div>
+        
+        <div class="test-result">
+            <h3>Elemento 2: Data na seção prêmios</h3>
+            <p><strong>Data do Sorteio:</strong> <span data-firebase="drawDate" id="testDate2">Data não carregada</span></p>
+        </div>
+        
+        <div class="test-result">
+            <h3>Elemento 3: Chave PIX no modal</h3>
+            <p><strong>PIX:</strong> <span data-firebase="pixKey" data-pix-key id="testPix">PIX não carregado</span></p>
+        </div>
+        
+        <div id="syncStatus" class="status info">
+            🔄 Aplicando configuração...
+        </div>
+        
+        <button onclick="reloadConfig()">🔄 Recarregar Configuração</button>
+        <button onclick="openMainPage()">🏠 Abrir Página Principal</button>
+        <button onclick="openAdmin()">⚙️ Abrir Admin</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 Log de Atividades</h2>
+        <div style="background-color: #212529; color: white; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;" id="logArea">
+            === TESTE DE CORREÇÃO INICIADO ===
+        </div>
+        <button onclick="clearLog()">🗑️ Limpar Log</button>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        function log(message, level = 'info') {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const levelIcon = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️'
+            }[level] || 'ℹ️';
+            
+            logArea.innerHTML += `\n[${timestamp}] ${levelIcon} ${message}`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        function updateStatus(message, type) {
+            const element = document.getElementById('connectionStatus');
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+        
+        function updateSyncStatus(message, type) {
+            const element = document.getElementById('syncStatus');
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+        
+        async function loadFirebaseData() {
+            log('📊 Carregando dados do Firebase...');
+            
+            try {
+                if (!window.FirebaseDB) {
+                    throw new Error('FirebaseDB não disponível');
+                }
+                
+                const result = await window.FirebaseDB.getDocument('rifa_config', 'main');
+                
+                if (result.success && result.data) {
+                    const config = result.data;
+                    
+                    // Mostrar dados do Firebase
+                    document.getElementById('firebaseDate').textContent = config.drawDate || 'Não definida';
+                    document.getElementById('firebasePix').textContent = config.pixKey || 'Não definida';
+                    
+                    // Informações de tipo
+                    document.getElementById('dateType').textContent = typeof config.drawDate;
+                    document.getElementById('pixLength').textContent = config.pixKey ? config.pixKey.length : 0;
+                    
+                    log(`✅ Data Firebase: ${config.drawDate} (${typeof config.drawDate})`, 'success');
+                    log(`✅ PIX Firebase: ${config.pixKey}`, 'success');
+                    
+                    return config;
+                } else {
+                    throw new Error(result.error || 'Configuração não encontrada');
+                }
+            } catch (error) {
+                log(`❌ Erro ao carregar Firebase: ${error.message}`, 'error');
+                updateStatus(`❌ Erro: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        function applyConfigToElements(config) {
+            log('🎯 Aplicando configuração aos elementos de teste...');
+            
+            try {
+                // Simular exatamente o que script.js faz
+                const dateElements = document.querySelectorAll('[data-firebase="drawDate"]');
+                const pixElements = document.querySelectorAll('[data-firebase="pixKey"]');
+                
+                log(`🔍 Encontrados ${dateElements.length} elementos de data e ${pixElements.length} elementos PIX`);
+                
+                // Aplicar data com a lógica corrigida
+                if (config.drawDate) {
+                    let drawDate;
+                    
+                    if (typeof config.drawDate === 'string') {
+                        log('📅 Processando data como string...', 'info');
+                        drawDate = new Date(config.drawDate);
+                    } else if (config.drawDate.toDate && typeof config.drawDate.toDate === 'function') {
+                        log('📅 Processando data como Firebase Timestamp...', 'info');
+                        drawDate = config.drawDate.toDate();
+                    } else if (config.drawDate instanceof Date) {
+                        log('📅 Processando data como Date object...', 'info');
+                        drawDate = config.drawDate;
+                    }
+                    
+                    if (drawDate && !isNaN(drawDate.getTime())) {
+                        const formattedDate = drawDate.toLocaleDateString('pt-BR', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        }) + ' às 16h';
+                        
+                        dateElements.forEach((el, index) => {
+                            el.textContent = formattedDate;
+                            log(`📅 Elemento data ${index + 1} atualizado: ${formattedDate}`, 'success');
+                        });
+                    } else {
+                        log('⚠️ Data inválida após processamento', 'warning');
+                    }
+                }
+                
+                // Aplicar PIX
+                if (config.pixKey) {
+                    pixElements.forEach((el, index) => {
+                        el.textContent = config.pixKey;
+                        log(`💳 Elemento PIX ${index + 1} atualizado: ${config.pixKey}`, 'success');
+                    });
+                }
+                
+                updateSyncStatus('✅ Configuração aplicada com sucesso!', 'success');
+                log('✅ Todos os elementos foram atualizados', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao aplicar configuração: ${error.message}`, 'error');
+                updateSyncStatus(`❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        async function reloadConfig() {
+            log('🔄 Recarregando configuração...');
+            const config = await loadFirebaseData();
+            if (config) {
+                applyConfigToElements(config);
+            }
+        }
+        
+        function openMainPage() {
+            window.open('index.html', '_blank');
+            log('🏠 Página principal aberta', 'info');
+        }
+        
+        function openAdmin() {
+            window.open('admin.html', '_blank');
+            log('⚙️ Painel admin aberto', 'info');
+        }
+        
+        function clearLog() {
+            document.getElementById('logArea').innerHTML = '=== LOG LIMPO ===';
+        }
+        
+        // Configurar listener para atualizações em tempo real
+        function setupListener() {
+            log('👂 Configurando listener para atualizações...');
+            
+            try {
+                const onConfigChange = (config) => {
+                    log('🔥 MUDANÇA DETECTADA NO FIREBASE!', 'success');
+                    applyConfigToElements(config);
+                    
+                    // Atualizar também os displays do Firebase
+                    document.getElementById('firebaseDate').textContent = config.drawDate || 'Não definida';
+                    document.getElementById('firebasePix').textContent = config.pixKey || 'Não definida';
+                    document.getElementById('dateType').textContent = typeof config.drawDate;
+                    document.getElementById('pixLength').textContent = config.pixKey ? config.pixKey.length : 0;
+                };
+                
+                if (typeof window.FirebaseDB.listenToConfigChanges === 'function') {
+                    log('✅ Usando listener específico', 'success');
+                    window.FirebaseDB.listenToConfigChanges(onConfigChange);
+                } else {
+                    log('⚠️ Usando listener de coleção', 'warning');
+                    window.FirebaseDB.listenToChanges('rifa_config', (configs) => {
+                        const config = configs.find(c => c.id === 'main');
+                        if (config) {
+                            onConfigChange(config);
+                        }
+                    });
+                }
+                
+                log('👂 Listener configurado e ativo', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao configurar listener: ${error.message}`, 'error');
+            }
+        }
+        
+        // Inicialização
+        async function init() {
+            log('🔧 Iniciando teste de correção...');
+            
+            if (!window.FirebaseDB) {
+                updateStatus('❌ Firebase não carregado', 'error');
+                log('❌ Firebase não foi carregado', 'error');
+                return;
+            }
+            
+            updateStatus('✅ Firebase conectado!', 'success');
+            log('✅ Firebase carregado com sucesso', 'success');
+            
+            const config = await loadFirebaseData();
+            if (config) {
+                applyConfigToElements(config);
+                setupListener();
+                
+                log('🎉 Teste pronto! A data e PIX agora vêm do Firebase.', 'success');
+            }
+        }
+        
+        // Iniciar quando a página carregar
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

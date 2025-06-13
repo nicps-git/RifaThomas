@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Teste Simples - Salvamento de Configuração</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .save-config-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .save-config-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .log-area {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #dee2e6;
+        }
+
+        .section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste Simples - Salvamento de Configuração</h1>
+        
+        <div class="section">
+            <h3>📝 Formulário de Configuração</h3>
+            <form id="config-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-total-numbers">Total de Números:</label>
+                        <input type="number" id="config-total-numbers" min="100" max="10000" value="150" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-ticket-price">Preço do Bilhete (R$):</label>
+                        <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-draw-date">Data do Sorteio:</label>
+                        <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-contact-phone">Telefone de Contato:</label>
+                        <input type="tel" id="config-contact-phone" value="(11) 99999-9999" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-pix-key">Chave PIX:</label>
+                        <input type="text" id="config-pix-key" value="contato@charifa.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-baby-name">Nome do Bebê:</label>
+                        <input type="text" id="config-baby-name" value="Thomas" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="config-first-prize">1º Prêmio:</label>
+                        <input type="text" id="config-first-prize" value="R$ 100,00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="config-second-prize">2º Prêmio:</label>
+                        <input type="text" id="config-second-prize" value="R$ 200,00" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="config-third-prize">3º Prêmio:</label>
+                    <input type="text" id="config-third-prize" value="Fraldas por faixa" required>
+                </div>
+                
+                <button type="submit" class="save-config-btn">
+                    <i class="fas fa-save"></i> 💾 Salvar Configurações
+                </button>
+            </form>
+        </div>
+
+        <div class="section">
+            <h3>📊 Log de Execução</h3>
+            <div id="log-area" class="log-area">
+                Aguardando ação...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logMessages = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logMessages.push(`[${timestamp}] ${message}`);
+            document.getElementById('log-area').textContent = logMessages.slice(-20).join('\n');
+            console.log(`[TESTE] ${message}`);
+        }
+
+        // Simular adminData (necessário para a função do admin.js)
+        window.adminData = {
+            config: {
+                totalNumbers: 150,
+                ticketPrice: 40.00,
+                prizes: {
+                    first: 'R$ 100,00',
+                    second: 'R$ 200,00',
+                    third: 'Fraldas por faixa'
+                }
+            },
+            firebaseReady: false
+        };
+
+        // Simular FirebaseDB mock
+        window.FirebaseDB = {
+            saveConfig: async function(config) {
+                log('🔥 SIMULAÇÃO: Firebase saveConfig chamado');
+                log(`📊 Dados recebidos: ${config.totalNumbers} números, R$ ${config.ticketPrice}`);
+                return { success: true };
+            }
+        };
+
+        // Implementar função de salvamento simplificada
+        async function saveConfiguration(event) {
+            event.preventDefault();
+            log('🚀 FUNÇÃO saveConfiguration CHAMADA!');
+            
+            try {
+                // Coletar dados do formulário
+                const newConfig = {
+                    totalNumbers: parseInt(document.getElementById('config-total-numbers').value),
+                    ticketPrice: parseFloat(document.getElementById('config-ticket-price').value),
+                    drawDate: new Date(document.getElementById('config-draw-date').value),
+                    contactPhone: document.getElementById('config-contact-phone').value,
+                    pixKey: document.getElementById('config-pix-key').value,
+                    babyName: document.getElementById('config-baby-name').value,
+                    prizes: {
+                        first: document.getElementById('config-first-prize').value,
+                        second: document.getElementById('config-second-prize').value,
+                        third: document.getElementById('config-third-prize').value
+                    }
+                };
+                
+                log('📋 Dados coletados do formulário:');
+                log(`  - Total números: ${newConfig.totalNumbers}`);
+                log(`  - Preço: R$ ${newConfig.ticketPrice}`);
+                log(`  - Bebê: ${newConfig.babyName}`);
+                log(`  - PIX: ${newConfig.pixKey}`);
+                log(`  - Telefone: ${newConfig.contactPhone}`);
+                
+                // Validações básicas
+                if (newConfig.totalNumbers < 100 || newConfig.totalNumbers > 10000) {
+                    throw new Error('Total de números deve estar entre 100 e 10000');
+                }
+                
+                if (newConfig.ticketPrice < 1) {
+                    throw new Error('Preço do bilhete deve ser maior que R$ 1,00');
+                }
+                
+                if (!newConfig.pixKey || !newConfig.contactPhone) {
+                    throw new Error('PIX e telefone são obrigatórios');
+                }
+                
+                log('✅ Validações básicas passaram');
+                
+                // Tentar salvar no Firebase primeiro
+                if (window.FirebaseDB) {
+                    try {
+                        log('🔥 Tentando salvar no Firebase...');
+                        const result = await window.FirebaseDB.saveConfig(newConfig);
+                        if (result.success) {
+                            log('✅ Firebase: Configurações salvas com sucesso');
+                        } else {
+                            throw new Error(result.error || 'Erro no Firebase');
+                        }
+                    } catch (firebaseError) {
+                        log(`⚠️ Firebase falhou: ${firebaseError.message}`);
+                    }
+                }
+                
+                // Sempre salvar no localStorage como backup
+                try {
+                    localStorage.setItem('adminConfig', JSON.stringify(newConfig));
+                    log('💾 localStorage: Configurações salvas como backup');
+                } catch (storageError) {
+                    log(`⚠️ localStorage falhou: ${storageError.message}`);
+                }
+                
+                // Atualizar configurações em memória
+                window.adminData.config = { ...window.adminData.config, ...newConfig };
+                log('🔄 Configurações atualizadas na memória');
+                
+                // Notificação de sucesso
+                log('🎉 SALVAMENTO CONCLUÍDO COM SUCESSO!');
+                
+                // Mostrar alerta de confirmação
+                alert(`✅ CONFIGURAÇÕES SALVAS!\n\n` +
+                    `📊 Total de números: ${newConfig.totalNumbers}\n` +
+                    `💰 Preço por bilhete: R$ ${newConfig.ticketPrice.toFixed(2)}\n` +
+                    `👶 Nome do bebê: ${newConfig.babyName}\n` +
+                    `📱 Telefone: ${newConfig.contactPhone}\n` +
+                    `💳 PIX: ${newConfig.pixKey}\n\n` +
+                    `🏆 Prêmios:\n` +
+                    `   1º: ${newConfig.prizes.first}\n` +
+                    `   2º: ${newConfig.prizes.second}\n` +
+                    `   3º: ${newConfig.prizes.third}`);
+                
+            } catch (error) {
+                log(`❌ ERRO: ${error.message}`);
+                alert('❌ Erro ao salvar configurações:\n\n' + error.message);
+            }
+        }
+
+        // Configurar event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página carregada');
+            
+            const form = document.getElementById('config-form');
+            if (form) {
+                form.addEventListener('submit', saveConfiguration);
+                log('✅ Event listener do formulário configurado');
+            } else {
+                log('❌ Formulário não encontrado');
+            }
+        });
+    </script>
+</body>
+</html>

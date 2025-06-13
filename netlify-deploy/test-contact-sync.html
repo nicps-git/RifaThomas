@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Configurações de Contato</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-item { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; margin: 5px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .config-display { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Configurações de Contato</h1>
+        
+        <div class="test-item info">
+            <h3>📋 Status Atual</h3>
+            <div id="status">Verificando configurações...</div>
+        </div>
+
+        <div class="test-item">
+            <h3>⚙️ Configurações do Firebase</h3>
+            <div id="firebase-config" class="config-display">Carregando...</div>
+            <button onclick="loadFirebaseConfig()">🔄 Recarregar do Firebase</button>
+        </div>
+
+        <div class="test-item">
+            <h3>🎨 Configurações Aplicadas na UI</h3>
+            <div id="ui-config" class="config-display">
+📱 Telefone: <span data-contact-phone>(11) 99999-9999</span>
+📧 Email: <span data-contact-email>contato@rifaonline.com</span>
+💳 PIX: <span data-pix-key>contato@charifa.com</span>
+👶 Bebê: <span data-baby-name>Thomas</span>
+            </div>
+            <button onclick="applyTestConfig()">🎨 Aplicar Config na UI</button>
+        </div>
+
+        <div class="test-item">
+            <h3>🧪 Teste de Configuração Personalizada</h3>
+            <textarea id="custom-config" rows="8" style="width: 100%; font-family: monospace;">
+{
+  "contactPhone": "(11) 88888-8888",
+  "contactEmail": "teste@sincronizacao.com",
+  "pixKey": "teste@pix.com",
+  "babyName": "Thomas TESTE",
+  "totalNumbers": 180,
+  "ticketPrice": 45.00
+}
+            </textarea>
+            <button onclick="saveCustomConfig()">💾 Salvar e Testar</button>
+        </div>
+
+        <div class="test-item">
+            <h3>📊 Log de Testes</h3>
+            <div id="test-log" style="background: #000; color: #0f0; padding: 10px; height: 200px; overflow-y: auto; font-family: monospace;">
+Iniciando testes de configuração...\n
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEl = document.getElementById('test-log');
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#74c0fc';
+            logEl.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = type;
+        }
+
+        async function loadFirebaseConfig() {
+            try {
+                log('🔄 Carregando configurações do Firebase...', 'info');
+                
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não disponível');
+                }
+
+                const result = await window.FirebaseDB.loadConfig();
+                
+                if (result.success) {
+                    document.getElementById('firebase-config').textContent = JSON.stringify(result.data, null, 2);
+                    log('✅ Configurações carregadas do Firebase', 'success');
+                    updateStatus('✅ Firebase conectado e funcionando', 'success');
+                    
+                    // Aplicar automaticamente na UI
+                    applyConfigToUI(result.data);
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao carregar configurações: ${error.message}`, 'error');
+                updateStatus('❌ Erro na conexão com Firebase', 'error');
+            }
+        }
+
+        function applyConfigToUI(config) {
+            try {
+                log('🎨 Aplicando configurações na UI...', 'info');
+                
+                // Aplicar nas spans de teste
+                if (config.contactPhone) {
+                    const phoneEl = document.querySelector('[data-contact-phone]');
+                    if (phoneEl) phoneEl.textContent = config.contactPhone;
+                    log(`📱 Telefone atualizado: ${config.contactPhone}`, 'success');
+                }
+                
+                if (config.contactEmail) {
+                    const emailEl = document.querySelector('[data-contact-email]');
+                    if (emailEl) emailEl.textContent = config.contactEmail;
+                    log(`📧 Email atualizado: ${config.contactEmail}`, 'success');
+                }
+                
+                if (config.pixKey) {
+                    const pixEl = document.querySelector('[data-pix-key]');
+                    if (pixEl) pixEl.textContent = config.pixKey;
+                    log(`💳 PIX atualizado: ${config.pixKey}`, 'success');
+                }
+                
+                if (config.babyName) {
+                    const babyEl = document.querySelector('[data-baby-name]');
+                    if (babyEl) babyEl.textContent = config.babyName;
+                    log(`👶 Nome do bebê atualizado: ${config.babyName}`, 'success');
+                }
+                
+                log('✅ Configurações aplicadas na UI com sucesso', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao aplicar configurações na UI: ${error.message}`, 'error');
+            }
+        }
+
+        async function applyTestConfig() {
+            try {
+                log('🧪 Aplicando configurações de teste...', 'info');
+                await loadFirebaseConfig();
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`, 'error');
+            }
+        }
+
+        async function saveCustomConfig() {
+            try {
+                log('💾 Salvando configuração personalizada...', 'info');
+                
+                const configText = document.getElementById('custom-config').value;
+                const customConfig = JSON.parse(configText);
+                
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('Firebase não disponível');
+                }
+
+                const result = await window.FirebaseDB.saveConfig(customConfig);
+                
+                if (result.success) {
+                    log('✅ Configuração personalizada salva no Firebase', 'success');
+                    
+                    // Aguardar um pouco e recarregar
+                    setTimeout(async () => {
+                        await loadFirebaseConfig();
+                        log('🔄 Teste de sincronização concluído', 'success');
+                    }, 1000);
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (parseError) {
+                if (parseError instanceof SyntaxError) {
+                    log(`❌ Erro no JSON: ${parseError.message}`, 'error');
+                } else {
+                    log(`❌ Erro ao salvar: ${parseError.message}`, 'error');
+                }
+            }
+        }
+
+        // Inicializar quando Firebase estiver pronto
+        function initializeTest() {
+            if (typeof window.FirebaseDB !== 'undefined') {
+                log('🔥 Firebase disponível, iniciando testes...', 'success');
+                loadFirebaseConfig();
+            } else {
+                log('⏳ Aguardando Firebase carregar...', 'warning');
+                window.addEventListener('firebaseReady', () => {
+                    log('🔥 Firebase carregado via evento', 'success');
+                    loadFirebaseConfig();
+                });
+            }
+        }
+
+        // Aguardar carregamento
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeTest);
+        } else {
+            initializeTest();
+        }
+    </script>
+</body>
+</html>
