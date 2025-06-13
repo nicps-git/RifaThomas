@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnóstico - Listagem de Participantes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .diagnostic-panel {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-ok { color: #28a745; }
+        .status-error { color: #dc3545; }
+        .status-warning { color: #ffc107; }
+        .log-item { 
+            margin: 5px 0; 
+            padding: 5px; 
+            background: #f8f9fa; 
+            border-left: 3px solid #007bff;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { 
+            background: #f8f9fa; 
+        }
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .test-btn:hover { 
+            background: #0056b3; 
+        }
+        .test-btn.success { 
+            background: #28a745; 
+        }
+        .test-btn.error { 
+            background: #dc3545; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico - Problema Listagem de Participantes</h1>
+    
+    <div class="diagnostic-panel">
+        <h2>📋 Status do Sistema</h2>
+        <div id="system-status">
+            <div>🔄 Verificando sistema...</div>
+        </div>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h2>🧪 Testes de Diagnóstico</h2>
+        <button class="test-btn" onclick="teste1_VerificarElementos()">1️⃣ Verificar Elementos DOM</button>
+        <button class="test-btn" onclick="teste2_VerificarFirebase()">2️⃣ Verificar Firebase</button>
+        <button class="test-btn" onclick="teste3_VerificarDados()">3️⃣ Verificar Dados</button>
+        <button class="test-btn" onclick="teste4_CarregarParticipantes()">4️⃣ Carregar Participantes</button>
+        <button class="test-btn" onclick="teste5_CriarDadosTeste()">5️⃣ Criar Dados de Teste</button>
+        <button class="test-btn" onclick="teste6_ForcarExibicao()">6️⃣ Forçar Exibição</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h2>📊 Tabela de Participantes (Teste)</h2>
+        <div class="participants-table-container">
+            <table class="participants-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Números</th>
+                        <th>Valor</th>
+                        <th>Método</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="participants-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            🔍 Aguardando testes de diagnóstico...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h2>📝 Log de Eventos</h2>
+        <div id="diagnostic-log"></div>
+        <button class="test-btn" onclick="clearLog()">🗑️ Limpar Log</button>
+    </div>
+
+    <!-- Scripts necessários -->
+    <script src="firebase-config.js"></script>
+    <script>
+        // Sistema de log
+        const diagnosticLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logItem = { timestamp, message, type };
+            diagnosticLog.push(logItem);
+            
+            const logContainer = document.getElementById('diagnostic-log');
+            const logElement = document.createElement('div');
+            logElement.className = 'log-item';
+            logElement.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logElement);
+            
+            // Scroll para o final
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[DIAGNOSTICO] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('diagnostic-log').innerHTML = '';
+            diagnosticLog.length = 0;
+            log('Log limpo', 'info');
+        }
+
+        // Dados de exemplo para teste
+        const dadosTeste = [
+            {
+                id: 'test-1',
+                buyerName: 'Maria Silva (TESTE)',
+                buyerPhone: '(11) 99999-1111',
+                buyerEmail: 'maria@teste.com',
+                numbers: [1, 2, 3],
+                totalAmount: 120.00,
+                paymentMethod: 'donation',
+                status: 'pending_donation',
+                date: new Date().toISOString(),
+                timestamp: new Date()
+            },
+            {
+                id: 'test-2',
+                buyerName: 'João Santos (CONFIRMADO)',
+                buyerPhone: '(11) 98888-2222',
+                buyerEmail: 'joao@teste.com',
+                numbers: [10, 20, 30],
+                totalAmount: 120.00,
+                paymentMethod: 'pix',
+                status: 'confirmed',
+                date: new Date().toISOString(),
+                timestamp: new Date()
+            }
+        ];
+
+        // Testes de diagnóstico
+        function teste1_VerificarElementos() {
+            log('=== TESTE 1: Verificando Elementos DOM ===');
+            
+            const tbody = document.getElementById('participants-tbody');
+            if (tbody) {
+                log('✅ Elemento participants-tbody encontrado', 'success');
+                log(`ℹ️ InnerHTML atual: ${tbody.innerHTML.length} caracteres`);
+            } else {
+                log('❌ Elemento participants-tbody NÃO encontrado', 'error');
+            }
+            
+            const tabela = document.querySelector('.participants-table');
+            if (tabela) {
+                log('✅ Tabela de participantes encontrada', 'success');
+            } else {
+                log('❌ Tabela de participantes NÃO encontrada', 'error');
+            }
+            
+            log('=== FIM TESTE 1 ===');
+        }
+
+        function teste2_VerificarFirebase() {
+            log('=== TESTE 2: Verificando Firebase ===');
+            
+            if (typeof window.FirebaseDB !== 'undefined') {
+                log('✅ Firebase disponível', 'success');
+                log(`ℹ️ Métodos disponíveis: ${Object.keys(window.FirebaseDB).join(', ')}`);
+            } else {
+                log('❌ Firebase não disponível', 'error');
+            }
+            
+            log('=== FIM TESTE 2 ===');
+        }
+
+        function teste3_VerificarDados() {
+            log('=== TESTE 3: Verificando Dados ===');
+            
+            // Verificar localStorage
+            const localData = localStorage.getItem('purchases');
+            if (localData) {
+                try {
+                    const parsed = JSON.parse(localData);
+                    log(`✅ Dados no localStorage: ${parsed.length} itens`, 'success');
+                } catch (e) {
+                    log('❌ Erro ao fazer parse dos dados do localStorage', 'error');
+                }
+            } else {
+                log('⚠️ Nenhum dado encontrado no localStorage', 'warning');
+            }
+            
+            // Verificar backup
+            const backupData = localStorage.getItem('admin_purchases_backup');
+            if (backupData) {
+                try {
+                    const parsed = JSON.parse(backupData);
+                    log(`✅ Backup no localStorage: ${parsed.length} itens`, 'success');
+                } catch (e) {
+                    log('❌ Erro ao fazer parse do backup', 'error');
+                }
+            } else {
+                log('⚠️ Nenhum backup encontrado no localStorage', 'warning');
+            }
+            
+            log('=== FIM TESTE 3 ===');
+        }
+
+        function teste4_CarregarParticipantes() {
+            log('=== TESTE 4: Carregando Participantes ===');
+            
+            const tbody = document.getElementById('participants-tbody');
+            if (!tbody) {
+                log('❌ Elemento tbody não encontrado', 'error');
+                return;
+            }
+            
+            // Simular função loadParticipants
+            try {
+                tbody.innerHTML = '';
+                
+                // Tentar carregar dados do localStorage
+                let dados = [];
+                const localData = localStorage.getItem('purchases');
+                const backupData = localStorage.getItem('admin_purchases_backup');
+                
+                if (localData) {
+                    dados = JSON.parse(localData);
+                    log(`📦 Carregados ${dados.length} itens do localStorage`, 'info');
+                } else if (backupData) {
+                    dados = JSON.parse(backupData);
+                    log(`📦 Carregados ${dados.length} itens do backup`, 'info');
+                } else {
+                    log('⚠️ Nenhum dado disponível para carregar', 'warning');
+                    dados = dadosTeste;
+                    log(`🎭 Usando dados de teste: ${dados.length} itens`, 'info');
+                }
+                
+                if (dados.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                📭 Nenhum participante encontrado
+                            </td>
+                        </tr>
+                    `;
+                    log('📭 Exibindo mensagem de "nenhum participante"', 'warning');
+                } else {
+                    dados.forEach((item, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.buyerName || item.name || 'N/A'}</td>
+                            <td>${item.buyerPhone || item.phone || 'N/A'}</td>
+                            <td>${(item.numbers || []).join(', ') || 'N/A'}</td>
+                            <td>R$ ${(item.totalAmount || 0).toFixed(2)}</td>
+                            <td>${item.paymentMethod || 'N/A'}</td>
+                            <td>${item.status || 'confirmed'}</td>
+                            <td>${new Date(item.date || Date.now()).toLocaleDateString('pt-BR')}</td>
+                            <td>
+                                <button onclick="alert('Testando botão ${index}')" style="padding: 5px 10px; margin: 2px;">
+                                    🔍 Teste
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    log(`✅ ${dados.length} participantes exibidos na tabela`, 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao carregar participantes: ${error.message}`, 'error');
+            }
+            
+            log('=== FIM TESTE 4 ===');
+        }
+
+        function teste5_CriarDadosTeste() {
+            log('=== TESTE 5: Criando Dados de Teste ===');
+            
+            try {
+                // Salvar dados de teste no localStorage
+                localStorage.setItem('purchases', JSON.stringify(dadosTeste));
+                localStorage.setItem('admin_purchases_backup', JSON.stringify(dadosTeste));
+                
+                log(`✅ ${dadosTeste.length} dados de teste salvos no localStorage`, 'success');
+                
+                // Tentar carregar novamente
+                teste4_CarregarParticipantes();
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados de teste: ${error.message}`, 'error');
+            }
+            
+            log('=== FIM TESTE 5 ===');
+        }
+
+        function teste6_ForcarExibicao() {
+            log('=== TESTE 6: Forçando Exibição ===');
+            
+            const tbody = document.getElementById('participants-tbody');
+            if (!tbody) {
+                log('❌ Elemento tbody não encontrado', 'error');
+                return;
+            }
+            
+            // Forçar exibição de dados básicos
+            tbody.innerHTML = `
+                <tr style="background: #e7f3ff;">
+                    <td><strong>TESTE FORÇADO</strong></td>
+                    <td>(11) 99999-0000</td>
+                    <td>1, 2, 3</td>
+                    <td>R$ 120,00</td>
+                    <td>PIX</td>
+                    <td><span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 3px;">Confirmado</span></td>
+                    <td>${new Date().toLocaleDateString('pt-BR')}</td>
+                    <td>
+                        <button onclick="alert('Funcionando!')" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px;">
+                            ✅ Teste
+                        </button>
+                    </td>
+                </tr>
+                <tr style="background: #fff3cd;">
+                    <td><strong>TESTE DOAÇÃO</strong></td>
+                    <td>(11) 88888-1111</td>
+                    <td>10, 20</td>
+                    <td>R$ 80,00</td>
+                    <td>Doação</td>
+                    <td><span style="background: #ffc107; color: black; padding: 3px 8px; border-radius: 3px;">Pendente</span></td>
+                    <td>${new Date().toLocaleDateString('pt-BR')}</td>
+                    <td>
+                        <button onclick="alert('Confirmar!')" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">
+                            ✅ Confirmar
+                        </button>
+                        <button onclick="alert('Rejeitar!')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">
+                            ❌ Rejeitar
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            log('✅ Exibição forçada aplicada com sucesso', 'success');
+            log('=== FIM TESTE 6 ===');
+        }
+
+        // Verificar status do sistema
+        function verificarSistema() {
+            const statusDiv = document.getElementById('system-status');
+            let status = [];
+            
+            // Verificar DOM
+            if (document.getElementById('participants-tbody')) {
+                status.push('<span class="status-ok">✅ DOM: participants-tbody encontrado</span>');
+            } else {
+                status.push('<span class="status-error">❌ DOM: participants-tbody não encontrado</span>');
+            }
+            
+            // Verificar Firebase
+            if (typeof window.FirebaseDB !== 'undefined') {
+                status.push('<span class="status-ok">✅ Firebase: Disponível</span>');
+            } else {
+                status.push('<span class="status-warning">⚠️ Firebase: Não disponível</span>');
+            }
+            
+            // Verificar dados
+            const localData = localStorage.getItem('purchases');
+            const backupData = localStorage.getItem('admin_purchases_backup');
+            if (localData || backupData) {
+                status.push('<span class="status-ok">✅ Dados: Disponíveis no localStorage</span>');
+            } else {
+                status.push('<span class="status-warning">⚠️ Dados: Não encontrados no localStorage</span>');
+            }
+            
+            statusDiv.innerHTML = status.join('<br>');
+        }
+
+        // Inicializar quando DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Diagnóstico iniciado', 'info');
+            verificarSistema();
+            
+            // Verificar a cada 2 segundos se Firebase está disponível
+            const checkFirebase = setInterval(() => {
+                if (typeof window.FirebaseDB !== 'undefined') {
+                    log('🔥 Firebase detectado e disponível', 'success');
+                    verificarSistema();
+                    clearInterval(checkFirebase);
+                }
+            }, 2000);
+            
+            // Timeout para parar a verificação após 10 segundos
+            setTimeout(() => {
+                clearInterval(checkFirebase);
+                if (typeof window.FirebaseDB === 'undefined') {
+                    log('⏰ Timeout: Firebase não carregou em 10 segundos', 'warning');
+                }
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

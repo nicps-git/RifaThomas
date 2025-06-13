@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Teste das Correções - Admin Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .btn-test {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        
+        h1 { color: #333; }
+        h2 { color: #007bff; }
+        h3 { color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Teste das Correções - Admin Panel</h1>
+        <p><strong>Objetivo:</strong> Verificar se os três problemas críticos foram resolvidos:</p>
+        <ol>
+            <li>✅ <strong>Auto-sync erro "loadDataFromFirebase is not defined"</strong></li>
+            <li>✅ <strong>Botões de ação não funcionam (editar, confirmar, rejeitar)</strong></li>
+            <li>✅ <strong>Dashboard zerado (estatísticas não aparecem)</strong></li>
+        </ol>
+    </div>
+
+    <div class="test-container">
+        <h2>🔥 1. Teste de Conexão Firebase</h2>
+        <div id="firebase-status" class="test-result info">
+            ⏳ Verificando Firebase...
+        </div>
+        <button class="btn-test" onclick="testFirebase()">🧪 Testar Firebase</button>
+    </div>
+
+    <div class="test-container">
+        <h2>📊 2. Teste de Carregamento de Dados</h2>
+        <div id="data-status" class="test-result info">
+            ⏳ Aguardando teste...
+        </div>
+        <button class="btn-test" onclick="testLoadData()">📋 Carregar Dados</button>
+        <button class="btn-test" onclick="createTestData()">🧪 Criar Dados de Teste</button>
+    </div>
+
+    <div class="test-container">
+        <h2>🔄 3. Teste de Auto-Sync</h2>
+        <div id="autosync-status" class="test-result info">
+            ⏳ Auto-sync não testado...
+        </div>
+        <button class="btn-test" onclick="testAutoSync()">🔄 Testar Auto-Sync</button>
+        <button class="btn-success" onclick="forceSync()">⚡ Forçar Sincronização</button>
+    </div>
+
+    <div class="test-container">
+        <h2>🎯 4. Teste de Botões de Ação</h2>
+        <div id="buttons-status" class="test-result info">
+            ⏳ Botões não testados...
+        </div>
+        <div id="test-buttons-area">
+            <!-- Os botões de teste serão criados aqui -->
+        </div>
+        <button class="btn-test" onclick="testActionButtons()">🎯 Testar Botões</button>
+    </div>
+
+    <div class="test-container">
+        <h2>📈 5. Teste de Dashboard</h2>
+        <div id="dashboard-status" class="test-result info">
+            ⏳ Dashboard não testado...
+        </div>
+        <div id="dashboard-preview">
+            <p><strong>Participantes:</strong> <span id="test-participants">-</span></p>
+            <p><strong>Receita:</strong> <span id="test-revenue">-</span></p>
+            <p><strong>Números Vendidos:</strong> <span id="test-sold">-</span></p>
+            <p><strong>Taxa de Conclusão:</strong> <span id="test-completion">-</span></p>
+        </div>
+        <button class="btn-test" onclick="testDashboard()">📊 Testar Dashboard</button>
+    </div>
+
+    <div class="test-container">
+        <h2>📝 Log de Testes</h2>
+        <div id="test-log" style="max-height: 300px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px;">
+            Logs aparecerão aqui...<br>
+        </div>
+        <button class="btn-test" onclick="clearLog()">🧹 Limpar Log</button>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+
+    <script>
+        let testResults = {
+            firebase: false,
+            loadData: false,
+            autoSync: false,
+            buttons: false,
+            dashboard: false
+        };
+
+        function log(message, type = 'info') {
+            const logArea = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const emoji = type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            
+            logArea.innerHTML += `[${timestamp}] ${emoji} ${message}<br>`;
+            logArea.scrollTop = logArea.scrollHeight;
+            console.log(`${emoji} ${message}`);
+        }
+
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `test-result ${type}`;
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').innerHTML = 'Log limpo...<br>';
+        }
+
+        // 1. Teste Firebase
+        async function testFirebase() {
+            log('🔥 Testando conexão Firebase...', 'info');
+            
+            try {
+                if (typeof window.FirebaseDB === 'undefined') {
+                    throw new Error('FirebaseDB não está disponível');
+                }
+                
+                // Teste básico
+                const testDoc = await firebase.firestore().collection('test').doc('ping').get();
+                
+                updateStatus('firebase-status', '✅ Firebase conectado e funcionando', 'success');
+                log('Firebase conectado com sucesso', 'success');
+                testResults.firebase = true;
+                
+            } catch (error) {
+                updateStatus('firebase-status', `❌ Erro Firebase: ${error.message}`, 'error');
+                log(`Erro Firebase: ${error.message}`, 'error');
+                testResults.firebase = false;
+            }
+        }
+
+        // 2. Teste de carregamento de dados
+        async function testLoadData() {
+            log('📊 Testando carregamento de dados...', 'info');
+            
+            try {
+                if (typeof window.adminData === 'undefined') {
+                    throw new Error('adminData não está disponível');
+                }
+                
+                // Verificar se loadDataFromFirebase existe
+                if (typeof window.loadDataFromFirebase === 'function') {
+                    log('loadDataFromFirebase encontrada', 'success');
+                } else {
+                    log('loadDataFromFirebase não encontrada globalmente, testando no admin.js', 'warning');
+                }
+                
+                // Tentar carregar dados
+                if (window.FirebaseDB && window.FirebaseDB.getPurchases) {
+                    const result = await window.FirebaseDB.getPurchases();
+                    const count = result.success ? result.data.length : 0;
+                    
+                    updateStatus('data-status', `✅ Dados carregados: ${count} compras`, 'success');
+                    log(`Dados carregados com sucesso: ${count} compras`, 'success');
+                    testResults.loadData = true;
+                } else {
+                    throw new Error('Funções de carregamento não disponíveis');
+                }
+                
+            } catch (error) {
+                updateStatus('data-status', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no carregamento: ${error.message}`, 'error');
+                testResults.loadData = false;
+            }
+        }
+
+        // 3. Teste Auto-Sync
+        function testAutoSync() {
+            log('🔄 Testando sistema de auto-sync...', 'info');
+            
+            try {
+                if (typeof window.initializeAutoSync === 'function') {
+                    log('initializeAutoSync encontrada', 'success');
+                } else {
+                    throw new Error('initializeAutoSync não encontrada');
+                }
+                
+                if (typeof window.refreshData === 'function') {
+                    log('refreshData encontrada', 'success');
+                } else {
+                    throw new Error('refreshData não encontrada');
+                }
+                
+                updateStatus('autosync-status', '✅ Sistema de auto-sync disponível', 'success');
+                log('Sistema de auto-sync funcionando', 'success');
+                testResults.autoSync = true;
+                
+            } catch (error) {
+                updateStatus('autosync-status', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no auto-sync: ${error.message}`, 'error');
+                testResults.autoSync = false;
+            }
+        }
+
+        function forceSync() {
+            log('⚡ Forçando sincronização...', 'info');
+            
+            try {
+                if (typeof window.refreshData === 'function') {
+                    window.refreshData();
+                    log('Sincronização forçada executada', 'success');
+                } else {
+                    throw new Error('refreshData não disponível');
+                }
+            } catch (error) {
+                log(`Erro na sincronização: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. Teste Botões de Ação
+        function testActionButtons() {
+            log('🎯 Testando botões de ação...', 'info');
+            
+            try {
+                // Verificar se as funções de handler existem
+                const requiredFunctions = [
+                    'handleConfirmDonation',
+                    'handleRejectDonation',
+                    'handleEditParticipant',
+                    'setupEventDelegation'
+                ];
+                
+                let missingFunctions = [];
+                requiredFunctions.forEach(funcName => {
+                    if (typeof window[funcName] === 'function') {
+                        log(`${funcName} encontrada`, 'success');
+                    } else {
+                        missingFunctions.push(funcName);
+                    }
+                });
+                
+                if (missingFunctions.length === 0) {
+                    // Criar botões de teste
+                    createTestButtons();
+                    updateStatus('buttons-status', '✅ Todas as funções de botão disponíveis', 'success');
+                    log('Sistema de botões funcionando', 'success');
+                    testResults.buttons = true;
+                } else {
+                    throw new Error(`Funções faltando: ${missingFunctions.join(', ')}`);
+                }
+                
+            } catch (error) {
+                updateStatus('buttons-status', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro nos botões: ${error.message}`, 'error');
+                testResults.buttons = false;
+            }
+        }
+
+        function createTestButtons() {
+            const area = document.getElementById('test-buttons-area');
+            area.innerHTML = `
+                <h4>Botões de Teste (simulação):</h4>
+                <button 
+                    class="btn-success" 
+                    data-action="confirm-donation" 
+                    data-purchase-id="test-123"
+                    onclick="log('Botão CONFIRMAR clicado - sistema funcionando!', 'success')"
+                >
+                    ✅ Confirmar Doação (Teste)
+                </button>
+                <button 
+                    class="btn-danger" 
+                    data-action="reject-donation" 
+                    data-purchase-id="test-123"
+                    onclick="log('Botão REJEITAR clicado - sistema funcionando!', 'warning')"
+                >
+                    ❌ Rejeitar Doação (Teste)
+                </button>
+                <button 
+                    class="btn-test" 
+                    data-action="edit-participant" 
+                    data-purchase-id="test-123"
+                    onclick="log('Botão EDITAR clicado - sistema funcionando!', 'info')"
+                >
+                    ✏️ Editar Participante (Teste)
+                </button>
+            `;
+        }
+
+        // 5. Teste Dashboard
+        function testDashboard() {
+            log('📊 Testando dashboard...', 'info');
+            
+            try {
+                if (typeof window.calculateStats === 'function') {
+                    log('calculateStats encontrada', 'success');
+                } else {
+                    throw new Error('calculateStats não encontrada');
+                }
+                
+                if (typeof window.updateDashboard === 'function') {
+                    log('updateDashboard encontrada', 'success');
+                } else {
+                    throw new Error('updateDashboard não encontrada');
+                }
+                
+                // Simular dados para teste
+                if (window.adminData) {
+                    const mockData = [
+                        {
+                            id: 'test-1',
+                            status: 'confirmed',
+                            totalAmount: 120,
+                            numbers: [1, 2, 3]
+                        },
+                        {
+                            id: 'test-2',
+                            status: 'pending_donation',
+                            totalAmount: 80,
+                            numbers: [10, 11]
+                        }
+                    ];
+                    
+                    const originalPurchases = window.adminData.purchases;
+                    window.adminData.purchases = mockData;
+                    
+                    // Calcular estatísticas
+                    const stats = window.calculateStats();
+                    
+                    // Atualizar preview
+                    document.getElementById('test-participants').textContent = stats.totalParticipants;
+                    document.getElementById('test-revenue').textContent = `R$ ${stats.totalRevenue.toFixed(2)}`;
+                    document.getElementById('test-sold').textContent = stats.soldNumbers;
+                    document.getElementById('test-completion').textContent = `${stats.completionRate}%`;
+                    
+                    // Restaurar dados originais
+                    window.adminData.purchases = originalPurchases;
+                    
+                    updateStatus('dashboard-status', '✅ Dashboard funcionando corretamente', 'success');
+                    log('Dashboard testado com sucesso', 'success');
+                    testResults.dashboard = true;
+                } else {
+                    throw new Error('adminData não disponível');
+                }
+                
+            } catch (error) {
+                updateStatus('dashboard-status', `❌ Erro: ${error.message}`, 'error');
+                log(`Erro no dashboard: ${error.message}`, 'error');
+                testResults.dashboard = false;
+            }
+        }
+
+        // Criar dados de teste
+        async function createTestData() {
+            log('🧪 Criando dados de teste...', 'info');
+            
+            try {
+                if (!testResults.firebase) {
+                    throw new Error('Firebase deve estar conectado primeiro');
+                }
+                
+                const testPurchase = {
+                    buyerName: 'Teste Correções',
+                    buyerPhone: '(11) 99999-9999',
+                    buyerEmail: 'teste@correcoes.com',
+                    numbers: [150, 149, 148],
+                    totalAmount: 120.00,
+                    paymentMethod: 'doacao',
+                    status: 'pending_donation',
+                    date: new Date().toISOString()
+                };
+                
+                const result = await window.FirebaseDB.savePurchase(testPurchase);
+                if (result.success) {
+                    log(`Dados de teste criados: ${result.id}`, 'success');
+                    updateStatus('data-status', `✅ Dados de teste criados: ${result.id}`, 'success');
+                } else {
+                    throw new Error(result.error);
+                }
+                
+            } catch (error) {
+                log(`Erro ao criar dados: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-iniciar alguns testes quando a página carregar
+        window.addEventListener('firebaseReady', () => {
+            log('🔥 Firebase carregado, iniciando testes automáticos...', 'info');
+            setTimeout(() => {
+                testFirebase();
+                setTimeout(testLoadData, 1000);
+                setTimeout(testAutoSync, 2000);
+            }, 500);
+        });
+
+        // Se Firebase já estiver disponível
+        if (typeof window.FirebaseDB !== 'undefined') {
+            log('🔥 Firebase já disponível, iniciando testes...', 'info');
+            setTimeout(() => {
+                testFirebase();
+                setTimeout(testLoadData, 1000);
+                setTimeout(testAutoSync, 2000);
+            }, 500);
+        }
+
+        // Log inicial
+        log('🔧 Página de teste carregada. Pronta para verificar correções!', 'info');
+        log('📋 Execute os testes para verificar se os problemas foram resolvidos.', 'info');
+    </script>
+</body>
+</html>

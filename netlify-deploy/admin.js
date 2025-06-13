@@ -67,6 +67,7 @@ async function initializeAdminSystem() {
         
         // 2. Configurar event listeners
         setupEventListeners();
+        setupEventDelegation();
         
         // 3. Carregar dados
         await loadPurchaseData();
@@ -76,6 +77,9 @@ async function initializeAdminSystem() {
         
         systemInitialized = true;
         console.log('✅ Sistema admin inicializado com sucesso!');
+        
+        // 5. Inicializar sistema de auto-sync
+        initializeAutoSync();
         
     } catch (error) {
         console.error('❌ Erro na inicialização do admin:', error);
@@ -1160,4 +1164,1021 @@ async function deleteParticipant(purchaseId) {
         console.error('❌ Erro ao excluir participante:', error);
         showNotification(`❌ Erro ao excluir: ${error.message}`, 'error');
     }
+}
+
+// ========================================================================================
+// FUNÇÕES AUXILIARES DE FORMATAÇÃO
+// ========================================================================================
+
+/**
+ * Formatar valor monetário para formato brasileiro
+ */
+function formatCurrency(value) {
+    if (value === null || value === undefined || isNaN(value)) {
+        return 'R$ 0,00';
+    }
+    
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(Number(value));
+}
+
+/**
+ * Formatar data para formato brasileiro
+ */
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        
+        // Verificar se a data é válida
+        if (isNaN(date.getTime())) {
+            return 'Data inválida';
+        }
+        
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (error) {
+        console.warn('Erro ao formatar data:', error);
+        return 'Data inválida';
+    }
+}
+
+/**
+ * Atualizar elemento DOM com fallback para erro
+ */
+function updateElement(id, value) {
+    try {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        } else {
+            console.warn(`⚠️ Elemento ${id} não encontrado`);
+        }
+    } catch (error) {
+        console.error(`❌ Erro ao atualizar elemento ${id}:`, error);
+    }
+}
+
+/**
+ * Mostrar erro com fallback
+ */
+function showError(message) {
+    console.error('❌', message);
+    
+    // Tentar mostrar notificação se a função existe
+    if (typeof showNotification === 'function') {
+        showNotification(message, 'error');
+    } else {
+        // Fallback para alert
+        alert('Erro: ' + message);
+    }
+}
+
+/**
+ * Mostrar notificação (implementação simples)
+ */
+function showNotification(message, type = 'info') {
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    
+    // Implementação simples de notificação
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 5px;
+        color: white;
+        font-weight: bold;
+        z-index: 10000;
+        max-width: 350px;
+        word-wrap: break-word;
+    `;
+    
+    // Definir cor baseada no tipo
+    switch (type) {
+        case 'success':
+            notification.style.backgroundColor = '#28a745';
+            break;
+        case 'error':
+            notification.style.backgroundColor = '#dc3545';
+            break;
+        case 'warning':
+            notification.style.backgroundColor = '#ffc107';
+            notification.style.color = 'black';
+            break;
+        default:
+            notification.style.backgroundColor = '#007bff';
+    }
+    
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Remover após 5 segundos
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+
+// ========================================================================================
+// LOGS E INICIALIZAÇÃO
+// ========================================================================================
+
+console.log('✅ Admin.js carregado completamente - todas as funções disponíveis');
+console.log('📋 Versão: Sistema completo com listagem de participantes corrigida');
+
+// Expor funções globalmente para uso nos botões e debug
+window.adminData = adminData;
+window.loadParticipants = loadParticipants;
+window.createParticipantRow = createParticipantRow;
+window.formatCurrency = formatCurrency;
+window.formatDate = formatDate;
+window.updateInterface = updateInterface;
+window.loadPurchaseData = loadPurchaseData;
+window.createSampleData = createSampleData;
+
+// ========================================================================================
+// 🔄 SISTEMA DE AUTO-SYNC - IMPLEMENTAÇÃO COMPLETA
+// ========================================================================================
+
+// Configuração do auto-sync
+let autoSyncConfig = {
+    enabled: true,        // Ativo por padrão
+    interval: 30000,      // 30 segundos
+    timer: null,          // Timer interno
+    lastUpdate: null,     // Última atualização
+    isUpdating: false     // Flag de controle
+};
+
+// Inicializar sistema de auto-sync
+function initializeAutoSync() {
+    console.log('🔄 Inicializando sistema de auto-sync...');
+    
+    try {
+        // Recuperar estado salvo
+        const savedState = localStorage.getItem('adminAutoSyncEnabled');
+        if (savedState !== null) {
+            autoSyncConfig.enabled = JSON.parse(savedState);
+        }
+        
+        // Configurar indicadores visuais
+        updateSyncIndicators();
+        
+        // Iniciar auto-sync se habilitado
+        if (autoSyncConfig.enabled) {
+            startAutoSync();
+        }
+        
+        console.log('✅ Sistema de auto-sync inicializado');
+        
+    } catch (error) {
+        console.error('❌ Erro ao inicializar auto-sync:', error);
+    }
+}
+
+// Atualização manual de dados
+function refreshData() {
+    console.log('🔄 [REFRESH] Atualizando dados manualmente...');
+    
+    // Evitar múltiplas atualizações simultâneas
+    if (autoSyncConfig.isUpdating) {
+        console.log('⚠️ Atualização já em andamento...');
+        showNotification('⚠️ Atualização já em andamento', 'warning');
+        return;
+    }
+    
+    autoSyncConfig.isUpdating = true;
+    showSyncProgress(0, 'Iniciando atualização...');
+    
+    try {
+        // Atualizar progresso
+        showSyncProgress(25, 'Carregando dados...');
+        
+        // Carregar dados baseado na disponibilidade do Firebase
+        if (adminData.firebaseReady && window.FirebaseDB) {
+            showSyncProgress(50, 'Carregando do Firebase...');
+            loadDataFromFirebase();
+        } else {
+            showSyncProgress(50, 'Carregando dados locais...');
+            loadParticipants();
+            updateDashboard();
+        }
+        
+        // Finalizar progresso
+        showSyncProgress(75, 'Atualizando interface...');
+        setTimeout(() => {
+            showSyncProgress(100, 'Concluído!');
+            autoSyncConfig.lastUpdate = new Date();
+            updateSyncIndicators();
+            
+            setTimeout(() => {
+                hideSyncProgress();
+                autoSyncConfig.isUpdating = false;
+                showNotification('🔄 Dados atualizados com sucesso!', 'success');
+            }, 500);
+        }, 300);
+        
+    } catch (error) {
+        console.error('❌ Erro ao atualizar dados:', error);
+        hideSyncProgress();
+        autoSyncConfig.isUpdating = false;
+        showNotification('❌ Erro ao atualizar dados: ' + error.message, 'error');
+    }
+}
+
+// Toggle do auto-sync
+function toggleAutoSync() {
+    console.log('🔄 Toggle auto-sync...');
+    
+    autoSyncConfig.enabled = !autoSyncConfig.enabled;
+    
+    // Salvar estado
+    localStorage.setItem('adminAutoSyncEnabled', JSON.stringify(autoSyncConfig.enabled));
+    
+    if (autoSyncConfig.enabled) {
+        startAutoSync();
+        showNotification('▶️ Auto-sync ativado', 'success');
+    } else {
+        stopAutoSync();
+        showNotification('⏸️ Auto-sync pausado', 'warning');
+    }
+    
+    updateSyncIndicators();
+}
+
+// Iniciar auto-sync
+function startAutoSync() {
+    console.log('▶️ Iniciando auto-sync...');
+    
+    // Parar timer anterior se existir
+    if (autoSyncConfig.timer) {
+        clearInterval(autoSyncConfig.timer);
+    }
+    
+    // Configurar novo timer
+    autoSyncConfig.timer = setInterval(() => {
+        // Verificar se a página está visível
+        if (document.hidden) {
+            console.log('📄 Página não visível, pulando auto-sync');
+            return;
+        }
+        
+        // Verificar se não há atualização em andamento
+        if (!autoSyncConfig.isUpdating) {
+            console.log('⏰ Executando auto-sync...');
+            refreshData();
+        } else {
+            console.log('⚠️ Auto-sync pulado - atualização em andamento');
+        }
+    }, autoSyncConfig.interval);
+    
+    console.log(`✅ Auto-sync ativo (${autoSyncConfig.interval / 1000}s)`);
+}
+
+// Parar auto-sync
+function stopAutoSync() {
+    console.log('⏸️ Parando auto-sync...');
+    
+    if (autoSyncConfig.timer) {
+        clearInterval(autoSyncConfig.timer);
+        autoSyncConfig.timer = null;
+    }
+    
+    console.log('✅ Auto-sync parado');
+}
+
+// Recarregamento completo da página
+function forceFullRefresh() {
+    const confirmed = confirm('🔃 Recarregar a página completamente?\n\nIsso irá recarregar toda a interface.');
+    
+    if (confirmed) {
+        console.log('🔃 Recarregando página...');
+        showNotification('🔃 Recarregando página...', 'info');
+        
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }
+}
+
+// Mostrar estatísticas detalhadas
+function showDataStats() {
+    console.log('📊 Mostrando estatísticas...');
+    
+    try {
+        const stats = calculateStats();
+        
+        const statsMessage = `📊 ESTATÍSTICAS DETALHADAS:
+
+👥 Participantes: ${stats.totalParticipants}
+💰 Receita Total: ${formatCurrency(stats.totalRevenue)}
+🎯 Números Vendidos: ${stats.soldNumbers}
+📈 Taxa de Conclusão: ${stats.completionRate}%
+
+🔥 Status Firebase: ${adminData.firebaseReady ? '✅ Conectado' : '❌ Desconectado'}
+🔄 Auto-sync: ${autoSyncConfig.enabled ? '🟢 Ativo' : '🔴 Pausado'}
+⏰ Última Atualização: ${autoSyncConfig.lastUpdate ? autoSyncConfig.lastUpdate.toLocaleTimeString('pt-BR') : 'Nunca'}
+⚡ Intervalo Auto-sync: ${autoSyncConfig.interval / 1000} segundos
+
+📋 Breakdown por Status:
+• Pendentes: ${adminData.purchases.filter(p => p.status === 'pending_donation').length}
+• Confirmadas: ${adminData.purchases.filter(p => p.status === 'confirmed').length}
+• Rejeitadas: ${adminData.purchases.filter(p => p.status === 'rejected').length}`;
+
+        alert(statsMessage);
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular estatísticas:', error);
+        showNotification('❌ Erro ao calcular estatísticas', 'error');
+    }
+}
+
+// Mostrar progresso da sincronização
+function showSyncProgress(percentage, status) {
+    const progressDiv = document.getElementById('sync-progress');
+    const progressBar = document.getElementById('sync-progress-bar');
+    const progressText = document.getElementById('sync-progress-text');
+    
+    if (progressDiv && progressBar) {
+        progressDiv.style.display = 'block';
+        progressBar.style.width = percentage + '%';
+        
+        if (progressText) {
+            progressText.textContent = status || `${percentage}%`;
+        }
+        
+        console.log(`📊 Progresso: ${percentage}% - ${status}`);
+    }
+}
+
+// Esconder progresso da sincronização
+function hideSyncProgress() {
+    const progressDiv = document.getElementById('sync-progress');
+    if (progressDiv) {
+        progressDiv.style.display = 'none';
+    }
+}
+
+// Atualizar indicadores visuais do auto-sync
+function updateSyncIndicators() {
+    // Atualizar status do auto-sync
+    const statusElement = document.getElementById('auto-sync-status');
+    if (statusElement) {
+        if (autoSyncConfig.enabled) {
+            statusElement.textContent = '🟢 Auto-sync Ativo';
+            statusElement.style.background = '#28a745';
+        } else {
+            statusElement.textContent = '🔴 Auto-sync Pausado';
+            statusElement.style.background = '#dc3545';
+        }
+    }
+    
+    // Atualizar botão de toggle
+    const toggleButton = document.getElementById('auto-sync-btn');
+    if (toggleButton) {
+        if (autoSyncConfig.enabled) {
+            toggleButton.textContent = '⏸️ Pausar Auto-sync';
+            toggleButton.style.background = '#ffc107';
+            toggleButton.style.color = '#000';
+        } else {
+            toggleButton.textContent = '▶️ Ativar Auto-sync';
+            toggleButton.style.background = '#28a745';
+            toggleButton.style.color = '#fff';
+        }
+    }
+    
+    // Atualizar timestamp da última atualização
+    const timeElement = document.getElementById('last-update-time');
+    if (timeElement && autoSyncConfig.lastUpdate) {
+        timeElement.textContent = `Última atualização: ${autoSyncConfig.lastUpdate.toLocaleTimeString('pt-BR')}`;
+    }
+}
+
+// Calcular estatísticas
+function calculateStats() {
+    const confirmedPurchases = adminData.purchases.filter(p => p.status === 'confirmed');
+    
+    const soldNumbers = confirmedPurchases.reduce((total, purchase) => {
+        return total + (purchase.numbers ? purchase.numbers.length : 0);
+    }, 0);
+    
+    const totalRevenue = confirmedPurchases.reduce((total, purchase) => {
+        return total + (purchase.totalAmount || 0);
+    }, 0);
+    
+    const completionRate = adminData.config.totalNumbers > 0 
+        ? ((soldNumbers / adminData.config.totalNumbers) * 100).toFixed(1)
+        : 0;
+    
+    return {
+        totalParticipants: confirmedPurchases.length,
+        soldNumbers,
+        totalRevenue,
+        completionRate
+    };
+}
+
+// Carregar dados do Firebase
+async function loadDataFromFirebase() {
+    try {
+        console.log('🔥 Carregando dados do Firebase...');
+        
+        // Carregar compras
+        const purchasesResult = await window.FirebaseDB.getPurchases();
+        if (purchasesResult.success) {
+            adminData.purchases = purchasesResult.data;
+            console.log(`✅ ${purchasesResult.data.length} compras carregadas do Firebase`);
+        } else {
+            console.warn('⚠️ Erro ao carregar compras:', purchasesResult.error);
+        }
+        
+        // Carregar configurações
+        const configResult = await window.FirebaseDB.getConfig();
+        if (configResult.success) {
+            adminData.config = { ...adminData.config, ...configResult.data };
+            console.log('✅ Configurações carregadas do Firebase');
+        }
+        
+        // Atualizar interface
+        loadParticipants();
+        updateDashboard();
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dados do Firebase:', error);
+        throw error; // Re-throw para o auto-sync capturar
+    }
+}
+
+// ==========================================
+// 🎯 EVENT DELEGATION - SISTEMA DE BOTÕES
+// ==========================================
+
+function setupEventDelegation() {
+    console.log('🎯 Configurando Event Delegation para botões...');
+    
+    // Remover listeners existentes para evitar duplicação
+    document.removeEventListener('click', handleGlobalClicks);
+    
+    // Adicionar listener global para capturar todos os cliques
+    document.addEventListener('click', handleGlobalClicks);
+    
+    console.log('✅ Event Delegation configurado com sucesso!');
+}
+
+function handleGlobalClicks(event) {
+    const target = event.target;
+    const button = target.closest('button');
+    
+    if (!button) return;
+    
+    // Prevenir comportamento padrão
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const action = button.getAttribute('data-action');
+    const purchaseId = button.getAttribute('data-purchase-id');
+    
+    console.log(`🎯 Clique capturado: action="${action}", purchaseId="${purchaseId}"`);
+    
+    switch (action) {
+        case 'confirm-donation':
+            handleConfirmDonation(purchaseId);
+            break;
+        case 'reject-donation':
+            handleRejectDonation(purchaseId);
+            break;
+        case 'edit-participant':
+            handleEditParticipant(purchaseId);
+            break;
+        default:
+            console.log(`⚠️ Ação desconhecida: ${action}`);
+    }
+}
+
+// ==========================================
+// 🎯 HANDLERS DE CONFIRMAÇÃO
+// ==========================================
+
+async function handleConfirmDonation(purchaseId) {
+    console.log(`✅ CONFIRMANDO DOAÇÃO: ${purchaseId}`);
+    
+    const purchase = adminData.purchases.find(p => p.id === purchaseId);
+    if (!purchase) {
+        alert('❌ Compra não encontrada!');
+        return;
+    }
+    
+    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
+    const numbers = purchase.numbers || [];
+    const total = purchase.totalAmount || 0;
+    
+    const confirmMessage = `✅ CONFIRMAR DOAÇÃO\n\n` +
+        `👤 Cliente: ${buyerName}\n` +
+        `🎯 Números: ${numbers.join(', ')}\n` +
+        `💰 Valor: R$ ${total.toFixed(2)}\n\n` +
+        `⚠️ Esta ação não pode ser desfeita.\n` +
+        `Confirmar doação?`;
+    
+    if (!confirm(confirmMessage)) {
+        console.log('❌ Confirmação cancelada pelo usuário');
+        return;
+    }
+    
+    try {
+        // Atualizar status localmente
+        purchase.status = 'confirmed';
+        purchase.confirmedAt = new Date().toISOString();
+        purchase.confirmedBy = 'admin';
+        
+        // Salvar no localStorage
+        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
+        console.log('💾 Dados salvos no localStorage');
+        
+        // Tentar salvar no Firebase se disponível
+        if (adminData.firebaseReady && typeof window.FirebaseDB !== 'undefined') {
+            try {
+                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'confirmed', {
+                    confirmedAt: purchase.confirmedAt,
+                    confirmedBy: purchase.confirmedBy
+                });
+                
+                if (result.success) {
+                    console.log('✅ Atualizado no Firebase');
+                } else {
+                    console.warn('⚠️ Erro no Firebase:', result.error);
+                }
+            } catch (firebaseError) {
+                console.warn('⚠️ Firebase indisponível:', firebaseError);
+            }
+        }
+        
+        // Atualizar interface
+        loadParticipants();
+        updateDashboard();
+        
+        // Notificação de sucesso
+        showNotification('✅ Doação confirmada com sucesso!', 'success');
+        alert('✅ DOAÇÃO CONFIRMADA!\n\nNúmeros foram marcados como vendidos.');
+        
+        console.log('✅ CONFIRMAÇÃO CONCLUÍDA COM SUCESSO!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao confirmar doação:', error);
+        alert(`❌ Erro ao confirmar: ${error.message}`);
+        showNotification('Erro ao confirmar doação: ' + error.message, 'error');
+    }
+}
+
+async function handleRejectDonation(purchaseId) {
+    console.log(`❌ REJEITANDO DOAÇÃO: ${purchaseId}`);
+    
+    const purchase = adminData.purchases.find(p => p.id === purchaseId);
+    if (!purchase) {
+        alert('❌ Compra não encontrada!');
+        return;
+    }
+    
+    const buyerName = purchase.buyerName || purchase.name || 'Comprador';
+    const reason = prompt(`❌ REJEITAR DOAÇÃO\n\nCliente: ${buyerName}\n\nMotivo da rejeição (opcional):`);
+    
+    if (reason === null) {
+        console.log('❌ Rejeição cancelada pelo usuário');
+        return;
+    }
+    
+    try {
+        // Atualizar status localmente
+        purchase.status = 'rejected';
+        purchase.rejectedAt = new Date().toISOString();
+        purchase.rejectionReason = reason || 'Sem motivo especificado';
+        purchase.rejectedBy = 'admin';
+        
+        // Salvar no localStorage
+        localStorage.setItem('purchases', JSON.stringify(adminData.purchases));
+        console.log('💾 Dados salvos no localStorage');
+        
+        // Tentar salvar no Firebase se disponível
+        if (adminData.firebaseReady && typeof window.FirebaseDB !== 'undefined') {
+            try {
+                const result = await window.FirebaseDB.updatePurchaseStatus(purchaseId, 'rejected', {
+                    rejectedAt: purchase.rejectedAt,
+                    rejectionReason: purchase.rejectionReason,
+                    rejectedBy: purchase.rejectedBy
+                });
+                
+                if (result.success) {
+                    console.log('✅ Atualizado no Firebase');
+                } else {
+                    console.warn('⚠️ Erro no Firebase:', result.error);
+                }
+            } catch (firebaseError) {
+                console.warn('⚠️ Firebase indisponível:', firebaseError);
+            }
+        }
+        
+        // Atualizar interface
+        loadParticipants();
+        updateDashboard();
+        
+        // Notificação
+        showNotification('❌ Doação rejeitada. Números liberados.', 'warning');
+        alert('❌ DOAÇÃO REJEITADA!\n\nNúmeros foram liberados para venda.');
+        
+        console.log('✅ REJEIÇÃO CONCLUÍDA COM SUCESSO!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao rejeitar doação:', error);
+        alert(`❌ Erro ao rejeitar: ${error.message}`);
+        showNotification('Erro ao rejeitar doação: ' + error.message, 'error');
+    }
+}
+
+function handleEditParticipant(purchaseId) {
+    console.log(`✏️ EDITANDO PARTICIPANTE: ${purchaseId}`);
+    
+    const purchase = adminData.purchases.find(p => p.id === purchaseId);
+    if (!purchase) {
+        alert('❌ Participante não encontrado!');
+        return;
+    }
+    
+    const buyerName = purchase.buyerName || purchase.name || 'Participante';
+    alert(`✏️ EDIÇÃO DE PARTICIPANTE\n\nNome: ${buyerName}\nID: ${purchaseId}\n\n⚠️ Funcionalidade de edição será implementada em breve.`);
+}
+
+// ========================================================================================
+// FUNÇÕES AUXILIARES DE FORMATAÇÃO
+// ========================================================================================
+
+/**
+ * Formatar valor monetário para formato brasileiro
+ */
+function formatCurrency(value) {
+    if (value === null || value === undefined || isNaN(value)) {
+        return 'R$ 0,00';
+    }
+    
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+    }).format(Number(value));
+}
+
+/**
+ * Formatar data para formato brasileiro
+ */
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    
+    try {
+        const date = new Date(dateString);
+        
+        // Verificar se a data é válida
+        if (isNaN(date.getTime())) {
+            return 'Data inválida';
+        }
+        
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (error) {
+        console.warn('Erro ao formatar data:', error);
+        return 'Data inválida';
+    }
+}
+
+/**
+ * Atualizar elemento DOM com fallback para erro
+ */
+function updateElement(id, value) {
+    try {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        } else {
+            console.warn(`⚠️ Elemento ${id} não encontrado`);
+        }
+    } catch (error) {
+        console.error(`❌ Erro ao atualizar elemento ${id}:`, error);
+    }
+}
+
+/**
+ * Mostrar erro com fallback
+ */
+function showError(message) {
+    console.error('❌', message);
+    
+    // Tentar mostrar notificação se a função existe
+    if (typeof showNotification === 'function') {
+        showNotification(message, 'error');
+    } else {
+        // Fallback para alert
+        alert('Erro: ' + message);
+    }
+}
+
+// ========================================================================================
+// LOGS E INICIALIZAÇÃO
+// ========================================================================================
+
+console.log('✅ Admin.js carregado completamente - todas as funções disponíveis');
+console.log('📋 Versão: Sistema completo com listagem de participantes corrigida');
+
+// Expor funções globalmente para uso nos botões e debug
+window.adminData = adminData;
+window.loadParticipants = loadParticipants;
+window.createParticipantRow = createParticipantRow;
+window.formatCurrency = formatCurrency;
+window.formatDate = formatDate;
+window.updateInterface = updateInterface;
+window.loadPurchaseData = loadPurchaseData;
+window.createSampleData = createSampleData;
+
+// ========================================================================================
+// 🔄 SISTEMA DE AUTO-SYNC - IMPLEMENTAÇÃO COMPLETA
+// ========================================================================================
+
+// Configuração do auto-sync (já definida anteriormente)
+
+// Inicializar sistema de auto-sync (DUPLICADO - CORRIGIDO)
+function initializeAutoSync() {
+    console.log('🔄 Inicializando sistema de auto-sync...');
+    
+    try {
+        // Recuperar estado salvo
+        const savedState = localStorage.getItem('adminAutoSyncEnabled');
+        if (savedState !== null) {
+            autoSyncConfig.enabled = JSON.parse(savedState);
+        }
+        
+        // Configurar indicadores visuais
+        updateSyncIndicators();
+        
+        // Iniciar auto-sync se habilitado
+        if (autoSyncConfig.enabled) {
+            startAutoSync();
+        }
+        
+        console.log('✅ Sistema de auto-sync inicializado');
+        
+    } catch (error) {
+        console.error('❌ Erro ao inicializar auto-sync:', error);
+    }
+}
+
+// Atualização manual de dados
+function refreshData() {
+    console.log('🔄 [REFRESH] Atualizando dados manualmente...');
+    
+    // Evitar múltiplas atualizações simultâneas
+    if (autoSyncConfig.isUpdating) {
+        console.log('⚠️ Atualização já em andamento...');
+        showNotification('⚠️ Atualização já em andamento', 'warning');
+        return;
+    }
+    
+    autoSyncConfig.isUpdating = true;
+    showSyncProgress(0, 'Iniciando atualização...');
+    
+    try {
+        // Atualizar progresso
+        showSyncProgress(25, 'Carregando dados...');
+        
+        // Carregar dados baseado na disponibilidade do Firebase
+        if (adminData.firebaseReady && window.FirebaseDB) {
+            showSyncProgress(50, 'Carregando do Firebase...');
+            loadDataFromFirebase();
+        } else {
+            showSyncProgress(50, 'Carregando dados locais...');
+            loadParticipants();
+            updateDashboard();
+        }
+        
+        // Finalizar progresso
+        showSyncProgress(75, 'Atualizando interface...');
+        setTimeout(() => {
+            showSyncProgress(100, 'Concluído!');
+            autoSyncConfig.lastUpdate = new Date();
+            updateSyncIndicators();
+            
+            setTimeout(() => {
+                hideSyncProgress();
+                autoSyncConfig.isUpdating = false;
+                showNotification('🔄 Dados atualizados com sucesso!', 'success');
+            }, 500);
+        }, 300);
+        
+    } catch (error) {
+        console.error('❌ Erro ao atualizar dados:', error);
+        hideSyncProgress();
+        autoSyncConfig.isUpdating = false;
+        showNotification('❌ Erro ao atualizar dados: ' + error.message, 'error');
+    }
+}
+
+// Toggle do auto-sync
+function toggleAutoSync() {
+    console.log('🔄 Toggle auto-sync...');
+    
+    autoSyncConfig.enabled = !autoSyncConfig.enabled;
+    
+    // Salvar estado
+    localStorage.setItem('adminAutoSyncEnabled', JSON.stringify(autoSyncConfig.enabled));
+    
+    if (autoSyncConfig.enabled) {
+        startAutoSync();
+        showNotification('▶️ Auto-sync ativado', 'success');
+    } else {
+        stopAutoSync();
+        showNotification('⏸️ Auto-sync pausado', 'warning');
+    }
+    
+    updateSyncIndicators();
+}
+
+// Iniciar auto-sync
+function startAutoSync() {
+    console.log('▶️ Iniciando auto-sync...');
+    
+    // Parar timer anterior se existir
+    if (autoSyncConfig.timer) {
+        clearInterval(autoSyncConfig.timer);
+    }
+    
+    // Configurar novo timer
+    autoSyncConfig.timer = setInterval(() => {
+        // Verificar se a página está visível
+        if (document.hidden) {
+            console.log('📄 Página não visível, pulando auto-sync');
+            return;
+        }
+        
+        // Verificar se não há atualização em andamento
+        if (!autoSyncConfig.isUpdating) {
+            console.log('⏰ Executando auto-sync...');
+            refreshData();
+        } else {
+            console.log('⚠️ Auto-sync pulado - atualização em andamento');
+        }
+    }, autoSyncConfig.interval);
+    
+    console.log(`✅ Auto-sync ativo (${autoSyncConfig.interval / 1000}s)`);
+}
+
+// Parar auto-sync
+function stopAutoSync() {
+    console.log('⏸️ Parando auto-sync...');
+    
+    if (autoSyncConfig.timer) {
+        clearInterval(autoSyncConfig.timer);
+        autoSyncConfig.timer = null;
+    }
+    
+    console.log('✅ Auto-sync parado');
+}
+
+// Recarregamento completo da página
+function forceFullRefresh() {
+    const confirmed = confirm('🔃 Recarregar a página completamente?\n\nIsso irá recarregar toda a interface.');
+    
+    if (confirmed) {
+        console.log('🔃 Recarregando página...');
+        showNotification('🔃 Recarregando página...', 'info');
+        
+        setTimeout(() => {
+            location.reload();
+        }, 1000);
+    }
+}
+
+// Mostrar estatísticas detalhadas
+function showDataStats() {
+    console.log('📊 Mostrando estatísticas...');
+    
+    try {
+        const stats = calculateStats();
+        
+        const statsMessage = `📊 ESTATÍSTICAS DETALHADAS:
+
+👥 Participantes: ${stats.totalParticipants}
+💰 Receita Total: ${formatCurrency(stats.totalRevenue)}
+🎯 Números Vendidos: ${stats.soldNumbers}
+📈 Taxa de Conclusão: ${stats.completionRate}%
+
+🔥 Status Firebase: ${adminData.firebaseReady ? '✅ Conectado' : '❌ Desconectado'}
+🔄 Auto-sync: ${autoSyncConfig.enabled ? '🟢 Ativo' : '🔴 Pausado'}
+⏰ Última Atualização: ${autoSyncConfig.lastUpdate ? autoSyncConfig.lastUpdate.toLocaleTimeString('pt-BR') : 'Nunca'}
+⚡ Intervalo Auto-sync: ${autoSyncConfig.interval / 1000} segundos
+
+📋 Breakdown por Status:
+• Pendentes: ${adminData.purchases.filter(p => p.status === 'pending_donation').length}
+• Confirmadas: ${adminData.purchases.filter(p => p.status === 'confirmed').length}
+• Rejeitadas: ${adminData.purchases.filter(p => p.status === 'rejected').length}`;
+
+        alert(statsMessage);
+        
+    } catch (error) {
+        console.error('❌ Erro ao calcular estatísticas:', error);
+        showNotification('❌ Erro ao calcular estatísticas', 'error');
+    }
+}
+
+// Mostrar progresso da sincronização
+function showSyncProgress(percentage, status) {
+    const progressDiv = document.getElementById('sync-progress');
+    const progressBar = document.getElementById('sync-progress-bar');
+    const progressText = document.getElementById('sync-progress-text');
+    
+    if (progressDiv && progressBar) {
+        progressDiv.style.display = 'block';
+        progressBar.style.width = percentage + '%';
+        
+        if (progressText) {
+            progressText.textContent = status || `${percentage}%`;
+        }
+        
+        console.log(`📊 Progresso: ${percentage}% - ${status}`);
+    }
+}
+
+// Esconder progresso da sincronização
+function hideSyncProgress() {
+    const progressDiv = document.getElementById('sync-progress');
+    if (progressDiv) {
+        progressDiv.style.display = 'none';
+    }
+}
+
+// Atualizar indicadores visuais do auto-sync
+function updateSyncIndicators() {
+    // Atualizar status do auto-sync
+    const statusElement = document.getElementById('auto-sync-status');
+    if (statusElement) {
+        if (autoSyncConfig.enabled) {
+            statusElement.textContent = '🟢 Auto-sync Ativo';
+            statusElement.style.background = '#28a745';
+        } else {
+            statusElement.textContent = '🔴 Auto-sync Pausado';
+            statusElement.style.background = '#dc3545';
+        }
+    }
+    
+    // Atualizar botão de toggle
+    const toggleButton = document.getElementById('auto-sync-btn');
+    if (toggleButton) {
+        if (autoSyncConfig.enabled) {
+            toggleButton.textContent = '⏸️ Pausar Auto-sync';
+            toggleButton.style.background = '#ffc107';
+            toggleButton.style.color = '#000';
+        } else {
+            toggleButton.textContent = '▶️ Ativar Auto-sync';
+            toggleButton.style.background = '#28a745';
+            toggleButton.style.color = '#fff';
+        }
+    }
+    
+    // Atualizar timestamp da última atualização
+    const timeElement = document.getElementById('last-update-time');
+    if (timeElement && autoSyncConfig.lastUpdate) {
+        timeElement.textContent = `Última atualização: ${autoSyncConfig.lastUpdate.toLocaleTimeString('pt-BR')}`;
+    }
+}
+
+// Calcular estatísticas
+function calculateStats() {
+    const confirmedPurchases = adminData.purchases.filter(p => p.status === 'confirmed');
+    
+    const soldNumbers = confirmedPurchases.reduce((total, purchase) => {
+        return total + (purchase.numbers ? purchase.numbers.length : 0);
+    }, 0);
+    
+    const totalRevenue = confirmedPurchases.reduce((total, purchase) => {
+        return total + (purchase.totalAmount || 0);
+    }, 0);
+    
+    const completionRate = adminData.config.totalNumbers > 0 
+        ? ((soldNumbers / adminData.config.totalNumbers) * 100).toFixed(1)
+        : 0;
+    
+    return {
+        totalParticipants: confirmedPurchases.length,
+        soldNumbers,
+        totalRevenue,
+        completionRate
+    };
 }

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Teste - Listagem de Participantes Corrigida</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-panel {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-ok { color: #28a745; font-weight: bold; }
+        .status-error { color: #dc3545; font-weight: bold; }
+        .status-warning { color: #ffc107; font-weight: bold; }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { 
+            background: #f8f9fa; 
+            font-weight: bold;
+        }
+        
+        .test-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .test-btn:hover { background: #0056b3; }
+        .test-btn.success { background: #28a745; }
+        .test-btn.error { background: #dc3545; }
+        .test-btn.warning { background: #ffc107; color: black; }
+        
+        .participants-table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        
+        .log-output {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .action-buttons button {
+            padding: 5px 10px;
+            margin: 2px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-confirmed { background: #28a745; }
+        .status-pending-donation { background: #ffc107; color: black; }
+        .status-rejected { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste - Listagem de Participantes Corrigida</h1>
+    
+    <div class="test-panel">
+        <h2>📋 Status da Correção</h2>
+        <div id="status-info">
+            <div>🔄 Verificando sistema...</div>
+        </div>
+    </div>
+
+    <div class="test-panel">
+        <h2>🧪 Testes Funcionais</h2>
+        <button class="test-btn" onclick="testeCarregarFuncoes()">1️⃣ Verificar Funções</button>
+        <button class="test-btn" onclick="testeCriarDados()">2️⃣ Criar Dados de Teste</button>
+        <button class="test-btn" onclick="testeCarregarParticipantes()">3️⃣ Carregar Participantes</button>
+        <button class="test-btn" onclick="testeFormatacao()">4️⃣ Testar Formatação</button>
+        <button class="test-btn" onclick="testeBotoes()">5️⃣ Testar Botões</button>
+        <button class="test-btn" onclick="limparTudo()">🗑️ Limpar Tudo</button>
+        
+        <div id="test-output" class="log-output"></div>
+    </div>
+
+    <div class="test-panel">
+        <h2>👥 Tabela de Participantes</h2>
+        <div class="participants-table-container">
+            <table class="participants-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>WhatsApp</th>
+                        <th>Números</th>
+                        <th>Valor</th>
+                        <th>Método</th>
+                        <th>Status</th>
+                        <th>Data</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="participants-tbody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                            🔍 Aguardando testes...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+    
+    <script>
+        let testLog = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            testLog.push(logMessage);
+            
+            const output = document.getElementById('test-output');
+            const div = document.createElement('div');
+            div.textContent = logMessage;
+            div.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : type === 'warning' ? '#ffc107' : '#333';
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+            
+            console.log(logMessage);
+        }
+
+        function updateStatus() {
+            const statusDiv = document.getElementById('status-info');
+            let status = [];
+            
+            // Verificar adminData
+            if (typeof window.adminData !== 'undefined') {
+                status.push('<span class="status-ok">✅ adminData: Disponível</span>');
+            } else {
+                status.push('<span class="status-error">❌ adminData: Não disponível</span>');
+            }
+            
+            // Verificar loadParticipants
+            if (typeof window.loadParticipants === 'function') {
+                status.push('<span class="status-ok">✅ loadParticipants: Função disponível</span>');
+            } else {
+                status.push('<span class="status-error">❌ loadParticipants: Função não encontrada</span>');
+            }
+            
+            // Verificar formatCurrency
+            if (typeof window.formatCurrency === 'function') {
+                status.push('<span class="status-ok">✅ formatCurrency: Função disponível</span>');
+            } else {
+                status.push('<span class="status-error">❌ formatCurrency: Função não encontrada</span>');
+            }
+            
+            // Verificar formatDate
+            if (typeof window.formatDate === 'function') {
+                status.push('<span class="status-ok">✅ formatDate: Função disponível</span>');
+            } else {
+                status.push('<span class="status-error">❌ formatDate: Função não encontrada</span>');
+            }
+            
+            // Verificar Firebase
+            if (typeof window.FirebaseDB !== 'undefined') {
+                status.push('<span class="status-ok">✅ Firebase: Conectado</span>');
+            } else {
+                status.push('<span class="status-warning">⚠️ Firebase: Não conectado</span>');
+            }
+            
+            statusDiv.innerHTML = status.join('<br>');
+        }
+
+        function testeCarregarFuncoes() {
+            log('=== TESTE 1: Verificando Funções ===');
+            
+            try {
+                // Verificar se adminData existe
+                if (typeof window.adminData !== 'undefined') {
+                    log('✅ adminData encontrado', 'success');
+                    log(`📊 Total de compras: ${window.adminData.purchases?.length || 0}`);
+                } else {
+                    log('❌ adminData não encontrado', 'error');
+                }
+                
+                // Verificar loadParticipants
+                if (typeof window.loadParticipants === 'function') {
+                    log('✅ loadParticipants encontrada', 'success');
+                } else {
+                    log('❌ loadParticipants não encontrada', 'error');
+                }
+                
+                // Verificar funções de formatação
+                if (typeof window.formatCurrency === 'function') {
+                    const testValue = window.formatCurrency(120.50);
+                    log(`✅ formatCurrency funciona: ${testValue}`, 'success');
+                } else {
+                    log('❌ formatCurrency não encontrada', 'error');
+                }
+                
+                if (typeof window.formatDate === 'function') {
+                    const testDate = window.formatDate(new Date());
+                    log(`✅ formatDate funciona: ${testDate}`, 'success');
+                } else {
+                    log('❌ formatDate não encontrada', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste: ${error.message}`, 'error');
+            }
+            
+            log('=== FIM TESTE 1 ===');
+        }
+
+        function testeCriarDados() {
+            log('=== TESTE 2: Criando Dados de Teste ===');
+            
+            try {
+                // Criar dados de teste
+                const dadosTeste = [
+                    {
+                        id: 'test-01',
+                        buyerName: 'Maria Silva (TESTE CORRIGIDO)',
+                        buyerPhone: '(11) 99999-1111',
+                        buyerEmail: 'maria@teste.com',
+                        numbers: [1, 2, 3],
+                        totalAmount: 120.00,
+                        paymentMethod: 'donation',
+                        status: 'pending_donation',
+                        date: new Date().toISOString(),
+                        timestamp: new Date()
+                    },
+                    {
+                        id: 'test-02',
+                        buyerName: 'João Santos (CONFIRMADO)',
+                        buyerPhone: '(11) 98888-2222',
+                        buyerEmail: 'joao@teste.com',
+                        numbers: [10, 20, 30],
+                        totalAmount: 120.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        date: new Date().toISOString(),
+                        timestamp: new Date()
+                    },
+                    {
+                        id: 'test-03',
+                        buyerName: 'Ana Costa (REJEITADA)',
+                        buyerPhone: '(11) 97777-3333',
+                        buyerEmail: 'ana@teste.com',
+                        numbers: [50, 51],
+                        totalAmount: 80.00,
+                        paymentMethod: 'donation',
+                        status: 'rejected',
+                        date: new Date().toISOString(),
+                        timestamp: new Date()
+                    }
+                ];
+                
+                // Atualizar adminData se existir
+                if (typeof window.adminData !== 'undefined') {
+                    window.adminData.purchases = dadosTeste;
+                    log(`✅ ${dadosTeste.length} dados de teste criados no adminData`, 'success');
+                } else {
+                    // Criar adminData básico
+                    window.adminData = { purchases: dadosTeste };
+                    log(`✅ adminData criado com ${dadosTeste.length} dados de teste`, 'success');
+                }
+                
+                // Salvar no localStorage
+                localStorage.setItem('purchases', JSON.stringify(dadosTeste));
+                localStorage.setItem('admin_purchases_backup', JSON.stringify(dadosTeste));
+                log('💾 Dados salvos no localStorage', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados: ${error.message}`, 'error');
+            }
+            
+            log('=== FIM TESTE 2 ===');
+        }
+
+        function testeCarregarParticipantes() {
+            log('=== TESTE 3: Carregando Participantes ===');
+            
+            try {
+                const tbody = document.getElementById('participants-tbody');
+                if (!tbody) {
+                    log('❌ Elemento participants-tbody não encontrado', 'error');
+                    return;
+                }
+                
+                // Verificar se loadParticipants existe
+                if (typeof window.loadParticipants === 'function') {
+                    log('📋 Chamando loadParticipants...', 'info');
+                    window.loadParticipants();
+                    log('✅ loadParticipants executada', 'success');
+                } else {
+                    log('❌ Função loadParticipants não encontrada', 'error');
+                    
+                    // Tentar carregar manualmente
+                    log('🔧 Tentando carregamento manual...', 'warning');
+                    
+                    if (window.adminData && window.adminData.purchases) {
+                        tbody.innerHTML = '';
+                        
+                        window.adminData.purchases.forEach((purchase, index) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td><strong>${purchase.buyerName || 'N/A'}</strong></td>
+                                <td>${purchase.buyerPhone || 'N/A'}</td>
+                                <td>${(purchase.numbers || []).join(', ')}</td>
+                                <td>${window.formatCurrency ? window.formatCurrency(purchase.totalAmount) : 'R$ ' + (purchase.totalAmount || 0).toFixed(2)}</td>
+                                <td>${purchase.paymentMethod || 'N/A'}</td>
+                                <td><span class="status-badge status-${purchase.status || 'confirmed'}">${purchase.status || 'confirmed'}</span></td>
+                                <td>${window.formatDate ? window.formatDate(purchase.date) : new Date(purchase.date).toLocaleDateString('pt-BR')}</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button onclick="alert('Teste ${index + 1}')" style="background: #007bff; color: white;">
+                                            🔍 Teste
+                                        </button>
+                                    </div>
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        
+                        log(`✅ ${window.adminData.purchases.length} participantes carregados manualmente`, 'success');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao carregar participantes: ${error.message}`, 'error');
+            }
+            
+            log('=== FIM TESTE 3 ===');
+        }
+
+        function testeFormatacao() {
+            log('=== TESTE 4: Testando Formatação ===');
+            
+            try {
+                // Testar formatCurrency
+                if (typeof window.formatCurrency === 'function') {
+                    const valores = [0, 10.5, 120.99, 1000, null, undefined];
+                    valores.forEach(valor => {
+                        const resultado = window.formatCurrency(valor);
+                        log(`💰 formatCurrency(${valor}) = ${resultado}`, 'info');
+                    });
+                } else {
+                    log('❌ formatCurrency não disponível', 'error');
+                }
+                
+                // Testar formatDate
+                if (typeof window.formatDate === 'function') {
+                    const datas = [new Date(), '2025-06-13T10:30:00', null, 'invalid'];
+                    datas.forEach(data => {
+                        const resultado = window.formatDate(data);
+                        log(`📅 formatDate(${data}) = ${resultado}`, 'info');
+                    });
+                } else {
+                    log('❌ formatDate não disponível', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste de formatação: ${error.message}`, 'error');
+            }
+            
+            log('=== FIM TESTE 4 ===');
+        }
+
+        function testeBotoes() {
+            log('=== TESTE 5: Testando Botões ===');
+            
+            try {
+                const tbody = document.getElementById('participants-tbody');
+                const botoes = tbody.querySelectorAll('button');
+                
+                log(`🔘 ${botoes.length} botões encontrados na tabela`, 'info');
+                
+                botoes.forEach((botao, index) => {
+                    log(`${index + 1}. ${botao.textContent.trim()}`, 'info');
+                });
+                
+                if (botoes.length > 0) {
+                    log('✅ Botões estão sendo criados corretamente', 'success');
+                } else {
+                    log('⚠️ Nenhum botão encontrado', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro ao testar botões: ${error.message}`, 'error');
+            }
+            
+            log('=== FIM TESTE 5 ===');
+        }
+
+        function limparTudo() {
+            log('=== LIMPEZA COMPLETA ===');
+            
+            try {
+                // Limpar tabela
+                const tbody = document.getElementById('participants-tbody');
+                if (tbody) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                🧹 Tabela limpa
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                // Limpar dados
+                if (window.adminData) {
+                    window.adminData.purchases = [];
+                }
+                localStorage.removeItem('purchases');
+                localStorage.removeItem('admin_purchases_backup');
+                
+                // Limpar log
+                testLog = [];
+                document.getElementById('test-output').innerHTML = '';
+                
+                log('🧹 Limpeza completa realizada', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro na limpeza: ${error.message}`, 'error');
+            }
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Teste de correção iniciado', 'success');
+            updateStatus();
+            
+            // Atualizar status a cada 2 segundos
+            setInterval(updateStatus, 2000);
+        });
+    </script>
+</body>
+</html>
