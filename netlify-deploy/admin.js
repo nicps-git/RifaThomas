@@ -900,7 +900,320 @@ setTimeout(() => {
     }
 }, 10000); // 10 segundos para dar tempo da página carregar completamente
 
+// ========================================================================================
+// SISTEMA DE ATUALIZAÇÃO AUTOMÁTICA E SINCRONIZAÇÃO EM TEMPO REAL
+// ========================================================================================
+
+// Configuração da sincronização automática
+let autoSyncConfig = {
+    enabled: true,
+    interval: 30000, // 30 segundos
+    timer: null,
+    lastUpdate: null,
+    isUpdating: false
+};
+
+// Inicializar sistema de auto-sync
+function initializeAutoSync() {
+    console.log('🔄 Inicializando sistema de auto-sync...');
+    
+    // Atualizar display do último update
+    updateLastUpdateDisplay();
+    
+    // Iniciar auto-sync se habilitado
+    if (autoSyncConfig.enabled) {
+        startAutoSync();
+    }
+    
+    // Configurar indicadores visuais
+    updateSyncIndicators();
+}
+
+// Função principal de atualização de dados
+async function refreshData() {
+    if (autoSyncConfig.isUpdating) {
+        console.log('⚠️ Atualização já em andamento...');
+        return;
+    }
+    
+    console.log('🔄 Iniciando atualização manual de dados...');
+    autoSyncConfig.isUpdating = true;
+    
+    try {
+        // Mostrar progresso
+        showSyncProgress('Conectando...', 10);
+        
+        // Carregar dados atualizados
+        showSyncProgress('Carregando dados...', 30);
+        await loadPurchaseData();
+        
+        // Atualizar interface
+        showSyncProgress('Atualizando interface...', 60);
+        updateDashboard();
+        loadParticipants();
+        
+        // Forçar criação de botões se necessário
+        showSyncProgress('Verificando botões...', 80);
+        setTimeout(() => {
+            const buttons = document.querySelectorAll('[data-action]');
+            if (buttons.length === 0) {
+                console.log('⚠️ Botões não encontrados após atualização, forçando criação...');
+                window.forcarBotoesEmergencia?.();
+            }
+        }, 1000);
+        
+        // Finalizar
+        showSyncProgress('Concluído!', 100);
+        autoSyncConfig.lastUpdate = new Date();
+        updateLastUpdateDisplay();
+        
+        console.log('✅ Dados atualizados com sucesso!');
+        showNotification('📊 Dados atualizados com sucesso!', 'success');
+        
+    } catch (error) {
+        console.error('❌ Erro ao atualizar dados:', error);
+        showNotification('❌ Erro ao atualizar dados: ' + error.message, 'error');
+        showSyncProgress('Erro na atualização', 0);
+    } finally {
+        autoSyncConfig.isUpdating = false;
+        setTimeout(hideSyncProgress, 2000);
+    }
+}
+
+// Auto-sync automático
+function startAutoSync() {
+    if (autoSyncConfig.timer) {
+        clearInterval(autoSyncConfig.timer);
+    }
+    
+    console.log(`🔄 Auto-sync iniciado (intervalo: ${autoSyncConfig.interval/1000}s)`);
+    
+    autoSyncConfig.timer = setInterval(async () => {
+        if (!autoSyncConfig.isUpdating && document.visibilityState === 'visible') {
+            console.log('🔄 Auto-sync executando...');
+            await refreshData();
+        }
+    }, autoSyncConfig.interval);
+    
+    updateSyncIndicators();
+}
+
+function stopAutoSync() {
+    if (autoSyncConfig.timer) {
+        clearInterval(autoSyncConfig.timer);
+        autoSyncConfig.timer = null;
+    }
+    console.log('⏸️ Auto-sync pausado');
+    updateSyncIndicators();
+}
+
+// Toggle do auto-sync
+function toggleAutoSync() {
+    autoSyncConfig.enabled = !autoSyncConfig.enabled;
+    
+    if (autoSyncConfig.enabled) {
+        startAutoSync();
+        showNotification('🔄 Auto-sync ativado', 'success');
+    } else {
+        stopAutoSync();
+        showNotification('⏸️ Auto-sync pausado', 'warning');
+    }
+    
+    updateSyncIndicators();
+}
+
+// Recarregamento completo forçado
+function forceFullRefresh() {
+    console.log('🔃 Forçando recarregamento completo...');
+    
+    if (confirm('🔃 Recarregar página completamente?\n\nIsso irá recarregar toda a página e pode interromper ações em andamento.')) {
+        // Salvar estado do auto-sync
+        localStorage.setItem('autoSyncEnabled', autoSyncConfig.enabled);
+        
+        // Recarregar página
+        window.location.reload();
+    }
+}
+
+// Mostrar estatísticas dos dados
+function showDataStats() {
+    console.log('📊 Mostrando estatísticas dos dados...');
+    
+    const stats = {
+        total: adminData.purchases?.length || 0,
+        pending: adminData.purchases?.filter(p => p.status === 'pending_donation').length || 0,
+        confirmed: adminData.purchases?.filter(p => p.status === 'confirmed').length || 0,
+        rejected: adminData.purchases?.filter(p => p.status === 'rejected').length || 0,
+        lastUpdate: autoSyncConfig.lastUpdate ? autoSyncConfig.lastUpdate.toLocaleString('pt-BR') : 'Nunca',
+        autoSyncStatus: autoSyncConfig.enabled ? 'Ativo' : 'Pausado',
+        firebaseStatus: adminData.firebaseReady ? 'Conectado' : 'Desconectado'
+    };
+    
+    const revenue = adminData.purchases?.reduce((sum, p) => sum + (p.totalAmount || 0), 0) || 0;
+    
+    const message = `📊 ESTATÍSTICAS DOS DADOS\n\n` +
+        `👥 Total de Participantes: ${stats.total}\n` +
+        `🍼 Doações Pendentes: ${stats.pending}\n` +
+        `✅ Confirmados: ${stats.confirmed}\n` +
+        `❌ Rejeitados: ${stats.rejected}\n` +
+        `💰 Receita Total: R$ ${revenue.toFixed(2)}\n\n` +
+        `🔄 Auto-sync: ${stats.autoSyncStatus}\n` +
+        `🔥 Firebase: ${stats.firebaseStatus}\n` +
+        `⏰ Última Atualização: ${stats.lastUpdate}`;
+    
+    alert(message);
+}
+
+// Funções auxiliares de interface
+function showSyncProgress(message, percent) {
+    const progressDiv = document.getElementById('sync-progress');
+    const progressBar = document.getElementById('sync-progress-bar');
+    const statusText = document.getElementById('sync-status-text');
+    
+    if (progressDiv && progressBar && statusText) {
+        progressDiv.style.display = 'block';
+        progressBar.style.width = percent + '%';
+        statusText.textContent = message;
+    }
+}
+
+function hideSyncProgress() {
+    const progressDiv = document.getElementById('sync-progress');
+    if (progressDiv) {
+        progressDiv.style.display = 'none';
+    }
+}
+
+function updateLastUpdateDisplay() {
+    const timeElement = document.getElementById('last-update-time');
+    if (timeElement) {
+        if (autoSyncConfig.lastUpdate) {
+            const time = autoSyncConfig.lastUpdate.toLocaleTimeString('pt-BR');
+            timeElement.textContent = `Última atualização: ${time}`;
+        } else {
+            timeElement.textContent = 'Primeira execução...';
+        }
+    }
+}
+
+function updateSyncIndicators() {
+    const statusElement = document.getElementById('auto-sync-status');
+    const buttonElement = document.getElementById('auto-sync-btn');
+    
+    if (statusElement) {
+        if (autoSyncConfig.enabled) {
+            statusElement.textContent = '🟢 Auto-sync Ativo';
+            statusElement.style.background = '#28a745';
+        } else {
+            statusElement.textContent = '🔴 Auto-sync Pausado';
+            statusElement.style.background = '#dc3545';
+        }
+    }
+    
+    if (buttonElement) {
+        if (autoSyncConfig.enabled) {
+            buttonElement.textContent = '⏸️ Pausar Auto-sync';
+            buttonElement.style.background = '#ffc107';
+            buttonElement.style.color = '#000';
+        } else {
+            buttonElement.textContent = '▶️ Ativar Auto-sync';
+            buttonElement.style.background = '#28a745';
+            buttonElement.style.color = 'white';
+        }
+    }
+}
+
+// Função de notificação simples
+function showNotification(message, type = 'info') {
+    console.log(`📢 ${type.toUpperCase()}: ${message}`);
+    
+    // Criar ou atualizar elemento de notificação
+    let notification = document.getElementById('admin-notification');
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'admin-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 9999;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        `;
+        document.body.appendChild(notification);
+    }
+    
+    // Definir cor baseada no tipo
+    const colors = {
+        success: '#28a745',
+        error: '#dc3545',
+        warning: '#ffc107',
+        info: '#007bff'
+    };
+    
+    notification.style.background = colors[type] || colors.info;
+    notification.textContent = message;
+    notification.style.opacity = '1';
+    notification.style.transform = 'translateY(0)';
+    
+    // Auto-remover após 4 segundos
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 4000);
+}
+
+// Expor funções globalmente
+window.refreshData = refreshData;
+window.toggleAutoSync = toggleAutoSync;
+window.forceFullRefresh = forceFullRefresh;
+window.showDataStats = showDataStats;
+window.initializeAutoSync = initializeAutoSync;
+
+// Pausar auto-sync quando página não está visível
+document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+        console.log('👁️ Página oculta, pausando auto-sync temporariamente');
+    } else {
+        console.log('👁️ Página visível, retomando auto-sync');
+        if (autoSyncConfig.enabled && !autoSyncConfig.timer) {
+            startAutoSync();
+        }
+    }
+});
+
+// Inicializar auto-sync quando admin estiver pronto
+setTimeout(() => {
+    if (systemInitialized) {
+        console.log('🔄 Inicializando sistema de auto-sync...');
+        
+        // Restaurar estado do auto-sync se foi salvo
+        const savedState = localStorage.getItem('autoSyncEnabled');
+        if (savedState !== null) {
+            autoSyncConfig.enabled = savedState === 'true';
+        }
+        
+        initializeAutoSync();
+        
+        // Primeira atualização
+        setTimeout(() => {
+            refreshData();
+        }, 2000);
+    }
+}, 3000);
+
 console.log('✅ Admin.js carregado completamente - versão corrigida para confirmação de botões');
 console.log('🎯 Event delegation ativo e funções expostas globalmente');
 console.log('🧪 Use createSampleData() para criar dados de teste');
 console.log('🚨 EMERGÊNCIA: Use forcarBotoesEmergencia() se botões não aparecerem');
+console.log('🔄 Sistema de auto-sync implementado - Use refreshData() para atualizar manualmente');

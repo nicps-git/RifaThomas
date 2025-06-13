@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 TESTE: Sistema de Atualização Automática</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .success { border-left-color: #28a745; }
+        .warning { border-left-color: #ffc107; }
+        .error { border-left-color: #dc3545; }
+        
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        button:hover { transform: translateY(-2px); }
+        .btn-success { background: linear-gradient(135deg, #28a745, #1e7e34); }
+        .btn-warning { background: linear-gradient(135deg, #ffc107, #e0a800); color: #000; }
+        .btn-danger { background: linear-gradient(135deg, #dc3545, #c82333); }
+        
+        .status-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        
+        .feature-demo {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .demo-card {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        h1 { text-align: center; margin-bottom: 30px; }
+        h2 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 TESTE: Sistema de Atualização Automática</h1>
+        
+        <div class="test-section success">
+            <h2>✅ Funcionalidades Implementadas</h2>
+            <p>O sistema de atualização automática foi implementado com as seguintes funcionalidades:</p>
+            <ul>
+                <li><strong>🔄 Atualização Manual:</strong> Botão "Atualizar Agora" para refresh imediato</li>
+                <li><strong>⏱️ Auto-sync:</strong> Atualização automática a cada 30 segundos</li>
+                <li><strong>📊 Estatísticas:</strong> Informações detalhadas sobre os dados</li>
+                <li><strong>🔃 Recarregamento Completo:</strong> Refresh total da página se necessário</li>
+                <li><strong>📱 Otimização:</strong> Pausa auto-sync quando página não está visível</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2>🧪 Testar Funcionalidades</h2>
+            <div class="feature-demo">
+                <div class="demo-card">
+                    <h3>📊 Preparar Dados</h3>
+                    <p>Criar dados de teste para verificar as atualizações:</p>
+                    <button onclick="prepararDados()" class="btn-success">🆕 Criar Dados de Teste</button>
+                    <div id="dados-status" class="status-box">Aguardando...</div>
+                </div>
+                
+                <div class="demo-card">
+                    <h3>🔄 Testar Admin</h3>
+                    <p>Abrir o admin e verificar o sistema de atualização:</p>
+                    <button onclick="abrirAdmin()">🔧 Abrir Admin</button>
+                    <button onclick="simularMudancas()" class="btn-warning">📝 Simular Mudanças</button>
+                    <div id="admin-status" class="status-box">Aguardando...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section warning">
+            <h2>📋 Como Testar o Sistema</h2>
+            <ol>
+                <li><strong>Preparar Dados:</strong> Clique em "Criar Dados de Teste"</li>
+                <li><strong>Abrir Admin:</strong> Clique em "Abrir Admin" para abrir o painel</li>
+                <li><strong>Observar Interface:</strong> Note a nova seção de "ATUALIZAÇÃO DE DADOS"</li>
+                <li><strong>Testar Botões:</strong>
+                    <ul>
+                        <li>🔄 "Atualizar Agora" - refresh manual</li>
+                        <li>⏸️ "Pausar Auto-sync" - pausar/ativar auto-sync</li>
+                        <li>🔃 "Recarregar Completo" - refresh da página</li>
+                        <li>📊 "Estatísticas" - dados detalhados</li>
+                    </ul>
+                </li>
+                <li><strong>Verificar Auto-sync:</strong> Observe o indicador verde "🟢 Auto-sync Ativo"</li>
+                <li><strong>Simular Mudanças:</strong> Use "Simular Mudanças" nesta página e veja a sincronização</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h2>🔍 Verificações de Sistema</h2>
+            <button onclick="verificarImplementacao()">🔍 Verificar Implementação</button>
+            <button onclick="testarFuncoes()">🧪 Testar Funções</button>
+            <button onclick="mostrarLogs()">📝 Mostrar Logs</button>
+            <div id="verificacao-status" class="status-box">Clique nos botões acima para verificar o sistema...</div>
+        </div>
+        
+        <div class="test-section success">
+            <h2>✨ Benefícios do Sistema</h2>
+            <div class="feature-demo">
+                <div class="demo-card">
+                    <h3>🚀 Sem Login Repetido</h3>
+                    <p>Os dados são atualizados automaticamente sem necessidade de fazer login novamente.</p>
+                </div>
+                <div class="demo-card">
+                    <h3>⏱️ Tempo Real</h3>
+                    <p>Auto-sync a cada 30 segundos mantém os dados sempre atualizados.</p>
+                </div>
+                <div class="demo-card">
+                    <h3>💻 Otimizado</h3>
+                    <p>Sistema inteligente que pausa quando a página não está visível.</p>
+                </div>
+                <div class="demo-card">
+                    <h3>🔧 Controle Total</h3>
+                    <p>Botões para controlar manualmente todos os aspectos da sincronização.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#74c0fc';
+            console.log(`[${time}] ${type.toUpperCase()}: ${message}`);
+            
+            // Atualizar display se houver
+            const logDisplay = document.getElementById('log-display');
+            if (logDisplay) {
+                logDisplay.innerHTML += `<div style="color: ${color}">[${time}] ${message}</div>`;
+                logDisplay.scrollTop = logDisplay.scrollHeight;
+            }
+        }
+        
+        function updateStatus(id, message, type = 'info') {
+            const el = document.getElementById(id);
+            if (el) {
+                const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#74c0fc';
+                el.innerHTML = `<div style="color: ${color}">${message}</div>`;
+            }
+        }
+        
+        function prepararDados() {
+            log('🆕 Preparando dados de teste para sistema de atualização...', 'info');
+            
+            try {
+                // Dados com timestamps diferentes para testar atualizações
+                const dadosComTimestamp = [
+                    {
+                        id: 'auto-sync-test-1',
+                        buyerName: '🔄 TESTE AUTO-SYNC - Maria Silva',
+                        buyerPhone: '(11) 95555-0001',
+                        numbers: [1, 2],
+                        totalAmount: 80.00,
+                        paymentMethod: 'donation',
+                        status: 'pending_donation',
+                        date: new Date().toISOString(),
+                        lastModified: new Date().toISOString(),
+                        testId: 'auto-sync-test'
+                    },
+                    {
+                        id: 'auto-sync-test-2',
+                        buyerName: '🔄 TESTE AUTO-SYNC - João Santos',
+                        buyerPhone: '(11) 95555-0002',
+                        numbers: [10, 20],
+                        totalAmount: 80.00,
+                        paymentMethod: 'donation',
+                        status: 'pending_donation',
+                        date: new Date().toISOString(),
+                        lastModified: new Date().toISOString(),
+                        testId: 'auto-sync-test'
+                    },
+                    {
+                        id: 'auto-sync-test-3',
+                        buyerName: '🔄 TESTE AUTO-SYNC - Ana Costa',
+                        buyerPhone: '(11) 95555-0003',
+                        numbers: [50],
+                        totalAmount: 40.00,
+                        paymentMethod: 'pix',
+                        status: 'confirmed',
+                        date: new Date().toISOString(),
+                        lastModified: new Date().toISOString(),
+                        testId: 'auto-sync-test'
+                    }
+                ];
+                
+                // Salvar dados
+                localStorage.setItem('purchases', JSON.stringify(dadosComTimestamp));
+                localStorage.setItem('admin_purchases_backup', JSON.stringify(dadosComTimestamp));
+                
+                // Marcar timestamp de criação
+                localStorage.setItem('test_data_created', new Date().toISOString());
+                
+                log(`✅ ${dadosComTimestamp.length} dados de teste criados com timestamps`, 'success');
+                updateStatus('dados-status', '✅ Dados criados! Agora abra o admin para testar.', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao criar dados: ${error.message}`, 'error');
+                updateStatus('dados-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function abrirAdmin() {
+            log('🔧 Abrindo admin com sistema de auto-sync...', 'info');
+            
+            const adminWindow = window.open('admin.html', '_blank', 'width=1200,height=900');
+            
+            if (adminWindow) {
+                log('✅ Admin aberto! Verifique a seção de atualização de dados.', 'success');
+                updateStatus('admin-status', '✅ Admin aberto! Procure pela seção "🔄 ATUALIZAÇÃO DE DADOS"', 'success');
+                
+                setTimeout(() => {
+                    updateStatus('admin-status', 
+                        '📋 Na aba do admin, observe:\\n' +
+                        '• Seção azul "ATUALIZAÇÃO DE DADOS"\\n' +
+                        '• Indicador "🟢 Auto-sync Ativo"\\n' +
+                        '• Botões de controle de sincronização\\n' +
+                        '• Última atualização exibida', 'info');
+                }, 2000);
+            } else {
+                updateStatus('admin-status', '❌ Erro ao abrir admin - popup bloqueado?', 'error');
+            }
+        }
+        
+        function simularMudancas() {
+            log('📝 Simulando mudanças nos dados...', 'warning');
+            
+            try {
+                const existingData = JSON.parse(localStorage.getItem('purchases') || '[]');
+                
+                if (existingData.length === 0) {
+                    updateStatus('admin-status', '⚠️ Crie dados de teste primeiro!', 'warning');
+                    return;
+                }
+                
+                // Modificar dados aleatoriamente
+                const randomIndex = Math.floor(Math.random() * existingData.length);
+                const randomItem = existingData[randomIndex];
+                
+                // Simular mudança de status
+                const possibleStatuses = ['pending_donation', 'confirmed', 'rejected'];
+                const currentStatus = randomItem.status;
+                const newStatus = possibleStatuses.find(s => s !== currentStatus) || 'confirmed';
+                
+                randomItem.status = newStatus;
+                randomItem.lastModified = new Date().toISOString();
+                randomItem.modifiedBy = 'teste-automatico';
+                
+                // Salvar mudanças
+                localStorage.setItem('purchases', JSON.stringify(existingData));
+                localStorage.setItem('admin_purchases_backup', JSON.stringify(existingData));
+                
+                log(`✅ Mudança simulada: ${randomItem.buyerName} → Status: ${newStatus}`, 'success');
+                updateStatus('admin-status', 
+                    `📝 Mudança simulada!\\n` +
+                    `Participante: ${randomItem.buyerName}\\n` +
+                    `Novo status: ${newStatus}\\n` +
+                    `\\n👁️ Observe o admin para ver a atualização automática!`, 'success');
+                
+            } catch (error) {
+                log(`❌ Erro ao simular mudanças: ${error.message}`, 'error');
+                updateStatus('admin-status', `❌ Erro: ${error.message}`, 'error');
+            }
+        }
+        
+        function verificarImplementacao() {
+            log('🔍 Verificando implementação do sistema...', 'info');
+            
+            const checks = {
+                'localStorage funcionando': typeof Storage !== 'undefined',
+                'Dados de teste existem': localStorage.getItem('purchases') !== null,
+                'Backup existe': localStorage.getItem('admin_purchases_backup') !== null,
+                'Timestamp salvo': localStorage.getItem('test_data_created') !== null
+            };
+            
+            let report = '📋 VERIFICAÇÃO DO SISTEMA:\\n\\n';
+            let allGood = true;
+            
+            Object.entries(checks).forEach(([check, result]) => {
+                const status = result ? '✅' : '❌';
+                report += `${status} ${check}\\n`;
+                if (!result) allGood = false;
+            });
+            
+            report += `\\n📊 Status Geral: ${allGood ? '✅ Tudo OK' : '⚠️ Problemas encontrados'}`;
+            
+            updateStatus('verificacao-status', report, allGood ? 'success' : 'warning');
+            log(report.replace(/\\n/g, ' | '), allGood ? 'success' : 'warning');
+        }
+        
+        function testarFuncoes() {
+            log('🧪 Testando funções do sistema...', 'info');
+            
+            // Testar se as funções estão disponíveis
+            const functions = [
+                'refreshData',
+                'toggleAutoSync', 
+                'forceFullRefresh',
+                'showDataStats',
+                'initializeAutoSync'
+            ];
+            
+            let report = '🧪 TESTE DE FUNÇÕES:\\n\\n';
+            
+            functions.forEach(funcName => {
+                // Note: As funções só estarão disponíveis na página admin
+                report += `📝 ${funcName}: Implementada no admin.js\\n`;
+            });
+            
+            report += '\\n💡 Para testar as funções:\\n';
+            report += '1. Abra o admin\\n';
+            report += '2. Pressione F12 (Console)\\n';
+            report += '3. Digite: window.refreshData()\\n';
+            report += '4. Ou use os botões na interface';
+            
+            updateStatus('verificacao-status', report, 'info');
+        }
+        
+        function mostrarLogs() {
+            log('📝 Mostrando logs do sistema...', 'info');
+            
+            const testDataCreated = localStorage.getItem('test_data_created');
+            const purchasesCount = JSON.parse(localStorage.getItem('purchases') || '[]').length;
+            
+            const logReport = `📝 LOGS DO SISTEMA:\\n\\n` +
+                `📅 Dados criados em: ${testDataCreated ? new Date(testDataCreated).toLocaleString('pt-BR') : 'Nunca'}\\n` +
+                `📊 Total de registros: ${purchasesCount}\\n` +
+                `💾 LocalStorage funcionando: ${typeof Storage !== 'undefined' ? 'Sim' : 'Não'}\\n` +
+                `🌐 Página carregada em: ${new Date().toLocaleString('pt-BR')}\\n\\n` +
+                `💡 Para ver logs detalhados:\\n` +
+                `1. Abra o Console (F12)\\n` +
+                `2. Procure por mensagens com 🔄, 📊, ✅`;
+            
+            updateStatus('verificacao-status', logReport, 'info');
+        }
+        
+        // Auto-executar verificação inicial
+        window.addEventListener('load', function() {
+            log('🚀 Página de teste carregada', 'success');
+            
+            setTimeout(() => {
+                verificarImplementacao();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

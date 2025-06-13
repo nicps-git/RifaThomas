@@ -300,6 +300,68 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- Sistema de Auto-Sync -->
+                    <div class="auto-sync-controls" style="margin-top: 2rem;">
+                        <h3>🔄 Sistema de Atualização Automática</h3>
+                        <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                            <!-- Status do Auto-Sync -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span id="auto-sync-status" style="padding: 6px 12px; border-radius: 20px; color: white; font-weight: bold; font-size: 12px;">
+                                        🟢 Auto-sync Ativo
+                                    </span>
+                                    <span id="last-update-time" style="color: #666; font-size: 14px;">
+                                        Primeira execução...
+                                    </span>
+                                </div>
+                                <button id="auto-sync-btn" onclick="toggleAutoSync()" style="background: #ffc107; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                    ⏸️ Pausar Auto-sync
+                                </button>
+                            </div>
+
+                            <!-- Progresso da Sincronização -->
+                            <div id="sync-progress" style="display: none; margin-bottom: 15px;">
+                                <div style="background: #e9ecef; border-radius: 4px; overflow: hidden; height: 20px; position: relative;">
+                                    <div id="sync-progress-bar" style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 4px;"></div>
+                                    <span id="sync-status-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #495057; font-size: 12px; font-weight: bold;">
+                                        Sincronizando...
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Botões de Controle -->
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="refreshData()" style="background: #007bff; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-sync-alt"></i> 🔄 Atualizar Agora
+                                </button>
+                                <button onclick="showDataStats()" style="background: #17a2b8; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-chart-bar"></i> 📊 Estatísticas
+                                </button>
+                                <button onclick="forceFullRefresh()" style="background: #fd7e14; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-redo"></i> 🔃 Recarregar Página
+                                </button>
+                            </div>
+
+                            <!-- Informações do Sistema -->
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 14px;">
+                                    <div style="text-align: center; padding: 10px; background: #e8f4f8; border-radius: 6px;">
+                                        <div style="font-weight: bold; color: #17a2b8;">Atualização Automática</div>
+                                        <div style="color: #666; margin-top: 5px;">A cada 30 segundos</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 10px; background: #e8f5e8; border-radius: 6px;">
+                                        <div style="font-weight: bold; color: #28a745;">Sem Re-login</div>
+                                        <div style="color: #666; margin-top: 5px;">Mantém sessão ativa</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 10px; background: #fff3cd; border-radius: 6px;">
+                                        <div style="font-weight: bold; color: #856404;">Pausa Inteligente</div>
+                                        <div style="color: #666; margin-top: 5px;">Para quando aba inativa</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
