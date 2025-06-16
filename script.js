@@ -70,7 +70,7 @@ async function initializeDataSources() {
         loadFromLocalStorageWithMonitoring();
     }
 }
-}
+
 
 async function tryFirebaseFirst() {
     try {

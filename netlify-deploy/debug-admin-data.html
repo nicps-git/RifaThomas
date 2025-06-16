@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Botões de Confirmação</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .should-show { background: #fff3cd; border-color: #ffeaa7; }
+        .should-not-show { background: #f8f9fa; border-color: #dee2e6; }
+        .problem { background: #f8d7da; border-color: #f5c6cb; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+        th { background: #f2f2f2; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px; }
+        .btn-test { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Específico - Botões de Confirmação</h1>
+    
+    <div id="firebase-status" class="debug-section">
+        <h2>📡 Status Firebase</h2>
+        <div id="firebase-info">Carregando...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🧪 Análise de Dados</h2>
+        <button class="btn-test" onclick="analyzeButtonLogic()">Analisar Lógica dos Botões</button>
+        <div id="analysis-results"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📊 Tabela de Depuração</h2>
+        <div id="debug-table"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando debug específico dos botões...');
+        
+        let allPurchases = [];
+        
+        // Replicar exatamente a função do admin.js
+        function createActionButtons(purchase) {
+            console.log(`🔧 Criando botões para compra ${purchase.id}, status: ${purchase.status}, paymentMethod: ${purchase.paymentMethod}`);
+            
+            const buttons = [];
+            const status = purchase.status || 'confirmed';
+            const paymentMethod = purchase.paymentMethod || '';
+            
+            // Exatamente a mesma lógica do admin.js
+            const isPendingDonation = status === 'pending_donation' || 
+                                     (status === 'pending' && (paymentMethod === 'doacao' || paymentMethod === 'donation')) ||
+                                     paymentMethod === 'doacao' || 
+                                     paymentMethod === 'donation';
+            
+            const shouldShowButtons = isPendingDonation && status !== 'confirmed' && status !== 'rejected';
+            
+            if (shouldShowButtons) {
+                buttons.push('✅ Confirmar', '❌ Rejeitar');
+            }
+            
+            buttons.push('✏️ Editar', '🔍 Debug');
+            
+            return {
+                buttons: buttons,
+                shouldShow: shouldShowButtons,
+                isPendingDonation: isPendingDonation,
+                status: status,
+                paymentMethod: paymentMethod,
+                statusCheck: status !== 'confirmed' && status !== 'rejected',
+                analysis: {
+                    'Status é pending_donation': status === 'pending_donation',
+                    'Status é pending + método doação': status === 'pending' && (paymentMethod === 'doacao' || paymentMethod === 'donation'),
+                    'Método é doação': paymentMethod === 'doacao' || paymentMethod === 'donation',
+                    'Status não é confirmed': status !== 'confirmed',
+                    'Status não é rejected': status !== 'rejected'
+                }
+            };
+        }
+        
+        // Aguardar Firebase
+        function waitForFirebase() {
+            return new Promise((resolve) => {
+                if (window.FirebaseDB) {
+                    resolve();
+                } else {
+                    window.addEventListener('firebaseReady', resolve);
+                }
+            });
+        }
+        
+        async function analyzeButtonLogic() {
+            try {
+                await waitForFirebase();
+                
+                document.getElementById('firebase-info').innerHTML = '<p>✅ Firebase conectado</p>';
+                
+                // Carregar dados
+                const purchasesSnapshot = await window.FirebaseDB.collection('rifa_purchases').get();
+                
+                allPurchases = [];
+                purchasesSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    allPurchases.push({
+                        id: doc.id,
+                        ...data,
+                        // Garantir que temos os campos corretos
+                        buyerName: data.buyerName || data.name || 'N/A',
+                        buyerPhone: data.buyerPhone || data.phone || data.whatsapp || 'N/A'
+                    });
+                });
+                
+                console.log(`📊 ${allPurchases.length} compras carregadas para análise`);
+                
+                // Analisar cada compra
+                let analysisHtml = '<h3>Análise Detalhada:</h3>';
+                let problemCases = [];
+                let shouldShowCount = 0;
+                let actuallyShowingCount = 0;
+                
+                // Gerar tabela de debug
+                let tableHtml = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Status Original</th>
+                                <th>Método Original</th>
+                                <th>Status Processado</th>
+                                <th>Método Processado</th>
+                                <th>É Doação Pendente?</th>
+                                <th>Deve Mostrar Botões?</th>
+                                <th>Análise Detalhada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                allPurchases.forEach(purchase => {
+                    const analysis = createActionButtons(purchase);
+                    
+                    if (analysis.shouldShow) {
+                        shouldShowCount++;
+                    }
+                    
+                    // Identificar casos problemáticos
+                    const isDoacao = purchase.paymentMethod === 'doacao' || purchase.paymentMethod === 'donation';
+                    const isPending = purchase.status === 'pending' || purchase.status === 'pending_donation';
+                    const expectButtons = isDoacao && isPending && purchase.status !== 'confirmed' && purchase.status !== 'rejected';
+                    
+                    if (expectButtons !== analysis.shouldShow) {
+                        problemCases.push({
+                            purchase: purchase,
+                            expected: expectButtons,
+                            actual: analysis.shouldShow,
+                            analysis: analysis
+                        });
+                    }
+                    
+                    const rowClass = analysis.shouldShow ? 'should-show' : 'should-not-show';
+                    
+                    tableHtml += `
+                        <tr class="${rowClass}">
+                            <td>${purchase.buyerName}</td>
+                            <td><code>${purchase.status || 'undefined'}</code></td>
+                            <td><code>${purchase.paymentMethod || 'undefined'}</code></td>
+                            <td><code>${analysis.status}</code></td>
+                            <td><code>${analysis.paymentMethod}</code></td>
+                            <td>${analysis.isPendingDonation ? '✅ SIM' : '❌ NÃO'}</td>
+                            <td style="font-weight: bold; color: ${analysis.shouldShow ? 'green' : 'red'}">
+                                ${analysis.shouldShow ? '✅ SIM' : '❌ NÃO'}
+                            </td>
+                            <td>
+                                <details>
+                                    <summary>Ver análise</summary>
+                                    <pre>${JSON.stringify(analysis.analysis, null, 2)}</pre>
+                                </details>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tableHtml += '</tbody></table>';
+                
+                // Resumo
+                analysisHtml += `
+                    <div style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                        <h4>📊 Resumo:</h4>
+                        <p><strong>Total de compras:</strong> ${allPurchases.length}</p>
+                        <p><strong>Devem mostrar botões:</strong> ${shouldShowCount}</p>
+                        <p><strong>Casos problemáticos:</strong> ${problemCases.length}</p>
+                    </div>
+                `;
+                
+                // Casos problemáticos
+                if (problemCases.length > 0) {
+                    analysisHtml += '<h4 style="color: red;">🚨 Casos Problemáticos:</h4>';
+                    problemCases.forEach((prob, index) => {
+                        analysisHtml += `
+                            <div class="problem" style="margin: 10px 0; padding: 10px;">
+                                <strong>Caso ${index + 1}: ${prob.purchase.buyerName}</strong><br>
+                                <strong>Esperado:</strong> ${prob.expected ? 'Mostrar botões' : 'Não mostrar botões'}<br>
+                                <strong>Atual:</strong> ${prob.actual ? 'Mostra botões' : 'Não mostra botões'}<br>
+                                <strong>Status:</strong> <code>${prob.purchase.status}</code><br>
+                                <strong>Método:</strong> <code>${prob.purchase.paymentMethod}</code><br>
+                                <details>
+                                    <summary>Dados completos</summary>
+                                    <pre>${JSON.stringify(prob.purchase, null, 2)}</pre>
+                                </details>
+                            </div>
+                        `;
+                    });
+                } else {
+                    analysisHtml += '<p style="color: green;">✅ Nenhum caso problemático encontrado!</p>';
+                }
+                
+                document.getElementById('analysis-results').innerHTML = analysisHtml;
+                document.getElementById('debug-table').innerHTML = tableHtml;
+                
+            } catch (error) {
+                console.error('❌ Erro na análise:', error);
+                document.getElementById('analysis-results').innerHTML = `
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 5px;">
+                        <h4>❌ Erro:</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Verificar status do Firebase
+        function checkFirebaseStatus() {
+            const status = window.FirebaseDB ? '✅ Conectado' : '❌ Não conectado';
+            document.getElementById('firebase-info').innerHTML = `<p><strong>Status:</strong> ${status}</p>`;
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            checkFirebaseStatus();
+            
+            if (window.FirebaseDB) {
+                setTimeout(checkFirebaseStatus, 1000);
+            } else {
+                window.addEventListener('firebaseReady', checkFirebaseStatus);
+            }
+        });
+    </script>
+</body>
+</html>

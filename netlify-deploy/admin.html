@@ -75,6 +75,7 @@
                         <li><a href="index.html">← Voltar ao Site</a></li>
                         <li><a href="#dashboard">Dashboard</a></li>
                         <li><a href="#participantes">Participantes</a></li>
+                        <li><a href="sorteio.html" style="background: linear-gradient(45deg, #ff6b6b, #feca57); color: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-weight: bold;">🎯 Sorteio</a></li>
                         <li><a href="#configuracoes">Configurações</a></li>
                     </ul>
                 </div>
@@ -115,6 +116,25 @@
                                 <span class="stat-label">Progresso</span>
                             </div>
                         </div>
+                    </div>
+                    
+                    <!-- Ações Rápidas -->
+                    <div style="margin-top: 30px; text-align: center;">
+                        <a href="sorteio.html" class="quick-action-btn" style="
+                            display: inline-block;
+                            background: linear-gradient(45deg, #ff6b6b, #feca57);
+                            color: white;
+                            padding: 15px 30px;
+                            border-radius: 25px;
+                            text-decoration: none;
+                            font-weight: bold;
+                            font-size: 1.1rem;
+                            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+                            transition: all 0.3s ease;
+                            margin: 0 10px;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            🎯 Realizar Sorteio
+                        </a>
                     </div>
                 </div>
             </section>
@@ -339,23 +359,23 @@
                             <!-- Status do Auto-Sync -->
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span id="auto-sync-status" style="padding: 6px 12px; border-radius: 20px; color: white; font-weight: bold; font-size: 12px;">
+                                    <span id="auto-sync-status-main" style="padding: 6px 12px; border-radius: 20px; color: white; font-weight: bold; font-size: 12px;">
                                         🟢 Auto-sync Ativo
                                     </span>
-                                    <span id="last-update-time" style="color: #666; font-size: 14px;">
+                                    <span id="last-update-time-main" style="color: #666; font-size: 14px;">
                                         Primeira execução...
                                     </span>
                                 </div>
-                                <button id="auto-sync-btn" onclick="toggleAutoSync()" style="background: #ffc107; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                <button id="auto-sync-btn-main" onclick="toggleAutoSync()" style="background: #ffc107; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
                                     ⏸️ Pausar Auto-sync
                                 </button>
                             </div>
 
                             <!-- Progresso da Sincronização -->
-                            <div id="sync-progress" style="display: none; margin-bottom: 15px;">
+                            <div id="sync-progress-main" style="display: none; margin-bottom: 15px;">
                                 <div style="background: #e9ecef; border-radius: 4px; overflow: hidden; height: 20px; position: relative;">
-                                    <div id="sync-progress-bar" style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 4px;"></div>
-                                    <span id="sync-progress-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #495057; font-size: 12px; font-weight: bold;">
+                                    <div id="sync-progress-bar-main" style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 4px;"></div>
+                                    <span id="sync-progress-text-main" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #495057; font-size: 12px; font-weight: bold;">
                                         Sincronizando...
                                     </span>
                                 </div>

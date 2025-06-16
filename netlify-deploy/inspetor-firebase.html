@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspetor Firebase - Dados Brutos</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        .raw-data { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; font-size: 11px; white-space: pre-wrap; max-height: 200px; overflow-y: auto; border: 1px solid #ccc; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 11px; }
+        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th { background: #f2f2f2; position: sticky; top: 0; }
+        .btn-test { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn-danger { background: #dc3545; }
+        .btn-success { background: #28a745; }
+        .table-container { max-height: 400px; overflow-y: auto; border: 1px solid #ddd; }
+        .highlight-problem { background-color: #ffebee !important; }
+        .highlight-ok { background-color: #e8f5e8 !important; }
+    </style>
+</head>
+<body>
+    <h1>🔬 Inspetor Firebase - Dados Brutos</h1>
+    
+    <div class="debug-section info">
+        <h2>📡 Status da Conexão</h2>
+        <div id="connection-status">Verificando conexão...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🗂️ Collections Disponíveis</h2>
+        <button class="btn-test" onclick="listarCollections()">Listar Collections</button>
+        <div id="collections-list"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📊 Dados da Collection 'purchases'</h2>
+        <button class="btn-test" onclick="carregarPurchases()">Carregar Purchases</button>
+        <button class="btn-test btn-success" onclick="filtrarDoacoes()">Filtrar Apenas Doações</button>
+        <button class="btn-test btn-danger" onclick="exportarJSON()">Exportar JSON</button>
+        <div id="purchases-summary"></div>
+        <div id="purchases-data"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🔍 Análise Detalhada por Registro</h2>
+        <div id="detailed-analysis"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📈 Estatísticas dos Campos</h2>
+        <div id="field-stats"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando inspetor Firebase...');
+        
+        let allPurchases = [];
+        let db = null;
+        
+        // Função para normalizar strings (mesma do admin.js)
+        function normalizeString(str) {
+            if (!str) return '';
+            return str.toString().toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^\w\s]/g, '')
+                .trim();
+        }
+        
+        // Inicializar Firebase
+        function initializeFirebase() {
+            try {
+                if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.firestore();
+                document.getElementById('connection-status').innerHTML = '✅ Firebase conectado com sucesso';
+                return true;
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = `❌ Erro na conexão: ${error.message}`;
+                console.error('Erro Firebase:', error);
+                return false;
+            }
+        }
+        
+        // Listar collections disponíveis
+        async function listarCollections() {
+            const statusDiv = document.getElementById('collections-list');
+            statusDiv.innerHTML = '<div>🔄 Verificando collections...</div>';
+            
+            try {
+                // Tentar algumas collections comuns
+                const collectionsToCheck = ['purchases', 'compras', 'rifas', 'users', 'participantes'];
+                let html = '<h4>Collections Verificadas:</h4><ul>';
+                
+                for (const collectionName of collectionsToCheck) {
+                    try {
+                        const snapshot = await db.collection(collectionName).limit(1).get();
+                        const count = snapshot.size;
+                        html += `<li>✅ <strong>${collectionName}</strong>: ${count > 0 ? `${count}+ documentos` : 'Vazia'}</li>`;
+                    } catch (error) {
+                        html += `<li>❌ <strong>${collectionName}</strong>: Erro - ${error.message}</li>`;
+                    }
+                }
+                
+                html += '</ul>';
+                statusDiv.innerHTML = html;
+                
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Erro ao verificar collections: ${error.message}`;
+            }
+        }
+        
+        // Carregar dados da collection purchases
+        async function carregarPurchases() {
+            const summaryDiv = document.getElementById('purchases-summary');
+            const dataDiv = document.getElementById('purchases-data');
+            
+            summaryDiv.innerHTML = '<div>🔄 Carregando dados...</div>';
+            dataDiv.innerHTML = '';
+            
+            try {
+                const snapshot = await db.collection('purchases').get();
+                allPurchases = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                summaryDiv.innerHTML = `
+                    <div class="success">
+                        <h4>📊 Resumo dos Dados</h4>
+                        <ul>
+                            <li><strong>Total de registros:</strong> ${allPurchases.length}</li>
+                            <li><strong>Campos únicos encontrados:</strong> ${getUniqueFields().join(', ')}</li>
+                            <li><strong>Última atualização:</strong> ${new Date().toLocaleString()}</li>
+                        </ul>
+                    </div>
+                `;
+                
+                exibirTabelaDados(allPurchases);
+                analisarDetalhadamente();
+                gerarEstatisticasCampos();
+                
+            } catch (error) {
+                summaryDiv.innerHTML = `❌ Erro ao carregar purchases: ${error.message}`;
+                console.error('Erro:', error);
+            }
+        }
+        
+        // Filtrar apenas doações
+        function filtrarDoacoes() {
+            if (allPurchases.length === 0) {
+                alert('Carregue os dados primeiro!');
+                return;
+            }
+            
+            const doacoes = allPurchases.filter(purchase => {
+                const tipoNorm = normalizeString(purchase.tipo || '');
+                const metodoNorm = normalizeString(purchase.metodoPagamento || '');
+                const obsNorm = normalizeString(purchase.observacoes || '');
+                
+                return tipoNorm.includes('doacao') || 
+                       metodoNorm.includes('doacao') || 
+                       obsNorm.includes('doacao');
+            });
+            
+            document.getElementById('purchases-summary').innerHTML = `
+                <div class="warning">
+                    <h4>🎯 Filtro: Apenas Doações</h4>
+                    <ul>
+                        <li><strong>Doações encontradas:</strong> ${doacoes.length} de ${allPurchases.length} total</li>
+                        <li><strong>Percentual:</strong> ${((doacoes.length / allPurchases.length) * 100).toFixed(1)}%</li>
+                    </ul>
+                </div>
+            `;
+            
+            exibirTabelaDados(doacoes);
+        }
+        
+        // Obter campos únicos dos dados
+        function getUniqueFields() {
+            const fields = new Set();
+            allPurchases.forEach(purchase => {
+                Object.keys(purchase).forEach(key => fields.add(key));
+            });
+            return Array.from(fields).sort();
+        }
+        
+        // Exibir dados em tabela
+        function exibirTabelaDados(data) {
+            const dataDiv = document.getElementById('purchases-data');
+            
+            if (data.length === 0) {
+                dataDiv.innerHTML = '<div class="warning">Nenhum dado encontrado</div>';
+                return;
+            }
+            
+            const fields = getUniqueFields();
+            
+            let html = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                ${fields.filter(f => f !== 'id').map(field => `<th>${field}</th>`).join('')}
+                                <th>Deve ter botões?</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.forEach(purchase => {
+                const deveExibirBotoes = verificarBotoes(purchase);
+                const classe = deveExibirBotoes ? 'highlight-ok' : 'highlight-problem';
+                
+                html += `<tr class="${classe}">`;
+                html += `<td title="${purchase.id}">${purchase.id ? purchase.id.substring(0, 8) + '...' : 'N/A'}</td>`;
+                
+                fields.filter(f => f !== 'id').forEach(field => {
+                    const value = purchase[field];
+                    const displayValue = value ? (value.toString().length > 30 ? value.toString().substring(0, 30) + '...' : value) : '';
+                    html += `<td title="${value || ''}">${displayValue}</td>`;
+                });
+                
+                html += `<td><strong>${deveExibirBotoes ? '✅ SIM' : '❌ NÃO'}</strong></td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table></div>';
+            
+            dataDiv.innerHTML = html;
+        }
+        
+        // Verificar se deve exibir botões (lógica do admin.js)
+        function verificarBotoes(purchase) {
+            if (!purchase) return false;
+            
+            // Verificar se é doação
+            const tipoNorm = normalizeString(purchase.tipo || '');
+            const metodoNorm = normalizeString(purchase.metodoPagamento || '');
+            const obsNorm = normalizeString(purchase.observacoes || '');
+            
+            const ehDoacao = tipoNorm.includes('doacao') || 
+                           metodoNorm.includes('doacao') || 
+                           obsNorm.includes('doacao');
+            
+            // Verificar se é pendente
+            const statusNorm = normalizeString(purchase.status || '');
+            const ehPendente = statusNorm.includes('pendente') || 
+                             statusNorm.includes('pending') || 
+                             statusNorm.includes('aguardando');
+            
+            return ehDoacao && ehPendente;
+        }
+        
+        // Análise detalhada por registro
+        function analisarDetalhadamente() {
+            const detailDiv = document.getElementById('detailed-analysis');
+            
+            if (allPurchases.length === 0) return;
+            
+            // Separar casos problemáticos
+            const problematicos = allPurchases.filter(p => {
+                const tipoNorm = normalizeString(p.tipo || '');
+                const metodoNorm = normalizeString(p.metodoPagamento || '');
+                const obsNorm = normalizeString(p.observacoes || '');
+                
+                const ehDoacao = tipoNorm.includes('doacao') || 
+                               metodoNorm.includes('doacao') || 
+                               obsNorm.includes('doacao');
+                
+                const statusNorm = normalizeString(p.status || '');
+                const ehPendente = statusNorm.includes('pendente') || 
+                                 statusNorm.includes('pending') || 
+                                 statusNorm.includes('aguardando');
+                
+                // Problemático = é doação mas não tem botões OU deveria ter botões mas há algo errado
+                return ehDoacao && !ehPendente;
+            });
+            
+            let html = `<h4>🔍 Registros Problemáticos (${problematicos.length} encontrados)</h4>`;
+            
+            if (problematicos.length > 0) {
+                problematicos.slice(0, 5).forEach((purchase, index) => {
+                    html += `
+                        <div class="raw-data">
+                            <strong>Registro ${index + 1} - ID: ${purchase.id}</strong>
+                            ${JSON.stringify(purchase, null, 2)}
+                            
+                            <div style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px;">
+                                <strong>Análise:</strong><br>
+                                • Tipo normalizado: "${normalizeString(purchase.tipo || '')}"<br>
+                                • Status normalizado: "${normalizeString(purchase.status || '')}"<br>
+                                • É doação? ${normalizeString(purchase.tipo || '').includes('doacao') ? '✅' : '❌'}<br>
+                                • É pendente? ${normalizeString(purchase.status || '').includes('pendente') ? '✅' : '❌'}<br>
+                                • Problema: ${diagnosticarProblema(purchase)}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<div class="success">Nenhum registro problemático encontrado!</div>';
+            }
+            
+            detailDiv.innerHTML = html;
+        }
+        
+        // Diagnosticar problema específico
+        function diagnosticarProblema(purchase) {
+            const tipoNorm = normalizeString(purchase.tipo || '');
+            const statusNorm = normalizeString(purchase.status || '');
+            
+            if (!tipoNorm.includes('doacao')) {
+                return 'Não é identificado como doação';
+            }
+            
+            if (!statusNorm.includes('pendente') && !statusNorm.includes('pending')) {
+                return `Status "${purchase.status}" não é pendente`;
+            }
+            
+            return 'Não deveria ser problemático - verificar lógica';
+        }
+        
+        // Gerar estatísticas dos campos
+        function gerarEstatisticasCampos() {
+            const statsDiv = document.getElementById('field-stats');
+            
+            if (allPurchases.length === 0) return;
+            
+            const fields = getUniqueFields();
+            let html = '<h4>📈 Estatísticas dos Campos</h4><table><thead><tr><th>Campo</th><th>Valores Únicos</th><th>Valores Nulos/Vazios</th><th>Exemplos</th></tr></thead><tbody>';
+            
+            fields.forEach(field => {
+                const values = allPurchases.map(p => p[field]).filter(v => v !== null && v !== undefined && v !== '');
+                const uniqueValues = [...new Set(values)];
+                const nullCount = allPurchases.length - values.length;
+                const examples = uniqueValues.slice(0, 3).join(', ');
+                
+                html += `
+                    <tr>
+                        <td><strong>${field}</strong></td>
+                        <td>${uniqueValues.length}</td>
+                        <td>${nullCount}</td>
+                        <td title="${uniqueValues.join(', ')}">${examples}${uniqueValues.length > 3 ? '...' : ''}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            statsDiv.innerHTML = html;
+        }
+        
+        // Exportar dados como JSON
+        function exportarJSON() {
+            if (allPurchases.length === 0) {
+                alert('Carregue os dados primeiro!');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(allPurchases, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `firebase-purchases-${new Date().getTime()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Inicializar quando a página carregar
+        window.addEventListener('load', function() {
+            console.log('🎯 Página carregada, inicializando...');
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html>

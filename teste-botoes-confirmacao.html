@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Botões de Confirmação</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { margin: 5px; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-test { background: #007bff; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Teste - Botões de Confirmação para Doações Pendentes</h1>
+    
+    <div id="firebase-status" class="test-section">
+        <h2>📡 Status Firebase</h2>
+        <div id="firebase-info">Verificando...</div>
+    </div>
+    
+    <div id="test-data" class="test-section">
+        <h2>🧪 Teste com Dados Simulados</h2>
+        <button class="btn-test" onclick="testButtonLogic()">Testar Lógica dos Botões</button>
+        <div id="test-results"></div>
+    </div>
+    
+    <div id="real-data" class="test-section">
+        <h2>🔍 Análise de Dados Reais</h2>
+        <button class="btn-test" onclick="analyzeRealData()">Analisar Dados Firebase</button>
+        <div id="real-results"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando teste dos botões de confirmação...');
+        
+        // Simular função createActionButtons corrigida
+        function createActionButtons(purchase) {
+            console.log(`🔧 Criando botões para compra ${purchase.id}, status: ${purchase.status}, paymentMethod: ${purchase.paymentMethod}`);
+            
+            const buttons = [];
+            const status = purchase.status || 'confirmed';
+            const paymentMethod = purchase.paymentMethod || '';
+            
+            // Mostrar botões de confirmação para doações pendentes
+            const isPendingDonation = status === 'pending_donation' || 
+                                     (status === 'pending' && (paymentMethod === 'doacao' || paymentMethod === 'donation')) ||
+                                     paymentMethod === 'doacao' || 
+                                     paymentMethod === 'donation';
+            
+            if (isPendingDonation && status !== 'confirmed' && status !== 'rejected') {
+                buttons.push('✅ Confirmar', '❌ Rejeitar');
+                console.log(`✅ Botões de confirmação adicionados para doação pendente: ${purchase.id}`);
+            } else {
+                console.log(`ℹ️ Não é doação pendente - Status: ${status}, PaymentMethod: ${paymentMethod}`);
+            }
+            
+            // Sempre adicionar botão editar
+            buttons.push('✏️ Editar');
+            
+            return {
+                buttons: buttons,
+                shouldShowConfirmation: isPendingDonation && status !== 'confirmed' && status !== 'rejected',
+                analysis: {
+                    status,
+                    paymentMethod,
+                    isPendingDonation
+                }
+            };
+        }
+        
+        function testButtonLogic() {
+            const testCases = [
+                { id: 'test1', status: 'pending_donation', paymentMethod: 'doacao', expected: true },
+                { id: 'test2', status: 'pending', paymentMethod: 'doacao', expected: true },
+                { id: 'test3', status: 'pending', paymentMethod: 'donation', expected: true },
+                { id: 'test4', status: 'confirmed', paymentMethod: 'doacao', expected: false },
+                { id: 'test5', status: 'pending', paymentMethod: 'pix', expected: false },
+                { id: 'test6', status: 'pending_donation', paymentMethod: undefined, expected: true },
+                { id: 'test7', status: undefined, paymentMethod: 'doacao', expected: true },
+                { id: 'test8', status: 'rejected', paymentMethod: 'doacao', expected: false }
+            ];
+            
+            let results = '<h3>Resultados dos Testes:</h3>';
+            let allPassed = true;
+            
+            testCases.forEach(testCase => {
+                const result = createActionButtons(testCase);
+                const passed = result.shouldShowConfirmation === testCase.expected;
+                allPassed = allPassed && passed;
+                
+                const statusClass = passed ? 'success' : 'error';
+                results += `
+                    <div class="${statusClass}" style="margin: 10px 0; padding: 10px; border-radius: 4px;">
+                        <strong>Teste ${testCase.id}:</strong> ${passed ? '✅ PASSOU' : '❌ FALHOU'}<br>
+                        Status: <code>${testCase.status || 'undefined'}</code><br>
+                        PaymentMethod: <code>${testCase.paymentMethod || 'undefined'}</code><br>
+                        Esperado: ${testCase.expected ? 'Mostrar botões' : 'Não mostrar botões'}<br>
+                        Resultado: ${result.shouldShowConfirmation ? 'Mostrar botões' : 'Não mostrar botões'}<br>
+                        Botões: [${result.buttons.join(', ')}]
+                    </div>
+                `;
+            });
+            
+            results += `<div class="${allPassed ? 'success' : 'error'}" style="margin: 20px 0; padding: 15px; border-radius: 4px;">
+                <h4>${allPassed ? '🎉 Todos os testes passaram!' : '⚠️ Alguns testes falharam!'}</h4>
+            </div>`;
+            
+            document.getElementById('test-results').innerHTML = results;
+        }
+        
+        async function analyzeRealData() {
+            try {
+                // Aguardar Firebase
+                if (!window.FirebaseDB) {
+                    await new Promise(resolve => {
+                        window.addEventListener('firebaseReady', resolve);
+                    });
+                }
+                
+                // Carregar dados reais
+                const purchasesSnapshot = await window.FirebaseDB.collection('rifa_purchases').get();
+                const purchases = [];
+                
+                purchasesSnapshot.forEach(doc => {
+                    purchases.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                let analysis = `<h3>Análise de ${purchases.length} compras reais:</h3>`;
+                let pendingDonations = 0;
+                let shouldShowButtons = 0;
+                
+                purchases.forEach(purchase => {
+                    const result = createActionButtons(purchase);
+                    if (result.shouldShowConfirmation) {
+                        shouldShowButtons++;
+                        analysis += `
+                            <div class="warning" style="margin: 10px 0; padding: 10px; border-radius: 4px;">
+                                <strong>${purchase.buyerName || purchase.name || 'N/A'}</strong> (ID: ${purchase.id})<br>
+                                Status: <code>${purchase.status || 'undefined'}</code><br>
+                                PaymentMethod: <code>${purchase.paymentMethod || 'undefined'}</code><br>
+                                <strong>Deve mostrar botões de confirmação</strong>
+                            </div>
+                        `;
+                    }
+                    
+                    const paymentMethod = purchase.paymentMethod || '';
+                    if (paymentMethod === 'doacao' || paymentMethod === 'donation') {
+                        pendingDonations++;
+                    }
+                });
+                
+                analysis = `
+                    <div class="success" style="padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                        <h4>📊 Resumo:</h4>
+                        <p><strong>Total de compras:</strong> ${purchases.length}</p>
+                        <p><strong>Doações encontradas:</strong> ${pendingDonations}</p>
+                        <p><strong>Devem mostrar botões:</strong> ${shouldShowButtons}</p>
+                    </div>
+                ` + analysis;
+                
+                document.getElementById('real-results').innerHTML = analysis;
+                
+            } catch (error) {
+                document.getElementById('real-results').innerHTML = `
+                    <div class="error" style="padding: 15px; border-radius: 4px;">
+                        <h4>❌ Erro ao carregar dados:</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Verificar status do Firebase
+        function checkFirebaseStatus() {
+            const status = window.FirebaseDB ? '✅ Conectado' : '❌ Não conectado';
+            document.getElementById('firebase-info').innerHTML = `<p><strong>Status:</strong> ${status}</p>`;
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            checkFirebaseStatus();
+            
+            if (window.FirebaseDB) {
+                setTimeout(checkFirebaseStatus, 1000);
+            } else {
+                window.addEventListener('firebaseReady', checkFirebaseStatus);
+            }
+        });
+    </script>
+</body>
+</html>

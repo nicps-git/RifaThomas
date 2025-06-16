@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - DOM e Renderização</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .code-box { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; overflow-x: auto; }
+        .test-row { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .action-buttons { margin: 10px 0; }
+        .btn-test { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        
+        /* Copiar estilos dos botões do admin */
+        .btn-confirm {
+            background: #28a745 !important;
+            color: white !important;
+            border: none !important;
+            padding: 5px 10px !important;
+            margin: 2px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+        }
+        .btn-reject {
+            background: #dc3545 !important;
+            color: white !important;
+            border: none !important;
+            padding: 5px 10px !important;
+            margin: 2px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+        }
+        .btn-edit {
+            background: #007bff !important;
+            color: white !important;
+            border: none !important;
+            padding: 5px 10px !important;
+            margin: 2px !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - DOM e Renderização dos Botões</h1>
+    
+    <div class="debug-section">
+        <h2>📊 Status Firebase</h2>
+        <div id="firebase-status">Verificando...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🧪 Teste de Renderização Manual</h2>
+        <button class="btn-test" onclick="testManualRender()">Testar Renderização Manual</button>
+        <div id="manual-test"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🔍 Análise do DOM Real</h2>
+        <button class="btn-test" onclick="analyzeDOMButtons()">Analisar Botões no DOM</button>
+        <div id="dom-analysis"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        // Aguardar Firebase
+        async function waitForFirebase() {
+            return new Promise((resolve) => {
+                if (window.FirebaseDB) {
+                    resolve();
+                } else {
+                    window.addEventListener('firebaseReady', resolve);
+                }
+            });
+        }
+        
+        // Replicar a função exata do admin.js
+        function createActionButtons(purchase) {
+            console.log(`🔧 [BUTTON-DEBUG] Criando botões para compra ${purchase.id}:`);
+            console.log(`   - Status original: "${purchase.status}"`);
+            console.log(`   - PaymentMethod original: "${purchase.paymentMethod}"`);
+            console.log(`   - Nome: "${purchase.buyerName || purchase.name}"`);
+            
+            const buttons = [];
+            const status = (purchase.status || 'confirmed').toString().toLowerCase().trim();
+            const paymentMethod = (purchase.paymentMethod || '').toString().toLowerCase().trim();
+            
+            console.log(`   - Status processado: "${status}"`);
+            console.log(`   - PaymentMethod processado: "${paymentMethod}"`);
+            
+            // Detectar se é doação (múltiplas variações)
+            const isDonationMethod = paymentMethod === 'doacao' || 
+                                    paymentMethod === 'donation' || 
+                                    paymentMethod === 'doação' ||
+                                    paymentMethod.includes('doa');
+            
+            // Detectar se NÃO está finalizado
+            const isNotFinalized = status !== 'confirmed' && 
+                                  status !== 'rejected' && 
+                                  status !== 'confirmado' && 
+                                  status !== 'rejeitado';
+            
+            console.log(`   - É método doação? ${isDonationMethod}`);
+            console.log(`   - Não está finalizado? ${isNotFinalized}`);
+            
+            // Lógica expandida para mostrar botões
+            const shouldShowConfirmationButtons = isDonationMethod && isNotFinalized;
+            
+            console.log(`   - DEVE MOSTRAR BOTÕES? ${shouldShowConfirmationButtons}`);
+            
+            if (shouldShowConfirmationButtons) {
+                buttons.push(`
+                    <button class="btn-confirm" data-action="confirm-donation" data-purchase-id="${purchase.id}" title="Confirmar Doação">
+                        ✅ Confirmar
+                    </button>
+                    <button class="btn-reject" data-action="reject-donation" data-purchase-id="${purchase.id}" title="Rejeitar Doação">
+                        ❌ Rejeitar
+                    </button>
+                `);
+                console.log(`✅ [BUTTON-DEBUG] Botões de confirmação adicionados para: ${purchase.id}`);
+            } else {
+                console.log(`ℹ️ [BUTTON-DEBUG] Não mostrando botões para ${purchase.id}`);
+                console.log(`   Razão: isDonation=${isDonationMethod}, isNotFinalized=${isNotFinalized}`);
+            }
+            
+            // Botão editar sempre disponível
+            buttons.push(`
+                <button class="btn-edit" data-action="edit-participant" data-purchase-id="${purchase.id}" title="Editar">
+                    ✏️ Editar
+                </button>
+            `);
+            
+            // Botão de debug
+            buttons.push(`
+                <button onclick="console.log('Debug:', ${JSON.stringify(purchase).replace(/"/g, '&quot;')})" title="Debug" style="background: #6c757d; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                    🔍 Debug
+                </button>
+            `);
+            
+            const result = buttons.join('');
+            console.log(`✅ HTML gerado para ${purchase.id}:`, result);
+            return result;
+        }
+        
+        // Testar renderização manual com dados de exemplo
+        function testManualRender() {
+            const testCases = [
+                {
+                    id: 'test1',
+                    buyerName: 'Teste Doação Pendente',
+                    status: 'pending',
+                    paymentMethod: 'doacao'
+                },
+                {
+                    id: 'test2', 
+                    buyerName: 'Teste Doação Maiúscula',
+                    status: 'pending',
+                    paymentMethod: 'DOACAO'
+                },
+                {
+                    id: 'test3',
+                    buyerName: 'Teste Doação Confirmada',
+                    status: 'confirmed',
+                    paymentMethod: 'doacao'
+                },
+                {
+                    id: 'test4',
+                    buyerName: 'Teste PIX',
+                    status: 'pending',
+                    paymentMethod: 'pix'
+                }
+            ];
+            
+            let html = '<h3>Testes de Renderização Manual:</h3>';
+            
+            testCases.forEach((testCase, index) => {
+                const buttonsHtml = createActionButtons(testCase);
+                
+                html += `
+                    <div class="test-row">
+                        <h4>Teste ${index + 1}: ${testCase.buyerName}</h4>
+                        <p><strong>Dados:</strong> Status: <code>${testCase.status}</code>, Método: <code>${testCase.paymentMethod}</code></p>
+                        <div class="action-buttons">
+                            ${buttonsHtml}
+                        </div>
+                        <details>
+                            <summary>Ver HTML gerado</summary>
+                            <div class="code-box">${buttonsHtml.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                        </details>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('manual-test').innerHTML = html;
+        }
+        
+        // Analisar botões no DOM (simulando o que admin.js faz)
+        async function analyzeDOMButtons() {
+            try {
+                await waitForFirebase();
+                
+                const result = await window.FirebaseDB.loadPurchases();
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                const purchases = result.data;
+                let html = `<h3>Análise do DOM Real (${purchases.length} compras):</h3>`;
+                
+                // Criar tabela como no admin
+                html += `
+                    <table border="1" style="border-collapse: collapse; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Status</th>
+                                <th>Método</th>
+                                <th>Botões Gerados</th>
+                                <th>Teste Visual</th>
+                            </tr>
+                        </thead>
+                        <tbody id="test-tbody">
+                `;
+                
+                purchases.forEach(purchase => {
+                    const buttonsHtml = createActionButtons(purchase);
+                    const hasConfirmButtons = buttonsHtml.includes('btn-confirm');
+                    
+                    html += `
+                        <tr style="background: ${hasConfirmButtons ? '#d4edda' : '#f8f9fa'}">
+                            <td>${purchase.buyerName || purchase.name || 'N/A'}</td>
+                            <td><code>${purchase.status || 'null'}</code></td>
+                            <td><code>${purchase.paymentMethod || 'null'}</code></td>
+                            <td>${hasConfirmButtons ? '✅ Tem Confirmar/Rejeitar' : '❌ Só Editar/Debug'}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    ${buttonsHtml}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                
+                // Resumo
+                const withButtons = purchases.filter(p => createActionButtons(p).includes('btn-confirm')).length;
+                html += `
+                    <div style="margin: 20px 0; padding: 15px; background: #e7f3ff; border-radius: 5px;">
+                        <h4>📊 Resumo:</h4>
+                        <p><strong>Total de compras:</strong> ${purchases.length}</p>
+                        <p><strong>Com botões Confirmar/Rejeitar:</strong> ${withButtons}</p>
+                        <p><strong>Sem botões Confirmar/Rejeitar:</strong> ${purchases.length - withButtons}</p>
+                    </div>
+                `;
+                
+                document.getElementById('dom-analysis').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('dom-analysis').innerHTML = `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+        }
+        
+        // Verificar status do Firebase
+        function checkFirebaseStatus() {
+            if (window.FirebaseDB) {
+                document.getElementById('firebase-status').innerHTML = '✅ Firebase conectado e disponível';
+                document.getElementById('firebase-status').parentElement.className = 'debug-section success';
+            } else {
+                document.getElementById('firebase-status').innerHTML = '❌ Firebase não disponível';
+                document.getElementById('firebase-status').parentElement.className = 'debug-section error';
+            }
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            checkFirebaseStatus();
+            
+            if (!window.FirebaseDB) {
+                window.addEventListener('firebaseReady', () => {
+                    checkFirebaseStatus();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

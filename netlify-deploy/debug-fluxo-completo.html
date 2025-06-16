@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Fluxo Completo Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .step { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .step.success { background: #d4edda; border-color: #c3e6cb; }
+        .step.warning { background: #fff3cd; border-color: #ffeaa7; }
+        .step.error { background: #f8d7da; border-color: #f5c6cb; }
+        .data-box { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 6px; font-size: 11px; }
+        th { background: #f2f2f2; }
+        .missing { background: #f8d7da; }
+        .has-buttons { background: #d4edda; }
+        .btn { margin: 5px; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Fluxo Completo do Admin</h1>
+    
+    <div class="step">
+        <h2>1️⃣ Status Firebase</h2>
+        <div id="step1">Verificando...</div>
+    </div>
+    
+    <div class="step">
+        <h2>2️⃣ Carregamento via loadPurchases()</h2>
+        <div id="step2">Aguardando...</div>
+    </div>
+    
+    <div class="step">
+        <h2>3️⃣ Processamento dos Dados</h2>
+        <div id="step3">Aguardando...</div>
+    </div>
+    
+    <div class="step">
+        <h2>4️⃣ Função createActionButtons</h2>
+        <div id="step4">Aguardando...</div>
+    </div>
+    
+    <div class="step">
+        <h2>5️⃣ Filtro pending_donation</h2>
+        <div id="step5">Aguardando...</div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        let loadedPurchases = [];
+        let processedPurchases = [];
+        let filteredPurchases = [];
+        
+        // Aguardar Firebase
+        async function waitForFirebase() {
+            return new Promise((resolve) => {
+                if (window.FirebaseDB) {
+                    resolve();
+                } else {
+                    window.addEventListener('firebaseReady', resolve);
+                }
+            });
+        }
+        
+        // Replicar exatamente as funções do admin.js
+        function createActionButtons(purchase) {
+            console.log(`🔧 [BUTTON-DEBUG] Criando botões para compra ${purchase.id}:`);
+            console.log(`   - Status original: "${purchase.status}"`);
+            console.log(`   - PaymentMethod original: "${purchase.paymentMethod}"`);
+            console.log(`   - Nome: "${purchase.buyerName || purchase.name}"`);
+            
+            const buttons = [];
+            const status = (purchase.status || 'confirmed').toString().toLowerCase().trim();
+            const paymentMethod = (purchase.paymentMethod || '').toString().toLowerCase().trim();
+            
+            console.log(`   - Status processado: "${status}"`);
+            console.log(`   - PaymentMethod processado: "${paymentMethod}"`);
+            
+            // Detectar se é doação (múltiplas variações)
+            const isDonationMethod = paymentMethod === 'doacao' || 
+                                    paymentMethod === 'donation' || 
+                                    paymentMethod === 'doação' ||
+                                    paymentMethod.includes('doa');
+            
+            // Detectar se NÃO está finalizado
+            const isNotFinalized = status !== 'confirmed' && 
+                                  status !== 'rejected' && 
+                                  status !== 'confirmado' && 
+                                  status !== 'rejeitado';
+            
+            console.log(`   - É método doação? ${isDonationMethod}`);
+            console.log(`   - Não está finalizado? ${isNotFinalized}`);
+            
+            // Lógica expandida para mostrar botões
+            const shouldShowConfirmationButtons = isDonationMethod && isNotFinalized;
+            
+            console.log(`   - DEVE MOSTRAR BOTÕES? ${shouldShowConfirmationButtons}`);
+            
+            return {
+                shouldShow: shouldShowConfirmationButtons,
+                details: {
+                    status,
+                    paymentMethod,
+                    isDonationMethod,
+                    isNotFinalized,
+                    originalStatus: purchase.status,
+                    originalPaymentMethod: purchase.paymentMethod
+                }
+            };
+        }
+        
+        function filterPurchases(purchases, filter) {
+            if (filter !== 'all') {
+                return purchases.filter(purchase => {
+                    const status = (purchase.status || 'confirmed').toString().toLowerCase().trim();
+                    const paymentMethod = (purchase.paymentMethod || '').toString().toLowerCase().trim();
+                    
+                    if (filter === 'pending_donation') {
+                        // Detectar doações
+                        const isDonation = paymentMethod === 'doacao' || 
+                                         paymentMethod === 'donation' || 
+                                         paymentMethod === 'doação' ||
+                                         paymentMethod.includes('doa');
+                        
+                        // Não está finalizado
+                        const isNotFinalized = status !== 'confirmed' && 
+                                             status !== 'rejected' && 
+                                             status !== 'confirmado' && 
+                                             status !== 'rejeitado';
+                        
+                        console.log(`🔍 [FILTER-DEBUG] ${purchase.buyerName || purchase.id}:`);
+                        console.log(`   - isDonation: ${isDonation}`);
+                        console.log(`   - isNotFinalized: ${isNotFinalized}`);
+                        console.log(`   - Incluir no filtro: ${isDonation && isNotFinalized}`);
+                        
+                        return isDonation && isNotFinalized;
+                    }
+                    
+                    return status === filter.toLowerCase();
+                });
+            }
+            return purchases;
+        }
+        
+        async function runCompleteTest() {
+            try {
+                // PASSO 1: Verificar Firebase
+                document.getElementById('step1').innerHTML = '🔥 Conectando...';
+                await waitForFirebase();
+                document.getElementById('step1').innerHTML = '✅ Firebase conectado e disponível';
+                document.querySelector('#step1').parentElement.className = 'step success';
+                
+                // PASSO 2: Carregar via loadPurchases()
+                document.getElementById('step2').innerHTML = '📊 Carregando via loadPurchases()...';
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (!result.success) {
+                    throw new Error(`loadPurchases falhou: ${result.error}`);
+                }
+                
+                loadedPurchases = result.data;
+                
+                let step2Html = `✅ ${loadedPurchases.length} compras carregadas via loadPurchases()<br>`;
+                step2Html += `<h4>Primeiras 3 compras (dados brutos):</h4>`;
+                
+                loadedPurchases.slice(0, 3).forEach((purchase, i) => {
+                    step2Html += `<details><summary>Compra ${i+1}: ${purchase.buyerName || purchase.name || purchase.id}</summary>`;
+                    step2Html += `<div class="data-box">${JSON.stringify(purchase, null, 2)}</div></details>`;
+                });
+                
+                document.getElementById('step2').innerHTML = step2Html;
+                document.querySelector('#step2').parentElement.className = 'step success';
+                
+                // PASSO 3: Processar dados (simular createParticipantRow)
+                document.getElementById('step3').innerHTML = '🔄 Processando dados...';
+                
+                processedPurchases = loadedPurchases.map(purchase => ({
+                    ...purchase,
+                    buyerName: purchase.buyerName || purchase.name || 'N/A',
+                    buyerPhone: purchase.buyerPhone || purchase.phone || purchase.whatsapp || 'N/A'
+                }));
+                
+                let step3Html = `✅ ${processedPurchases.length} compras processadas<br>`;
+                step3Html += '<h4>Análise dos campos relevantes:</h4>';
+                step3Html += '<table><tr><th>Nome</th><th>Status Original</th><th>PaymentMethod Original</th><th>Tipo</th></tr>';
+                
+                processedPurchases.forEach(purchase => {
+                    const isDonationLike = purchase.paymentMethod && 
+                                          purchase.paymentMethod.toString().toLowerCase().includes('doa');
+                    const rowClass = isDonationLike ? 'has-buttons' : '';
+                    
+                    step3Html += `<tr class="${rowClass}">
+                        <td>${purchase.buyerName}</td>
+                        <td>${purchase.status || 'null'}</td>
+                        <td>${purchase.paymentMethod || 'null'}</td>
+                        <td>${isDonationLike ? '🎯 Doação' : '💳 Outro'}</td>
+                    </tr>`;
+                });
+                
+                step3Html += '</table>';
+                document.getElementById('step3').innerHTML = step3Html;
+                document.querySelector('#step3').parentElement.className = 'step success';
+                
+                // PASSO 4: Testar createActionButtons em cada compra
+                document.getElementById('step4').innerHTML = '🎯 Testando createActionButtons...';
+                
+                let step4Html = '<h4>Resultado da função createActionButtons:</h4>';
+                step4Html += '<table><tr><th>Nome</th><th>Status</th><th>PaymentMethod</th><th>Deve Mostrar?</th><th>Detalhes</th></tr>';
+                
+                let shouldShowCount = 0;
+                
+                processedPurchases.forEach(purchase => {
+                    const buttonResult = createActionButtons(purchase);
+                    const rowClass = buttonResult.shouldShow ? 'has-buttons' : 'missing';
+                    
+                    if (buttonResult.shouldShow) shouldShowCount++;
+                    
+                    step4Html += `<tr class="${rowClass}">
+                        <td>${purchase.buyerName}</td>
+                        <td>${purchase.status || 'null'}</td>
+                        <td>${purchase.paymentMethod || 'null'}</td>
+                        <td><strong>${buttonResult.shouldShow ? '✅ SIM' : '❌ NÃO'}</strong></td>
+                        <td><details><summary>Ver</summary><div class="data-box">${JSON.stringify(buttonResult.details, null, 2)}</div></details></td>
+                    </tr>`;
+                });
+                
+                step4Html += '</table>';
+                step4Html += `<p><strong>Compras que devem mostrar botões: ${shouldShowCount}</strong></p>`;
+                
+                document.getElementById('step4').innerHTML = step4Html;
+                document.querySelector('#step4').parentElement.className = shouldShowCount > 0 ? 'step success' : 'step warning';
+                
+                // PASSO 5: Testar filtro pending_donation
+                document.getElementById('step5').innerHTML = '🔍 Testando filtro pending_donation...';
+                
+                filteredPurchases = filterPurchases(processedPurchases, 'pending_donation');
+                
+                let step5Html = `✅ Filtro aplicado: ${filteredPurchases.length} compras no filtro 'pending_donation'<br>`;
+                
+                if (filteredPurchases.length > 0) {
+                    step5Html += '<h4>Compras que passaram no filtro:</h4>';
+                    step5Html += '<table><tr><th>Nome</th><th>Status</th><th>PaymentMethod</th><th>Botões?</th></tr>';
+                    
+                    filteredPurchases.forEach(purchase => {
+                        const buttonResult = createActionButtons(purchase);
+                        const rowClass = buttonResult.shouldShow ? 'has-buttons' : 'missing';
+                        
+                        step5Html += `<tr class="${rowClass}">
+                            <td>${purchase.buyerName}</td>
+                            <td>${purchase.status || 'null'}</td>
+                            <td>${purchase.paymentMethod || 'null'}</td>
+                            <td><strong>${buttonResult.shouldShow ? '✅ SIM' : '❌ NÃO'}</strong></td>
+                        </tr>`;
+                    });
+                    
+                    step5Html += '</table>';
+                } else {
+                    step5Html += '<p>⚠️ Nenhuma compra passou no filtro pending_donation</p>';
+                }
+                
+                document.getElementById('step5').innerHTML = step5Html;
+                document.querySelector('#step5').parentElement.className = filteredPurchases.length > 0 ? 'step success' : 'step warning';
+                
+            } catch (error) {
+                console.error('❌ Erro no teste:', error);
+                document.getElementById('step1').innerHTML = `❌ Erro: ${error.message}`;
+                document.querySelector('#step1').parentElement.className = 'step error';
+            }
+        }
+        
+        // Inicializar quando DOM estiver pronto
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.FirebaseDB) {
+                runCompleteTest();
+            } else {
+                window.addEventListener('firebaseReady', runCompleteTest);
+            }
+        });
+    </script>
+</body>
+</html>

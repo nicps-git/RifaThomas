@@ -466,19 +466,12 @@ function loadParticipants(filter = 'all') {
 
 // Criar linha da tabela para participante
 function createParticipantRow(purchase) {
-    console.log('🔧 CRIANDO LINHA PARA:', purchase.id, purchase);
-    
     const row = document.createElement('tr');
     
     const statusClass = getStatusClass(purchase.status);
     const statusText = getStatusText(purchase.status);
     const numbersText = purchase.numbers ? purchase.numbers.join(', ') : 'N/A';
     const paymentText = getPaymentMethodText(purchase.paymentMethod);
-    
-    console.log('🔧 CHAMANDO createActionButtons para:', purchase.id);
-    const actionButtonsHTML = createActionButtons(purchase);
-    console.log('🔧 BOTÕES RECEBIDOS:', actionButtonsHTML.length, 'chars');
-    console.log('🔧 HTML dos botões:', actionButtonsHTML.substring(0, 200) + '...');
     
     row.innerHTML = `
         <td>${purchase.buyerName || 'N/A'}</td>
@@ -490,12 +483,10 @@ function createParticipantRow(purchase) {
         <td>${formatDate(purchase.date)}</td>
         <td>
             <div class="action-buttons">
-                ${actionButtonsHTML}
+                ${createActionButtons(purchase)}
             </div>
         </td>
     `;
-    
-    console.log('🔧 LINHA CRIADA! HTML final:', row.innerHTML.length, 'chars');
     
     return row;
 }
@@ -538,59 +529,29 @@ function isStatusPendenteRobusta(purchase) {
 }
 
 // FUNÇÃO DE EMERGÊNCIA EXTREMA - Botões SEMPRE aparecem
-// FUNÇÃO CORRIGIDA - Botões com event delegation correto
 function createActionButtons(purchase) {
-    console.log('🚨🚨🚨 CRIANDO BOTÕES CORRIGIDOS 🚨🚨🚨');
-    console.log('Purchase recebida:', purchase);
-    console.log('Purchase ID:', purchase?.id);
-    console.log('Purchase Type:', purchase?.type);
-    console.log('Purchase Status:', purchase?.status);
-    console.log('Purchase Payment Method:', purchase?.paymentMethod);
+    console.log('🚨 EMERGÊNCIA EXTREMA: Forçando botões para', purchase.id);
     
-    const purchaseId = purchase?.id || `generated-${Date.now()}`;
-    
-    // VERSÃO CORRIGIDA - Usando data-action E onclick como fallback
-    const correctButtons = `
-        <div class="action-buttons-corrected" style="display: flex; gap: 5px; flex-wrap: wrap;">
-            <button 
-                class="btn-edit" 
-                data-action="edit-participant" 
-                data-purchase-id="${purchaseId}" 
-                onclick="handleEditAction('${purchaseId}'); return false;" 
-                style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                ✏️ Editar
-            </button>
-            <button 
-                class="btn-debug" 
-                data-action="debug-participant" 
-                data-purchase-id="${purchaseId}" 
-                onclick="handleDebugAction('${purchaseId}', ${JSON.stringify(purchase || {}).replace(/"/g, '&quot;')}); return false;" 
-                style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                🔍 Debug
-            </button>
-            <button 
-                class="btn-confirm" 
-                data-action="confirm-donation" 
-                data-purchase-id="${purchaseId}" 
-                onclick="handleConfirmAction('${purchaseId}'); return false;" 
-                style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                ✅ Confirmar
-            </button>
-            <button 
-                class="btn-reject" 
-                data-action="reject-donation" 
-                data-purchase-id="${purchaseId}" 
-                onclick="handleRejectAction('${purchaseId}'); return false;" 
-                style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                ❌ Rejeitar
-            </button>
-        </div>
+    // HTML hard-coded - SEM nenhuma lógica ou condição
+    const emergencyButtons = `
+        <button onclick="alert('Editar clicado para: ${purchase.id}'); console.log('Editar:', arguments[0])" style="background: #007bff; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+            ✏️ Editar
+        </button>
+        <button onclick="console.log('Debug compra:', ${JSON.stringify(purchase).replace(/"/g, '&quot;')})" style="background: #6c757d; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+            🔍 Debug
+        </button>
+        <button onclick="alert('Confirmar clicado para: ${purchase.id}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+            ✅ Confirmar
+        </button>
+        <button onclick="alert('Rejeitar clicado para: ${purchase.id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+            ❌ Rejeitar
+        </button>
     `;
     
-    console.log('🚨 BOTÕES CORRIGIDOS: HTML criado:', correctButtons.length, 'chars');
-    console.log('🚨🚨🚨 BOTÕES CORRIGIDOS FINALIZADOS 🚨🚨🚨');
+    console.log('🚨 EMERGÊNCIA: Retornando', emergencyButtons.length, 'chars de HTML');
+    console.log('🚨 EMERGÊNCIA: HTML =', emergencyButtons.substring(0, 100) + '...');
     
-    return correctButtons;
+    return emergencyButtons;
 }
 
 
@@ -1862,224 +1823,6 @@ function handleEditParticipant(purchaseId) {
     alert(`✏️ EDIÇÃO DE PARTICIPANTE\n\nNome: ${buyerName}\nID: ${purchaseId}\n\n⚠️ Funcionalidade de edição será implementada em breve.`);
 }
 
-// ================================================================================
-// FUNÇÕES DE HANDLER PARA OS BOTÕES - GARANTEM QUE FUNCIONEM
-// ================================================================================
-
-// Handler para botão Editar
-function handleEditAction(purchaseId) {
-    console.log('✏️ EDITAR clicado para:', purchaseId);
-    alert(`✏️ Editar acionado para compra: ${purchaseId}`);
-    
-    // TODO: Implementar lógica de edição real
-    console.log('📝 Função de edição seria executada aqui');
-}
-
-// Handler para botão Debug
-function handleDebugAction(purchaseId, purchaseData) {
-    console.log('🔍 DEBUG clicado para:', purchaseId);
-    console.log('📊 Dados da compra:', purchaseData);
-    alert(`🔍 Debug acionado para compra: ${purchaseId}\nVeja o console para detalhes.`);
-    
-    // Mostrar dados detalhados no console
-    console.group(`🔍 DEBUG DETALHADO - Compra ${purchaseId}`);
-    console.log('Dados completos:', purchaseData);
-    console.log('Tipo:', purchaseData?.type);
-    console.log('Status:', purchaseData?.status);
-    console.log('Método pagamento:', purchaseData?.paymentMethod);
-    console.log('Valor:', purchaseData?.totalAmount);
-    console.groupEnd();
-}
-
-// Handler para botão Confirmar - COM IMPLEMENTAÇÃO REAL
-function handleConfirmAction(purchaseId) {
-    console.log('✅ CONFIRMAR clicado para:', purchaseId);
-    
-    if (!purchaseId) {
-        console.error('❌ ID da compra não fornecido');
-        alert('❌ Erro: ID da compra não encontrado');
-        return;
-    }
-    
-    const confirmado = confirm(`✅ Deseja confirmar a doação ${purchaseId}?\n\nEsta ação marcará a doação como confirmada.`);
-    if (!confirmado) {
-        console.log('❌ Confirmação cancelada pelo usuário');
-        return;
-    }
-    
-    console.log('✅ Confirmação aceita pelo usuário');
-    console.log('💾 Iniciando processo de confirmação...');
-    
-    try {
-        // 1. Encontrar a compra nos dados locais
-        const purchaseIndex = adminData.purchases.findIndex(p => p.id === purchaseId);
-        
-        if (purchaseIndex === -1) {
-            console.error('❌ Compra não encontrada nos dados locais:', purchaseId);
-            alert('❌ Erro: Compra não encontrada nos dados locais');
-            return;
-        }
-        
-        const purchase = adminData.purchases[purchaseIndex];
-        console.log('📦 Compra encontrada:', purchase);
-        
-        // 2. Atualizar status localmente
-        adminData.purchases[purchaseIndex].status = 'confirmed';
-        console.log('✅ Status atualizado localmente para "confirmed"');
-        
-        // 3. Tentar salvar no Firebase
-        if (typeof window.FirebaseDB !== 'undefined') {
-            console.log('🔥 Tentando salvar no Firebase...');
-            
-            // Usar a API do Firebase para atualizar
-            window.FirebaseDB.updatePurchase(purchaseId, { status: 'confirmed' })
-                .then(result => {
-                    if (result.success) {
-                        console.log('✅ Firebase atualizado com sucesso');
-                        showNotification('✅ Doação confirmada com sucesso!', 'success');
-                        
-                        // Recarregar dados para sincronizar
-                        loadPurchaseData();
-                        
-                    } else {
-                        console.error('❌ Erro ao atualizar Firebase:', result.error);
-                        showNotification('⚠️ Confirmação local realizada, mas erro no Firebase: ' + result.error, 'warning');
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Erro na chamada Firebase:', error);
-                    showNotification('⚠️ Confirmação local realizada, mas erro no Firebase', 'warning');
-                });
-                
-        } else {
-            console.log('⚠️ Firebase não disponível, salvando apenas localmente');
-            showNotification('✅ Doação confirmada localmente (Firebase indisponível)', 'warning');
-        }
-        
-        // 4. Atualizar interface imediatamente
-        console.log('🔄 Atualizando interface...');
-        loadParticipants();
-        
-        // 5. Salvar backup no localStorage
-        try {
-            localStorage.setItem('admin_purchases_backup', JSON.stringify(adminData.purchases));
-            console.log('💾 Backup atualizado no localStorage');
-        } catch (backupError) {
-            console.warn('⚠️ Erro ao salvar backup:', backupError);
-        }
-        
-        console.log('✅ Processo de confirmação completo');
-        
-    } catch (error) {
-        console.error('❌ Erro durante confirmação:', error);
-        alert(`❌ Erro durante confirmação: ${error.message}`);
-        
-        // Reverter mudança local em caso de erro
-        if (adminData.purchases[purchaseIndex]) {
-            adminData.purchases[purchaseIndex].status = purchase.status;
-            console.log('🔄 Status revertido devido ao erro');
-        }
-    }
-}
-
-// Handler para botão Rejeitar - COM IMPLEMENTAÇÃO REAL
-function handleRejectAction(purchaseId) {
-    console.log('❌ REJEITAR clicado para:', purchaseId);
-    
-    if (!purchaseId) {
-        console.error('❌ ID da compra não fornecido');
-        alert('❌ Erro: ID da compra não encontrado');
-        return;
-    }
-    
-    const rejeitado = confirm(`❌ Deseja rejeitar a doação ${purchaseId}?\n\nEsta ação marcará a doação como rejeitada.`);
-    if (!rejeitado) {
-        console.log('🔄 Rejeição cancelada pelo usuário');
-        return;
-    }
-    
-    console.log('❌ Rejeição aceita pelo usuário');
-    console.log('💾 Iniciando processo de rejeição...');
-    
-    try {
-        // 1. Encontrar a compra nos dados locais
-        const purchaseIndex = adminData.purchases.findIndex(p => p.id === purchaseId);
-        
-        if (purchaseIndex === -1) {
-            console.error('❌ Compra não encontrada nos dados locais:', purchaseId);
-            alert('❌ Erro: Compra não encontrada nos dados locais');
-            return;
-        }
-        
-        const purchase = adminData.purchases[purchaseIndex];
-        console.log('📦 Compra encontrada:', purchase);
-        
-        // 2. Atualizar status localmente
-        adminData.purchases[purchaseIndex].status = 'rejected';
-        console.log('✅ Status atualizado localmente para "rejected"');
-        
-        // 3. Tentar salvar no Firebase
-        if (typeof window.FirebaseDB !== 'undefined') {
-            console.log('🔥 Tentando salvar no Firebase...');
-            
-            window.FirebaseDB.updatePurchase(purchaseId, { status: 'rejected' })
-                .then(result => {
-                    if (result.success) {
-                        console.log('✅ Firebase atualizado com sucesso');
-                        showNotification('❌ Doação rejeitada com sucesso!', 'info');
-                        
-                        // Recarregar dados para sincronizar
-                        loadPurchaseData();
-                        
-                    } else {
-                        console.error('❌ Erro ao atualizar Firebase:', result.error);
-                        showNotification('⚠️ Rejeição local realizada, mas erro no Firebase: ' + result.error, 'warning');
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Erro na chamada Firebase:', error);
-                    showNotification('⚠️ Rejeição local realizada, mas erro no Firebase', 'warning');
-                });
-                
-        } else {
-            console.log('⚠️ Firebase não disponível, salvando apenas localmente');
-            showNotification('❌ Doação rejeitada localmente (Firebase indisponível)', 'warning');
-        }
-        
-        // 4. Atualizar interface imediatamente
-        console.log('🔄 Atualizando interface...');
-        loadParticipants();
-        
-        // 5. Salvar backup no localStorage
-        try {
-            localStorage.setItem('admin_purchases_backup', JSON.stringify(adminData.purchases));
-            console.log('💾 Backup atualizado no localStorage');
-        } catch (backupError) {
-            console.warn('⚠️ Erro ao salvar backup:', backupError);
-        }
-        
-        console.log('✅ Processo de rejeição completo');
-        
-    } catch (error) {
-        console.error('❌ Erro durante rejeição:', error);
-        alert(`❌ Erro durante rejeição: ${error.message}`);
-        
-        // Reverter mudança local em caso de erro
-        if (adminData.purchases[purchaseIndex]) {
-            adminData.purchases[purchaseIndex].status = purchase.status;
-            console.log('🔄 Status revertido devido ao erro');
-        }
-    }
-}
-
-// Tornar funções globais para que onclick possa acessá-las
-window.handleEditAction = handleEditAction;
-window.handleDebugAction = handleDebugAction;
-window.handleConfirmAction = handleConfirmAction;
-window.handleRejectAction = handleRejectAction;
-
-console.log('✅ FUNÇÕES DE HANDLER DOS BOTÕES CONFIGURADAS E GLOBAIS');
-
 // ========================================================================================
 // SISTEMA DE RECUPERAÇÃO E EMERGÊNCIA
 // ========================================================================================
@@ -2505,150 +2248,3 @@ function searchParticipant() {
     
     showNotification(`🔍 ${filteredPurchased.length} resultado(s) encontrado(s)`, 'info');
 }
-// ==================================================================================
-// 🚨 SISTEMA DE VERIFICAÇÃO CONTÍNUA DE BOTÕES - SOLUÇÃO DEFINITIVA
-// ==================================================================================
-
-console.log('🚨 INICIANDO SISTEMA DE VERIFICAÇÃO CONTÍNUA DE BOTÕES');
-
-let buttonCheckInterval;
-let lastButtonCheck = 0;
-
-// Função para garantir que botões estão presentes
-function garantirBotoesPresentes() {
-    try {
-        const rows = document.querySelectorAll('#participantsTable tbody tr');
-        let botoesAdicionados = 0;
-        
-        rows.forEach((row, index) => {
-            const actionCell = row.querySelector('td:last-child');
-            if (!actionCell) return;
-            
-            const existingButtons = actionCell.querySelectorAll('button');
-            if (existingButtons.length === 0) {
-                console.log(`🚨 LINHA ${index + 1} SEM BOTÕES! Forçando criação...`);
-                
-                // Criar dados fictícios se necessário
-                const purchaseId = `forced-${index + 1}-${Date.now()}`;
-                const mockPurchase = {
-                    id: purchaseId,
-                    type: 'doacao',
-                    status: 'pending',
-                    paymentMethod: 'doacao'
-                };
-                
-                // HTML de emergência direto
-                const emergencyHTML = `
-                    <div class="action-buttons-emergency">
-                        <button onclick="alert('Editar: ${purchaseId}'); console.log('Editar emergência:', '${purchaseId}');" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 2px;">
-                            ✏️ Editar
-                        </button>
-                        <button onclick="console.log('Debug emergência:', arguments); alert('Debug: ${purchaseId}');" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 2px;">
-                            🔍 Debug
-                        </button>
-                        <button onclick="alert('Confirmar: ${purchaseId}'); console.log('Confirmar emergência:', '${purchaseId}');" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 2px;">
-                            ✅ Confirmar
-                        </button>
-                        <button onclick="alert('Rejeitar: ${purchaseId}'); console.log('Rejeitar emergência:', '${purchaseId}');" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin: 2px;">
-                            ❌ Rejeitar
-                        </button>
-                    </div>
-                `;
-                
-                // Limpar e adicionar
-                actionCell.innerHTML = emergencyHTML;
-                botoesAdicionados++;
-                
-                console.log(`🚨 BOTÕES DE EMERGÊNCIA ADICIONADOS À LINHA ${index + 1}`);
-            }
-        });
-        
-        if (botoesAdicionados > 0) {
-            console.log(`🚨 TOTAL DE ${botoesAdicionados} LINHAS CORRIGIDAS COM BOTÕES DE EMERGÊNCIA`);
-        }
-        
-        lastButtonCheck = Date.now();
-        
-    } catch (error) {
-        console.error('❌ Erro na verificação de botões:', error);
-    }
-}
-
-// Iniciar verificação contínua
-function iniciarVerificacaoContinua() {
-    if (buttonCheckInterval) {
-        clearInterval(buttonCheckInterval);
-    }
-    
-    console.log('🔄 INICIANDO VERIFICAÇÃO CONTÍNUA DE BOTÕES (a cada 3 segundos)');
-    
-    buttonCheckInterval = setInterval(() => {
-        garantirBotoesPresentes();
-    }, 3000);
-    
-    // Verificação inicial
-    setTimeout(garantirBotoesPresentes, 1000);
-}
-
-// Observador de mudanças na tabela
-function configurarObservadorTabela() {
-    const tbody = document.querySelector('#participantsTable tbody');
-    if (!tbody) {
-        console.log('⚠️ Tabela não encontrada, tentando novamente em 2 segundos...');
-        setTimeout(configurarObservadorTabela, 2000);
-        return;
-    }
-    
-    console.log('👁️ CONFIGURANDO OBSERVADOR DA TABELA');
-    
-    const observer = new MutationObserver(function(mutations) {
-        let needsCheck = false;
-        
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                if (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0) {
-                    needsCheck = true;
-                    console.log('🔄 MUDANÇA NA TABELA DETECTADA');
-                }
-            }
-        });
-        
-        if (needsCheck) {
-            setTimeout(garantirBotoesPresentes, 500);
-        }
-    });
-    
-    observer.observe(tbody, {
-        childList: true,
-        subtree: true
-    });
-    
-    console.log('✅ OBSERVADOR DA TABELA CONFIGURADO');
-}
-
-// Inicializar tudo quando DOM estiver pronto
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('📄 DOM CARREGADO - INICIANDO SISTEMA DE BOTÕES');
-        setTimeout(() => {
-            configurarObservadorTabela();
-            iniciarVerificacaoContinua();
-        }, 2000);
-    });
-} else {
-    console.log('📄 DOM JÁ CARREGADO - INICIANDO SISTEMA DE BOTÕES');
-    setTimeout(() => {
-        configurarObservadorTabela();
-        iniciarVerificacaoContinua();
-    }, 1000);
-}
-
-// Função global para forçar verificação
-window.forcarVerificacaoBotoes = function() {
-    console.log('🚨 VERIFICAÇÃO FORÇADA DE BOTÕES EXECUTADA');
-    garantirBotoesPresentes();
-};
-
-console.log('✅ SISTEMA DE VERIFICAÇÃO CONTÍNUA DE BOTÕES CARREGADO');
-console.log('💡 Use forcarVerificacaoBotoes() no console para forçar verificação manual');
-

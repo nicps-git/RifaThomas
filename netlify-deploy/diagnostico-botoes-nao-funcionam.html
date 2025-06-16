@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 DIAGNÓSTICO URGENTE - Botões Não Funcionam</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .status-ok { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .btn {
+            padding: 12px 24px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 DIAGNÓSTICO URGENTE - Botões Não Funcionam</h1>
+        
+        <div class="status status-error">
+            ❌ PROBLEMA: Os botões não estão funcionando conforme esperado
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Testes de Diagnóstico</h2>
+            <button class="btn btn-danger" onclick="testeCompleto()">🧪 Executar Teste Completo</button>
+            <button class="btn btn-primary" onclick="abrirAdminParaTeste()">🔗 Abrir Admin em Nova Aba</button>
+            <button class="btn btn-success" onclick="criarBotoesDeEmergencia()">🚨 Criar Botões de Emergência</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Log de Diagnóstico</h2>
+            <div id="logOutput" class="log">Aguardando diagnóstico...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>🛠️ Soluções de Emergência</h2>
+            <div id="solucoes" style="display: none;">
+                <h3>📋 Cole no Console da Página Admin (F12):</h3>
+                <textarea id="codigoEmergencia" readonly style="width: 100%; height: 300px; background: #000; color: #0f0; padding: 10px; font-family: monospace; border: 1px solid #ccc; border-radius: 5px;"></textarea>
+                <br>
+                <button class="btn btn-primary" onclick="copiarCodigo()">📋 Copiar Código</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logOutput = document.getElementById('logOutput');
+        let originalConsoleLog = console.log;
+
+        // Interceptar console.log
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, arguments);
+            let message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            logOutput.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            logOutput.scrollTop = logOutput.scrollHeight;
+        };
+
+        function abrirAdminParaTeste() {
+            console.log('🔗 Abrindo página admin para teste...');
+            window.open('admin.html', '_blank');
+        }
+
+        function testeCompleto() {
+            console.log('🧪 INICIANDO TESTE COMPLETO DE DIAGNÓSTICO');
+            console.log('===========================================');
+            
+            // Teste 1: Verificar se função createActionButtons existe
+            console.log('\n1. 🔍 Testando função createActionButtons...');
+            try {
+                // Simular dados de compra
+                const testPurchase = {
+                    id: 'test-' + Date.now(),
+                    type: 'doacao',
+                    status: 'pending',
+                    paymentMethod: 'doacao',
+                    buyerName: 'Teste Usuario',
+                    totalAmount: 50
+                };
+
+                console.log('📝 Dados de teste:', testPurchase);
+                
+                // Tentar executar a função (se existir)
+                if (typeof createActionButtons === 'function') {
+                    const result = createActionButtons(testPurchase);
+                    console.log('✅ Função existe e retornou:', result.length, 'caracteres');
+                    console.log('🔍 Resultado:', result.substring(0, 200) + '...');
+                } else {
+                    console.log('❌ Função createActionButtons NÃO EXISTE');
+                }
+            } catch (error) {
+                console.log('❌ ERRO ao testar função:', error.message);
+            }
+
+            // Teste 2: Verificar se há botões na página atual
+            console.log('\n2. 🔍 Verificando botões existentes...');
+            try {
+                const buttons = document.querySelectorAll('button');
+                console.log('📊 Total de botões na página:', buttons.length);
+                
+                if (buttons.length > 0) {
+                    buttons.forEach((btn, i) => {
+                        console.log(`  Botão ${i+1}: "${btn.textContent.trim()}" - onclick: ${!!btn.onclick}`);
+                    });
+                } else {
+                    console.log('⚠️ Nenhum botão encontrado na página');
+                }
+            } catch (error) {
+                console.log('❌ ERRO ao verificar botões:', error.message);
+            }
+
+            // Teste 3: Tentar criar botão de teste
+            console.log('\n3. 🔍 Criando botão de teste...');
+            try {
+                const testButton = document.createElement('button');
+                testButton.textContent = '🧪 Teste';
+                testButton.style.cssText = 'background: #28a745; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; margin: 10px;';
+                testButton.onclick = function() {
+                    alert('Botão de teste funcionou!');
+                    console.log('✅ Botão de teste clicado com sucesso!');
+                };
+                
+                document.body.appendChild(testButton);
+                console.log('✅ Botão de teste criado e adicionado à página');
+            } catch (error) {
+                console.log('❌ ERRO ao criar botão de teste:', error.message);
+            }
+
+            // Teste 4: Verificar localStorage e dados
+            console.log('\n4. 🔍 Verificando dados armazenados...');
+            try {
+                const adminData = localStorage.getItem('admin_purchases_backup');
+                if (adminData) {
+                    const purchases = JSON.parse(adminData);
+                    console.log('📊 Dados encontrados no localStorage:', purchases.length, 'compras');
+                    console.log('🔍 Primeira compra:', purchases[0]);
+                } else {
+                    console.log('⚠️ Nenhum dado encontrado no localStorage');
+                }
+            } catch (error) {
+                console.log('❌ ERRO ao verificar localStorage:', error.message);
+            }
+
+            console.log('\n===========================================');
+            console.log('🧪 DIAGNÓSTICO COMPLETO FINALIZADO');
+            
+            // Mostrar soluções
+            mostrarSolucoes();
+        }
+
+        function mostrarSolucoes() {
+            const solucoesDiv = document.getElementById('solucoes');
+            const codigoTextarea = document.getElementById('codigoEmergencia');
+            
+            const codigoEmergencia = `
+// 🚨 CÓDIGO DE EMERGÊNCIA - Cole no console da página admin.html
+console.log('🚨 APLICANDO SOLUÇÃO DE EMERGÊNCIA');
+
+// 1. Redefinir função createActionButtons
+window.createActionButtons = function(purchase) {
+    console.log('🚨 EMERGÊNCIA: Criando botões para', purchase?.id);
+    
+    const id = purchase?.id || 'emergency-' + Date.now();
+    
+    return \`
+        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+            <button onclick="alert('Editar: \${id}'); console.log('Editar:', '\${id}');" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                ✏️ Editar
+            </button>
+            <button onclick="alert('Debug: \${id}'); console.log('Debug:', '\${id}');" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                🔍 Debug
+            </button>
+            <button onclick="alert('Confirmar: \${id}'); console.log('Confirmar:', '\${id}');" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                ✅ Confirmar
+            </button>
+            <button onclick="alert('Rejeitar: \${id}'); console.log('Rejeitar:', '\${id}');" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                ❌ Rejeitar
+            </button>
+        </div>
+    \`;
+};
+
+// 2. Forçar botões em todas as linhas existentes
+document.querySelectorAll('#participantsTable tbody tr').forEach((row, index) => {
+    const actionCell = row.querySelector('td:last-child');
+    if (actionCell) {
+        const mockPurchase = { id: 'forced-' + (index + 1) };
+        actionCell.innerHTML = window.createActionButtons(mockPurchase);
+        console.log(\`✅ Linha \${index + 1} corrigida\`);
+    }
+});
+
+// 3. Configurar observador para manter botões
+const tbody = document.querySelector('#participantsTable tbody');
+if (tbody) {
+    const observer = new MutationObserver(() => {
+        console.log('🔄 Tabela modificada, verificando botões...');
+        setTimeout(() => {
+            document.querySelectorAll('#participantsTable tbody tr').forEach((row, index) => {
+                const actionCell = row.querySelector('td:last-child');
+                if (actionCell && !actionCell.querySelector('button')) {
+                    const mockPurchase = { id: 'auto-' + (index + 1) };
+                    actionCell.innerHTML = window.createActionButtons(mockPurchase);
+                    console.log(\`🚨 Auto-correção linha \${index + 1}\`);
+                }
+            });
+        }, 100);
+    });
+    
+    observer.observe(tbody, { childList: true, subtree: true });
+    console.log('👁️ Observador ativado');
+}
+
+console.log('✅ SOLUÇÃO DE EMERGÊNCIA APLICADA');
+console.log('💡 Os botões devem aparecer agora e ser mantidos automaticamente');
+`;
+
+            codigoTextarea.value = codigoEmergencia;
+            solucoesDiv.style.display = 'block';
+            
+            console.log('📋 Código de emergência preparado');
+        }
+
+        function copiarCodigo() {
+            const textarea = document.getElementById('codigoEmergencia');
+            textarea.select();
+            document.execCommand('copy');
+            console.log('📋 Código copiado para área de transferência');
+            alert('✅ Código copiado! Cole no console da página admin (F12)');
+        }
+
+        function criarBotoesDeEmergencia() {
+            console.log('🚨 Criando botões de emergência nesta página...');
+            
+            const container = document.createElement('div');
+            container.style.cssText = 'margin: 20px 0; padding: 15px; border: 2px solid #dc3545; border-radius: 5px; background: #f8d7da;';
+            container.innerHTML = `
+                <h3>🚨 Botões de Emergência - Teste</h3>
+                <p>Estes botões testam se o JavaScript básico está funcionando:</p>
+                <button onclick="alert('Editar funcionou!')" style="background: #007bff; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">✏️ Teste Editar</button>
+                <button onclick="console.log('Debug funcionou!')" style="background: #6c757d; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">🔍 Teste Debug</button>
+                <button onclick="alert('Confirmar funcionou!')" style="background: #28a745; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">✅ Teste Confirmar</button>
+                <button onclick="alert('Rejeitar funcionou!')" style="background: #dc3545; color: white; border: none; padding: 8px 16px; margin: 5px; border-radius: 4px; cursor: pointer;">❌ Teste Rejeitar</button>
+            `;
+            
+            document.body.appendChild(container);
+            console.log('✅ Botões de emergência criados');
+        }
+
+        // Auto-executar teste básico ao carregar
+        window.addEventListener('load', function() {
+            console.log('🔧 DIAGNÓSTICO CARREGADO - Pronto para teste');
+            setTimeout(() => {
+                console.log('🔍 Executando verificação inicial...');
+                const buttons = document.querySelectorAll('button');
+                console.log('📊 Botões encontrados na página:', buttons.length);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

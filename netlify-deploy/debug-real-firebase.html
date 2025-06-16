@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Real - Dados Firebase</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .missing-buttons { background: #f8d7da; border-color: #f5c6cb; }
+        .has-buttons { background: #d4edda; border-color: #c3e6cb; }
+        .data-raw { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+        th { background: #f2f2f2; }
+        .btn-test { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Real - Investigação dos Dados Firebase</h1>
+    
+    <div class="debug-section">
+        <h2>📡 Status</h2>
+        <div id="status">Carregando...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🧪 Análise de Collections</h2>
+        <button class="btn-test" onclick="checkCollections()">Verificar Collections Disponíveis</button>
+        <div id="collections-info"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📊 Dados Brutos do Firebase</h2>
+        <button class="btn-test" onclick="loadRawData()">Carregar Dados Brutos</button>
+        <div id="raw-data"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🔧 Teste da Função createActionButtons</h2>
+        <div id="button-test"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando debug real dos dados Firebase...');
+        
+        let rawPurchases = [];
+        
+        // Aguardar Firebase
+        function waitForFirebase() {
+            return new Promise((resolve) => {
+                if (window.FirebaseDB) {
+                    resolve();
+                } else {
+                    window.addEventListener('firebaseReady', resolve);
+                }
+            });
+        }
+        
+        // Verificar quais collections existem
+        async function checkCollections() {
+            try {
+                await waitForFirebase();
+                
+                let info = '<h3>Collections Disponíveis:</h3>';
+                
+                // Tentar diferentes nomes de collections
+                const collectionsToTry = [
+                    'purchases',
+                    'rifa_purchases', 
+                    'compras',
+                    'rifas'
+                ];
+                
+                for (const collectionName of collectionsToTry) {
+                    try {
+                        const snapshot = await firebase.firestore().collection(collectionName).limit(1).get();
+                        info += `<p>✅ <strong>${collectionName}</strong>: ${snapshot.size} documentos (sample)</p>`;
+                    } catch (error) {
+                        info += `<p>❌ <strong>${collectionName}</strong>: ${error.message}</p>`;
+                    }
+                }
+                
+                document.getElementById('collections-info').innerHTML = info;
+                
+            } catch (error) {
+                document.getElementById('collections-info').innerHTML = `<p>❌ Erro: ${error.message}</p>`;
+            }
+        }
+        
+        // Carregar dados brutos de todas as collections possíveis
+        async function loadRawData() {
+            try {
+                await waitForFirebase();
+                
+                document.getElementById('status').innerHTML = '🔥 Firebase conectado - Carregando dados...';
+                
+                let allData = '<h3>Dados Brutos por Collection:</h3>';
+                
+                // Tentar carregar de diferentes collections
+                const collectionsToTry = ['purchases', 'rifa_purchases'];
+                
+                for (const collectionName of collectionsToTry) {
+                    try {
+                        console.log(`📊 Tentando carregar de: ${collectionName}`);
+                        const snapshot = await firebase.firestore().collection(collectionName).get();
+                        
+                        allData += `<h4>Collection: ${collectionName} (${snapshot.size} documentos)</h4>`;
+                        
+                        if (snapshot.size > 0) {
+                            const purchases = [];
+                            snapshot.forEach(doc => {
+                                const data = doc.data();
+                                purchases.push({
+                                    id: doc.id,
+                                    ...data
+                                });
+                            });
+                            
+                            rawPurchases = purchases; // Salvar para teste
+                            
+                            // Mostrar tabela resumida
+                            allData += '<table><tr><th>ID</th><th>Nome</th><th>Status (raw)</th><th>PaymentMethod (raw)</th><th>Deve Mostrar?</th></tr>';
+                            
+                            purchases.forEach(purchase => {
+                                const shouldShow = testCreateActionButtons(purchase);
+                                const rowClass = shouldShow ? 'has-buttons' : 'missing-buttons';
+                                
+                                allData += `<tr class="${rowClass}">
+                                    <td>${purchase.id}</td>
+                                    <td>${purchase.buyerName || purchase.name || 'N/A'}</td>
+                                    <td><code>${JSON.stringify(purchase.status)}</code></td>
+                                    <td><code>${JSON.stringify(purchase.paymentMethod)}</code></td>
+                                    <td><strong>${shouldShow ? '✅ SIM' : '❌ NÃO'}</strong></td>
+                                </tr>`;
+                            });
+                            
+                            allData += '</table>';
+                            
+                            // Mostrar alguns dados brutos completos
+                            allData += '<h5>Exemplos de Dados Brutos:</h5>';
+                            purchases.slice(0, 3).forEach((purchase, index) => {
+                                allData += `<details><summary>Documento ${index + 1}: ${purchase.buyerName || purchase.name || purchase.id}</summary>`;
+                                allData += `<div class="data-raw">${JSON.stringify(purchase, null, 2)}</div></details>`;
+                            });
+                        }
+                        
+                    } catch (error) {
+                        allData += `<p>❌ Erro ao carregar ${collectionName}: ${error.message}</p>`;
+                    }
+                }
+                
+                document.getElementById('raw-data').innerHTML = allData;
+                
+                // Testar função de botões
+                testButtonFunction();
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Erro geral: ${error.message}`;
+                console.error('Erro:', error);
+            }
+        }
+        
+        // Replicar exatamente a função do admin.js
+        function testCreateActionButtons(purchase) {
+            const buttons = [];
+            const status = (purchase.status || 'confirmed').toString().toLowerCase().trim();
+            const paymentMethod = (purchase.paymentMethod || '').toString().toLowerCase().trim();
+            
+            // Detectar se é doação (múltiplas variações)
+            const isDonationMethod = paymentMethod === 'doacao' || 
+                                    paymentMethod === 'donation' || 
+                                    paymentMethod === 'doação' ||
+                                    paymentMethod.includes('doa');
+            
+            // Detectar se NÃO está finalizado
+            const isNotFinalized = status !== 'confirmed' && 
+                                  status !== 'rejected' && 
+                                  status !== 'confirmado' && 
+                                  status !== 'rejeitado';
+            
+            // Lógica expandida para mostrar botões
+            const shouldShowConfirmationButtons = isDonationMethod && isNotFinalized;
+            
+            return shouldShowConfirmationButtons;
+        }
+        
+        // Testar função de botões com dados reais
+        function testButtonFunction() {
+            if (rawPurchases.length === 0) {
+                document.getElementById('button-test').innerHTML = '<p>❌ Nenhum dado carregado para teste</p>';
+                return;
+            }
+            
+            let testHtml = '<h3>Teste Detalhado da Função createActionButtons:</h3>';
+            
+            let missingButtonsCount = 0;
+            let shouldHaveButtonsCount = 0;
+            
+            rawPurchases.forEach(purchase => {
+                const result = testCreateActionButtons(purchase);
+                
+                // Detectar casos que visualmente parecem que deveriam ter botões
+                const looksLikeDonation = (purchase.paymentMethod && 
+                                         purchase.paymentMethod.toString().toLowerCase().includes('doa'));
+                const looksLikePending = !purchase.status || 
+                                       purchase.status.toString().toLowerCase().includes('pending') ||
+                                       purchase.status.toString().toLowerCase() !== 'confirmed';
+                
+                if (looksLikeDonation) shouldHaveButtonsCount++;
+                if (looksLikeDonation && !result) missingButtonsCount++;
+                
+                if (looksLikeDonation) {
+                    const className = result ? 'has-buttons' : 'missing-buttons';
+                    
+                    testHtml += `<div class="debug-section ${className}">
+                        <h4>${purchase.buyerName || purchase.name || purchase.id}</h4>
+                        
+                        <p><strong>Dados Originais:</strong></p>
+                        <div class="data-raw">status: ${JSON.stringify(purchase.status)}
+paymentMethod: ${JSON.stringify(purchase.paymentMethod)}</div>
+                        
+                        <p><strong>Processamento:</strong></p>
+                        <ul>
+                            <li>Status processado: "${(purchase.status || 'confirmed').toString().toLowerCase().trim()}"</li>
+                            <li>PaymentMethod processado: "${(purchase.paymentMethod || '').toString().toLowerCase().trim()}"</li>
+                            <li>É doação: ${(purchase.paymentMethod || '').toString().toLowerCase().trim().includes('doa')}</li>
+                            <li>Não finalizado: ${(purchase.status || 'confirmed').toString().toLowerCase().trim() !== 'confirmed'}</li>
+                        </ul>
+                        
+                        <p><strong>Resultado:</strong> <span style="font-weight: bold; color: ${result ? 'green' : 'red'}">
+                            ${result ? '✅ MOSTRA BOTÕES' : '❌ NÃO MOSTRA BOTÕES'}
+                        </span></p>
+                    </div>`;
+                }
+            });
+            
+            testHtml += `<div class="debug-section" style="background: #e7f3ff;">
+                <h4>📊 Resumo do Teste:</h4>
+                <p><strong>Total de compras:</strong> ${rawPurchases.length}</p>
+                <p><strong>Aparenta ser doação:</strong> ${shouldHaveButtonsCount}</p>
+                <p><strong>Doações sem botões:</strong> ${missingButtonsCount}</p>
+                <p><strong>Taxa de sucesso:</strong> ${shouldHaveButtonsCount > 0 ? Math.round(((shouldHaveButtonsCount - missingButtonsCount) / shouldHaveButtonsCount) * 100) : 0}%</p>
+            </div>`;
+            
+            document.getElementById('button-test').innerHTML = testHtml;
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('status').innerHTML = '⏳ Aguardando Firebase...';
+            
+            if (window.FirebaseDB) {
+                document.getElementById('status').innerHTML = '✅ Firebase disponível';
+            } else {
+                window.addEventListener('firebaseReady', () => {
+                    document.getElementById('status').innerHTML = '✅ Firebase conectado';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

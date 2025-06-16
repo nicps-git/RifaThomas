@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEBUG URGENTE - Teste de Botões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-box { background: #f8f9fa; padding: 15px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        button { margin: 5px; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        .test-result { font-family: monospace; white-space: pre-wrap; background: #000; color: #0f0; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🚨 DEBUG URGENTE - Teste de Botões Admin</h1>
+    
+    <div class="debug-box warning">
+        <h3>🎯 Objetivo: Identificar por que os botões não aparecem</h3>
+        <p>Este teste vai simular exatamente o que acontece no admin.js</p>
+    </div>
+    
+    <div class="debug-box">
+        <h3>🧪 Teste 1: Função createActionButtons Isolada</h3>
+        <button onclick="testarFuncaoIsolada()">Testar Função Isolada</button>
+        <div id="teste1"></div>
+    </div>
+    
+    <div class="debug-box">
+        <h3>🔌 Teste 2: Carregar Admin.js e Testar</h3>
+        <button onclick="testarComAdminJs()">Testar com Admin.js</button>
+        <div id="teste2"></div>
+    </div>
+    
+    <div class="debug-box">
+        <h3>🌐 Teste 3: Simular Dados Reais do Firebase</h3>
+        <button onclick="testarComDadosReais()">Testar com Dados Reais</button>
+        <div id="teste3"></div>
+    </div>
+    
+    <div class="debug-box">
+        <h3>📊 Resultados dos Testes</h3>
+        <div id="resultados"></div>
+    </div>
+
+    <script>
+        console.log('🚀 Página de debug carregada');
+        
+        // Função createActionButtons isolada (copiada do admin.js)
+        function createActionButtonsLocal(purchase) {
+            console.log(`🔧 [BUTTON-DEBUG] *** CRIANDO BOTÕES PARA: ${purchase.id} ***`);
+            
+            // FORCE criar botões básicos SEMPRE - sem condições
+            let buttonsHtml = `
+                <button class="btn-edit" data-action="edit-participant" data-purchase-id="${purchase.id}" title="Editar" style="background: #007bff; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                    ✏️ Editar
+                </button>
+                <button onclick="console.log('Debug compra:', ${JSON.stringify(purchase).replace(/"/g, '&quot;')})" title="Debug" style="background: #6c757d; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                    🔍 Debug
+                </button>
+            `;
+            
+            console.log(`✅ [BUTTON-DEBUG] Botões básicos SEMPRE criados para: ${purchase.id}`);
+            
+            // Agora verificar se precisa adicionar botões de confirmação
+            try {
+                const status = (purchase.status || '').toString().toLowerCase();
+                const tipo = (purchase.tipo || '').toString().toLowerCase();
+                const metodo = (purchase.paymentMethod || purchase.metodoPagamento || '').toString().toLowerCase();
+                
+                console.log(`📊 [BUTTON-DEBUG] Dados da compra ${purchase.id}:`);
+                console.log(`   - Status: "${status}"`);
+                console.log(`   - Tipo: "${tipo}"`);
+                console.log(`   - Método: "${metodo}"`);
+                
+                // Verificar se é doação (bem simples)
+                const ehDoacao = tipo.includes('doacao') || 
+                                tipo.includes('doação') || 
+                                metodo.includes('doacao') || 
+                                metodo.includes('doação');
+                
+                // Verificar se é pendente (bem simples)  
+                const ehPendente = status.includes('pendente') || status.includes('pending');
+                
+                console.log(`   - É doação? ${ehDoacao}`);
+                console.log(`   - É pendente? ${ehPendente}`);
+                
+                if (ehDoacao && ehPendente) {
+                    buttonsHtml = `
+                        <button class="btn-confirm" data-action="confirm-donation" data-purchase-id="${purchase.id}" title="Confirmar Doação" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                            ✅ Confirmar
+                        </button>
+                        <button class="btn-reject" data-action="reject-donation" data-purchase-id="${purchase.id}" title="Rejeitar Doação" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                            ❌ Rejeitar
+                        </button>
+                    ` + buttonsHtml;
+                    
+                    console.log(`✅ [BUTTON-DEBUG] Botões de confirmação ADICIONADOS para doação pendente: ${purchase.id}`);
+                } else {
+                    console.log(`ℹ️ [BUTTON-DEBUG] Sem botões de confirmação para: ${purchase.id} (não é doação pendente)`);
+                }
+                
+            } catch (error) {
+                console.error(`❌ [BUTTON-DEBUG] ERRO ao processar botões para ${purchase.id}:`, error);
+            }
+            
+            console.log(`🎯 [BUTTON-DEBUG] HTML FINAL dos botões para ${purchase.id}:`, buttonsHtml);
+            console.log(`📏 [BUTTON-DEBUG] Tamanho do HTML: ${buttonsHtml.length} caracteres`);
+            
+            return buttonsHtml;
+        }
+        
+        // Teste 1: Função isolada
+        function testarFuncaoIsolada() {
+            const div = document.getElementById('teste1');
+            div.innerHTML = '<div>🔄 Testando função isolada...</div>';
+            
+            // Dados de teste
+            const dadosTeste = [
+                { id: 'test1', status: 'PENDENTE', tipo: 'Doação', buyerName: 'João' },
+                { id: 'test2', status: 'pendente', metodoPagamento: 'doacao', buyerName: 'Maria' },
+                { id: 'test3', status: 'confirmado', tipo: 'compra', buyerName: 'José' }
+            ];
+            
+            let resultado = '<div class="test-result">';
+            
+            dadosTeste.forEach(purchase => {
+                resultado += `\\n=== TESTE PARA ${purchase.id} ===\\n`;
+                const botoes = createActionButtonsLocal(purchase);
+                resultado += `HTML gerado: ${botoes}\\n`;
+                resultado += `Tamanho: ${botoes.length} caracteres\\n`;
+                resultado += `Contém "Editar": ${botoes.includes('Editar')}\\n`;
+                resultado += `Contém "Debug": ${botoes.includes('Debug')}\\n`;
+                resultado += `Contém "Confirmar": ${botoes.includes('Confirmar')}\\n`;
+                resultado += '\\n';
+            });
+            
+            resultado += '</div>';
+            
+            // Também mostrar os botões renderizados
+            resultado += '<h4>🎨 Botões Renderizados:</h4>';
+            dadosTeste.forEach(purchase => {
+                resultado += `<div style="border: 1px solid #ccc; margin: 10px 0; padding: 10px;">`;
+                resultado += `<strong>${purchase.id} (${purchase.buyerName}):</strong><br>`;
+                resultado += createActionButtonsLocal(purchase);
+                resultado += '</div>';
+            });
+            
+            div.innerHTML = resultado;
+        }
+        
+        // Teste 2: Com admin.js
+        function testarComAdminJs() {
+            const div = document.getElementById('teste2');
+            div.innerHTML = '<div>🔄 Carregando admin.js...</div>';
+            
+            const script = document.createElement('script');
+            script.src = 'admin.js';
+            script.onload = function() {
+                try {
+                    div.innerHTML = '<div class="success">✅ Admin.js carregado com sucesso!</div>';
+                    
+                    if (typeof createActionButtons === 'function') {
+                        div.innerHTML += '<div class="success">✅ Função createActionButtons encontrada!</div>';
+                        
+                        const testPurchase = { id: 'admin-test', status: 'PENDENTE', tipo: 'Doação', buyerName: 'Teste Admin' };
+                        const result = createActionButtons(testPurchase);
+                        
+                        div.innerHTML += `<div class="debug-box">
+                            <h4>Resultado do admin.js:</h4>
+                            <div class="test-result">${result}</div>
+                            <h4>Renderizado:</h4>
+                            ${result}
+                        </div>`;
+                        
+                    } else {
+                        div.innerHTML += '<div class="error">❌ Função createActionButtons NÃO encontrada no admin.js!</div>';
+                    }
+                } catch (error) {
+                    div.innerHTML = `<div class="error">❌ Erro ao testar admin.js: ${error.message}</div>`;
+                }
+            };
+            script.onerror = function() {
+                div.innerHTML = '<div class="error">❌ Erro ao carregar admin.js</div>';
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Teste 3: Com dados reais
+        function testarComDadosReais() {
+            const div = document.getElementById('teste3');
+            div.innerHTML = '<div>🔄 Testando com dados que parecem reais...</div>';
+            
+            // Simular dados baseados na imagem que você mostrou
+            const dadosReais = [
+                {
+                    id: 'real1',
+                    buyerName: 'josé carlos silva costa',
+                    buyerPhone: '(85) 99999-9998',
+                    status: 'PENDENTE',
+                    tipo: 'PIX',
+                    paymentMethod: 'PIX',
+                    totalAmount: 40
+                },
+                {
+                    id: 'real2', 
+                    buyerName: 'Teste 2',
+                    buyerPhone: '(95) 99898-8888',
+                    status: 'REJEITADO',
+                    tipo: 'Doação',
+                    metodoPagamento: 'Doação',
+                    totalAmount: 40
+                },
+                {
+                    id: 'real3',
+                    buyerName: 'João Victor',
+                    buyerPhone: '(85) 98843-2761', 
+                    status: 'CONFIRMADO',
+                    tipo: 'Doação',
+                    metodoPagamento: 'Doação',
+                    totalAmount: 40
+                }
+            ];
+            
+            let resultado = '<div class="test-result">TESTE COM DADOS REAIS:\\n\\n';
+            
+            dadosReais.forEach(purchase => {
+                resultado += `=== ${purchase.buyerName} ===\\n`;
+                resultado += `Status: ${purchase.status}\\n`;
+                resultado += `Tipo: ${purchase.tipo}\\n`;
+                resultado += `Método: ${purchase.metodoPagamento || purchase.paymentMethod}\\n`;
+                
+                const botoes = createActionButtonsLocal(purchase);
+                resultado += `Botões gerados: ${botoes.length > 0 ? 'SIM' : 'NÃO'}\\n`;
+                resultado += `HTML: ${botoes.substring(0, 100)}...\\n\\n`;
+            });
+            
+            resultado += '</div>';
+            
+            // Renderizar os botões
+            resultado += '<h4>🎨 Botões dos Dados Reais:</h4>';
+            dadosReais.forEach(purchase => {
+                resultado += `<div style="border: 1px solid #ccc; margin: 10px 0; padding: 10px; background: #f9f9f9;">`;
+                resultado += `<strong>${purchase.buyerName}</strong> (${purchase.status})<br>`;
+                resultado += createActionButtonsLocal(purchase);
+                resultado += '</div>';
+            });
+            
+            div.innerHTML = resultado;
+        }
+        
+        // Mostrar console no documento também
+        const originalLog = console.log;
+        const originalError = console.error;
+        let logOutput = '';
+        
+        console.log = function(...args) {
+            logOutput += args.join(' ') + '\\n';
+            originalLog.apply(console, arguments);
+            
+            const resultDiv = document.getElementById('resultados');
+            if (resultDiv) {
+                resultDiv.innerHTML = `<div class="test-result">${logOutput}</div>`;
+            }
+        };
+        
+        console.error = function(...args) {
+            logOutput += 'ERROR: ' + args.join(' ') + '\\n';
+            originalError.apply(console, arguments);
+            
+            const resultDiv = document.getElementById('resultados');
+            if (resultDiv) {
+                resultDiv.innerHTML = `<div class="test-result">${logOutput}</div>`;
+            }
+        };
+    </script>
+</body>
+</html>

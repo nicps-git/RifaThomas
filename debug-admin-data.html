@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Dados Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .data-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .status-pending { background: #fff3cd; }
+        .status-confirmed { background: #d4edda; }
+        .status-rejected { background: #f8d7da; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Dados Admin Firebase</h1>
+    
+    <div id="connection-status" class="data-section">
+        <h2>📡 Status Conexão Firebase</h2>
+        <div id="firebase-status">Carregando...</div>
+    </div>
+    
+    <div id="data-summary" class="data-section">
+        <h2>📊 Resumo dos Dados</h2>
+        <div id="summary-content">Carregando...</div>
+    </div>
+    
+    <div id="purchases-table" class="data-section">
+        <h2>🛒 Todas as Compras</h2>
+        <div id="table-content">Carregando...</div>
+    </div>
+    
+    <div id="pending-analysis" class="data-section">
+        <h2>⏳ Análise de Pendências</h2>
+        <div id="pending-content">Carregando...</div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando debug dos dados admin...');
+        
+        let allPurchases = [];
+        
+        // Aguardar Firebase estar pronto
+        function waitForFirebase() {
+            return new Promise((resolve) => {
+                if (window.FirebaseDB) {
+                    resolve();
+                } else {
+                    window.addEventListener('firebaseReady', resolve);
+                }
+            });
+        }
+        
+        async function loadAndAnalyzeData() {
+            try {
+                await waitForFirebase();
+                
+                // Status do Firebase
+                document.getElementById('firebase-status').innerHTML = `
+                    <p>✅ Firebase conectado</p>
+                    <p>Database: ${window.FirebaseDB ? 'OK' : 'ERRO'}</p>
+                `;
+                
+                console.log('📡 Carregando dados do Firebase...');
+                
+                // Carregar todas as compras
+                const purchasesSnapshot = await window.FirebaseDB.collection('rifa_purchases').get();
+                
+                allPurchases = [];
+                purchasesSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    allPurchases.push({
+                        id: doc.id,
+                        ...data
+                    });
+                });
+                
+                console.log(`📊 ${allPurchases.length} compras carregadas`);
+                
+                // Analisar dados
+                analyzeData();
+                displayPurchasesTable();
+                analyzePendingRequests();
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                document.getElementById('firebase-status').innerHTML = `
+                    <p>❌ Erro: ${error.message}</p>
+                `;
+            }
+        }
+        
+        function analyzeData() {
+            const summary = {
+                total: allPurchases.length,
+                byStatus: {},
+                byPaymentMethod: {},
+                pendingDonations: 0,
+                needingConfirmation: 0
+            };
+            
+            allPurchases.forEach(purchase => {
+                // Contar por status
+                const status = purchase.status || 'undefined';
+                summary.byStatus[status] = (summary.byStatus[status] || 0) + 1;
+                
+                // Contar por método de pagamento
+                const paymentMethod = purchase.paymentMethod || 'undefined';
+                summary.byPaymentMethod[paymentMethod] = (summary.byPaymentMethod[paymentMethod] || 0) + 1;
+                
+                // Identificar doações pendentes
+                if (status === 'pending_donation' || paymentMethod === 'doacao' || paymentMethod === 'donation') {
+                    summary.pendingDonations++;
+                }
+                
+                // Identificar que precisam confirmação
+                if (status === 'pending' && (paymentMethod === 'doacao' || paymentMethod === 'donation')) {
+                    summary.needingConfirmation++;
+                }
+            });
+            
+            let summaryHtml = `
+                <p><strong>Total:</strong> ${summary.total} compras</p>
+                <p><strong>Doações Pendentes:</strong> ${summary.pendingDonations}</p>
+                <p><strong>Precisando Confirmação:</strong> ${summary.needingConfirmation}</p>
+                <h4>Por Status:</h4>
+                <ul>
+            `;
+            
+            for (const [status, count] of Object.entries(summary.byStatus)) {
+                summaryHtml += `<li><strong>${status}:</strong> ${count}</li>`;
+            }
+            
+            summaryHtml += '</ul><h4>Por Método de Pagamento:</h4><ul>';
+            
+            for (const [method, count] of Object.entries(summary.byPaymentMethod)) {
+                summaryHtml += `<li><strong>${method}:</strong> ${count}</li>`;
+            }
+            
+            summaryHtml += '</ul>';
+            
+            document.getElementById('summary-content').innerHTML = summaryHtml;
+        }
+        
+        function displayPurchasesTable() {
+            let tableHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nome</th>
+                            <th>Status</th>
+                            <th>Método Pagamento</th>
+                            <th>Números</th>
+                            <th>Data</th>
+                            <th>Deve Mostrar Botão?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            allPurchases.forEach(purchase => {
+                const shouldShowButton = purchase.status === 'pending_donation' || 
+                                       purchase.paymentMethod === 'doacao' || 
+                                       purchase.paymentMethod === 'donation';
+                
+                const rowClass = shouldShowButton ? 'status-pending' : 
+                               purchase.status === 'confirmed' ? 'status-confirmed' : '';
+                
+                tableHtml += `
+                    <tr class="${rowClass}">
+                        <td>${purchase.id}</td>
+                        <td>${purchase.name || 'N/A'}</td>
+                        <td>${purchase.status || 'undefined'}</td>
+                        <td>${purchase.paymentMethod || 'undefined'}</td>
+                        <td>${Array.isArray(purchase.numbers) ? purchase.numbers.join(', ') : 'N/A'}</td>
+                        <td>${purchase.timestamp ? new Date(purchase.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</td>
+                        <td style="font-weight: bold; color: ${shouldShowButton ? 'green' : 'red'}">
+                            ${shouldShowButton ? '✅ SIM' : '❌ NÃO'}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHtml += '</tbody></table>';
+            document.getElementById('table-content').innerHTML = tableHtml;
+        }
+        
+        function analyzePendingRequests() {
+            const pendingRequests = allPurchases.filter(purchase => 
+                purchase.status === 'pending_donation' || 
+                purchase.paymentMethod === 'doacao' || 
+                purchase.paymentMethod === 'donation'
+            );
+            
+            let analysisHtml = `<p><strong>Total de solicitações que deveriam mostrar botão de confirmação:</strong> ${pendingRequests.length}</p>`;
+            
+            if (pendingRequests.length > 0) {
+                analysisHtml += '<h4>Detalhes das solicitações pendentes:</h4><ul>';
+                
+                pendingRequests.forEach(purchase => {
+                    analysisHtml += `
+                        <li>
+                            <strong>${purchase.name}</strong> (ID: ${purchase.id})<br>
+                            Status: ${purchase.status || 'undefined'}<br>
+                            Método: ${purchase.paymentMethod || 'undefined'}<br>
+                            Números: ${Array.isArray(purchase.numbers) ? purchase.numbers.join(', ') : 'N/A'}
+                        </li>
+                    `;
+                });
+                
+                analysisHtml += '</ul>';
+            } else {
+                analysisHtml += '<p>❌ Nenhuma solicitação pendente encontrada!</p>';
+            }
+            
+            document.getElementById('pending-content').innerHTML = analysisHtml;
+        }
+        
+        // Inicializar quando a página carregar
+        document.addEventListener('DOMContentLoaded', loadAndAnalyzeData);
+    </script>
+</body>
+</html>

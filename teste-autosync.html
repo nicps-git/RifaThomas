@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Auto-Sync</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .log { background: #f8f9fa; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto; }
+        button { margin: 5px; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-test { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Teste - Sistema de Auto-Sync</h1>
+    
+    <div id="status" class="test-section">
+        <h2>📡 Status do Sistema</h2>
+        <div id="status-info">Verificando...</div>
+    </div>
+    
+    <div id="firebase-test" class="test-section">
+        <h2>🔥 Teste Firebase</h2>
+        <button class="btn-test" onclick="testFirebaseMethods()">Testar Métodos Firebase</button>
+        <div id="firebase-results"></div>
+    </div>
+    
+    <div id="autosync-test" class="test-section">
+        <h2>🔄 Teste Auto-Sync</h2>
+        <button class="btn-test" onclick="testAutoSyncFunctions()">Testar Funções Auto-Sync</button>
+        <button class="btn-success" onclick="forceRefresh()">Forçar Atualização</button>
+        <button class="btn-warning" onclick="toggleTestAutoSync()">Toggle Auto-Sync</button>
+        <div id="autosync-results"></div>
+    </div>
+    
+    <div id="logs" class="test-section">
+        <h2>📝 Logs em Tempo Real</h2>
+        <button class="btn-test" onclick="clearLogs()">Limpar Logs</button>
+        <div id="log-content" class="log"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando teste do auto-sync...');
+        
+        let testLogs = [];
+        let autoSyncTestActive = false;
+        
+        // Interceptar console.log para capturar logs
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        function addLog(type, message, ...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message} ${args.length > 0 ? JSON.stringify(args) : ''}`;
+            testLogs.push(logEntry);
+            updateLogDisplay();
+            
+            // Chamar console original
+            if (type === 'error') originalConsoleError(message, ...args);
+            else if (type === 'warn') originalConsoleWarn(message, ...args);
+            else originalConsoleLog(message, ...args);
+        }
+        
+        console.log = (...args) => addLog('log', args.join(' '));
+        console.error = (...args) => addLog('error', args.join(' '));
+        console.warn = (...args) => addLog('warn', args.join(' '));
+        
+        function updateLogDisplay() {
+            const logDiv = document.getElementById('log-content');
+            if (logDiv) {
+                logDiv.innerHTML = testLogs.slice(-50).join('<br>'); // Últimas 50 linhas
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
+        }
+        
+        function clearLogs() {
+            testLogs = [];
+            updateLogDisplay();
+        }
+        
+        // Verificar status do sistema
+        function checkSystemStatus() {
+            const firebaseOK = typeof window.FirebaseDB !== 'undefined';
+            const loadPurchasesOK = firebaseOK && typeof window.FirebaseDB.loadPurchases === 'function';
+            const loadConfigOK = firebaseOK && typeof window.FirebaseDB.loadConfig === 'function';
+            
+            let statusHtml = `
+                <p><strong>Firebase Disponível:</strong> ${firebaseOK ? '✅ SIM' : '❌ NÃO'}</p>
+                <p><strong>Método loadPurchases:</strong> ${loadPurchasesOK ? '✅ SIM' : '❌ NÃO'}</p>
+                <p><strong>Método loadConfig:</strong> ${loadConfigOK ? '✅ SIM' : '❌ NÃO'}</p>
+            `;
+            
+            // Verificar se as funções de auto-sync existem
+            const autoSyncFunctions = [
+                'initializeAutoSync',
+                'refreshData', 
+                'toggleAutoSync',
+                'startAutoSync',
+                'stopAutoSync',
+                'updateSyncIndicators',
+                'showSyncProgress',
+                'hideSyncProgress',
+                'loadDataFromFirebase'
+            ];
+            
+            statusHtml += '<h4>Funções Auto-Sync:</h4><ul>';
+            autoSyncFunctions.forEach(func => {
+                const exists = typeof window[func] === 'function';
+                statusHtml += `<li><strong>${func}:</strong> ${exists ? '✅ SIM' : '❌ NÃO'}</li>`;
+            });
+            statusHtml += '</ul>';
+            
+            document.getElementById('status-info').innerHTML = statusHtml;
+        }
+        
+        // Testar métodos do Firebase
+        async function testFirebaseMethods() {
+            let results = '<h4>Testando métodos Firebase:</h4>';
+            
+            try {
+                if (!window.FirebaseDB) {
+                    results += '<p class="error">❌ FirebaseDB não disponível</p>';
+                    document.getElementById('firebase-results').innerHTML = results;
+                    return;
+                }
+                
+                console.log('🧪 Testando loadPurchases...');
+                const purchasesResult = await window.FirebaseDB.loadPurchases();
+                results += `<p><strong>loadPurchases:</strong> ${purchasesResult.success ? '✅ Sucesso' : '❌ Falha'}</p>`;
+                if (purchasesResult.success) {
+                    results += `<p>→ ${purchasesResult.data.length} compras carregadas</p>`;
+                } else {
+                    results += `<p>→ Erro: ${purchasesResult.error}</p>`;
+                }
+                
+                console.log('🧪 Testando loadConfig...');
+                const configResult = await window.FirebaseDB.loadConfig();
+                results += `<p><strong>loadConfig:</strong> ${configResult.success ? '✅ Sucesso' : '❌ Falha'}</p>`;
+                if (configResult.success) {
+                    results += `<p>→ Config carregada: ${JSON.stringify(configResult.data, null, 2)}</p>`;
+                } else {
+                    results += `<p>→ Erro: ${configResult.error}</p>`;
+                }
+                
+            } catch (error) {
+                console.error('Erro nos testes Firebase:', error);
+                results += `<p class="error">❌ Erro geral: ${error.message}</p>`;
+            }
+            
+            document.getElementById('firebase-results').innerHTML = results;
+        }
+        
+        // Testar funções do auto-sync
+        function testAutoSyncFunctions() {
+            console.log('🧪 Testando funções do auto-sync...');
+            
+            let results = '<h4>Testando funções Auto-Sync:</h4>';
+            
+            try {
+                // Testar updateSyncIndicators
+                if (typeof window.updateSyncIndicators === 'function') {
+                    console.log('🧪 Testando updateSyncIndicators...');
+                    window.updateSyncIndicators();
+                    results += '<p>✅ updateSyncIndicators executada</p>';
+                } else {
+                    results += '<p>❌ updateSyncIndicators não encontrada</p>';
+                }
+                
+                // Testar showSyncProgress
+                if (typeof window.showSyncProgress === 'function') {
+                    console.log('🧪 Testando showSyncProgress...');
+                    window.showSyncProgress(50, 'Teste de progresso');
+                    results += '<p>✅ showSyncProgress executada</p>';
+                    
+                    setTimeout(() => {
+                        if (typeof window.hideSyncProgress === 'function') {
+                            window.hideSyncProgress();
+                        }
+                    }, 2000);
+                } else {
+                    results += '<p>❌ showSyncProgress não encontrada</p>';
+                }
+                
+                // Testar loadDataFromFirebase
+                if (typeof window.loadDataFromFirebase === 'function') {
+                    console.log('🧪 Testando loadDataFromFirebase...');
+                    window.loadDataFromFirebase().then(() => {
+                        console.log('✅ loadDataFromFirebase concluída');
+                    }).catch(error => {
+                        console.error('❌ loadDataFromFirebase falhou:', error);
+                    });
+                    results += '<p>✅ loadDataFromFirebase iniciada (veja logs)</p>';
+                } else {
+                    results += '<p>❌ loadDataFromFirebase não encontrada</p>';
+                }
+                
+            } catch (error) {
+                console.error('Erro nos testes auto-sync:', error);
+                results += `<p class="error">❌ Erro: ${error.message}</p>`;
+            }
+            
+            document.getElementById('autosync-results').innerHTML = results;
+        }
+        
+        // Forçar refresh
+        function forceRefresh() {
+            if (typeof window.refreshData === 'function') {
+                console.log('🔄 Forçando refresh...');
+                window.refreshData();
+            } else {
+                console.error('❌ Função refreshData não encontrada');
+            }
+        }
+        
+        // Toggle auto-sync
+        function toggleTestAutoSync() {
+            if (typeof window.toggleAutoSync === 'function') {
+                console.log('🔄 Toggling auto-sync...');
+                window.toggleAutoSync();
+            } else {
+                console.error('❌ Função toggleAutoSync não encontrada');
+            }
+        }
+        
+        // Aguardar Firebase estar pronto
+        function waitForFirebase() {
+            return new Promise((resolve) => {
+                if (window.FirebaseDB) {
+                    resolve();
+                } else {
+                    window.addEventListener('firebaseReady', resolve);
+                }
+            });
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('📄 DOM carregado, aguardando Firebase...');
+            checkSystemStatus();
+            
+            // Aguardar Firebase
+            await waitForFirebase();
+            console.log('🔥 Firebase pronto!');
+            
+            // Verificar novamente após Firebase estar pronto
+            setTimeout(checkSystemStatus, 1000);
+        });
+    </script>
+</body>
+</html>

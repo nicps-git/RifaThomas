@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Casos Específicos Sem Botões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .data-item { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; font-size: 12px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+        th { background: #f2f2f2; }
+        .btn-test { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .field-analysis { margin: 5px 0; padding: 5px; border-left: 3px solid #ccc; }
+        .field-ok { border-left-color: #28a745; }
+        .field-problem { border-left-color: #dc3545; }
+        .field-warning { border-left-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Casos Específicos Sem Botões</h1>
+    
+    <div class="debug-section">
+        <h2>📡 Status Firebase</h2>
+        <div id="status">Inicializando...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🎯 Análise de Casos Específicos</h2>
+        <button class="btn-test" onclick="analisarCasosEspecificos()">Analisar Casos Problemáticos</button>
+        <div id="casos-especificos"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🔬 Comparação: Com Botões vs Sem Botões</h2>
+        <button class="btn-test" onclick="compararCasos()">Comparar Casos</button>
+        <div id="comparacao"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🧪 Teste Manual da Lógica</h2>
+        <button class="btn-test" onclick="testarLogicaManual()">Testar Lógica dos Botões</button>
+        <div id="teste-manual"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando análise de casos específicos...');
+        
+        let todasCompras = [];
+        
+        // Função para normalizar strings (mesma do admin.js)
+        function normalizeString(str) {
+            if (!str) return '';
+            return str.toString().toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')  // Remove acentos
+                .replace(/[^\w\s]/g, '')         // Remove pontuação
+                .trim();
+        }
+        
+        // Função para verificar se é doação (mesma lógica do admin.js)
+        function isDoacaoRobusta(purchase) {
+            if (!purchase) return false;
+            
+            const tipoNorm = normalizeString(purchase.tipo);
+            const metodoPagamentoNorm = normalizeString(purchase.metodoPagamento);
+            const observacoesNorm = normalizeString(purchase.observacoes || '');
+            
+            const variacoesDoacao = ['doacao', 'doacão', 'doação', 'donation'];
+            
+            return variacoesDoacao.some(variacao => 
+                tipoNorm.includes(variacao) || 
+                metodoPagamentoNorm.includes(variacao) ||
+                observacoesNorm.includes(variacao)
+            );
+        }
+        
+        // Função para verificar se está pendente (mesma lógica do admin.js)
+        function isStatusPendenteRobusta(purchase) {
+            if (!purchase) return false;
+            
+            const statusNorm = normalizeString(purchase.status);
+            const variacoesPendente = ['pendente', 'pending', 'aguardando', 'nao confirmado', 'naoconfirmado'];
+            
+            return variacoesPendente.some(variacao => statusNorm.includes(variacao));
+        }
+        
+        // Função para verificar se deve mostrar botões (mesma lógica do admin.js)
+        function deveExibirBotoes(purchase) {
+            const ehDoacaoPendente = isDoacaoRobusta(purchase) && isStatusPendenteRobusta(purchase);
+            
+            console.log(`[BUTTON-DEBUG] ID: ${purchase.id || 'N/A'}`);
+            console.log(`[BUTTON-DEBUG] Tipo: "${purchase.tipo}" (normalizado: "${normalizeString(purchase.tipo)}")`);
+            console.log(`[BUTTON-DEBUG] Status: "${purchase.status}" (normalizado: "${normalizeString(purchase.status)}")`);
+            console.log(`[BUTTON-DEBUG] É doação? ${isDoacaoRobusta(purchase)}`);
+            console.log(`[BUTTON-DEBUG] É pendente? ${isStatusPendenteRobusta(purchase)}`);
+            console.log(`[BUTTON-DEBUG] Deve exibir botões? ${ehDoacaoPendente}`);
+            
+            return ehDoacaoPendente;
+        }
+        
+        // Inicializar Firebase
+        function initializeFirebase() {
+            try {
+                if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                document.getElementById('status').innerHTML = '✅ Firebase inicializado com sucesso';
+                return true;
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Erro ao inicializar Firebase: ${error.message}`;
+                console.error('Erro Firebase:', error);
+                return false;
+            }
+        }
+        
+        // Carregar todas as compras
+        async function carregarTodasCompras() {
+            try {
+                const db = firebase.firestore();
+                const snapshot = await db.collection('purchases').get();
+                
+                todasCompras = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                console.log(`📊 Carregadas ${todasCompras.length} compras do Firebase`);
+                return todasCompras;
+            } catch (error) {
+                console.error('❌ Erro ao carregar compras:', error);
+                return [];
+            }
+        }
+        
+        // Analisar casos específicos onde botões não aparecem
+        async function analisarCasosEspecificos() {
+            const statusDiv = document.getElementById('casos-especificos');
+            statusDiv.innerHTML = '<div>🔄 Carregando dados...</div>';
+            
+            await carregarTodasCompras();
+            
+            let html = `<h3>📊 Análise de ${todasCompras.length} compras encontradas</h3>`;
+            
+            // Separar casos com e sem botões
+            const comBotoes = [];
+            const semBotoes = [];
+            const doacoesPendentes = [];
+            
+            todasCompras.forEach(purchase => {
+                const ehDoacaoPendente = isDoacaoRobusta(purchase) && isStatusPendenteRobusta(purchase);
+                
+                if (isDoacaoRobusta(purchase)) {
+                    doacoesPendentes.push(purchase);
+                    
+                    if (ehDoacaoPendente) {
+                        comBotoes.push(purchase);
+                    } else {
+                        semBotoes.push(purchase);
+                    }
+                }
+            });
+            
+            html += `
+                <div class="warning">
+                    <h4>📈 Estatísticas Gerais</h4>
+                    <ul>
+                        <li><strong>Total de compras:</strong> ${todasCompras.length}</li>
+                        <li><strong>Doações encontradas:</strong> ${doacoesPendentes.length}</li>
+                        <li><strong>Doações COM botões:</strong> ${comBotoes.length}</li>
+                        <li><strong>Doações SEM botões:</strong> ${semBotoes.length}</li>
+                    </ul>
+                </div>
+            `;
+            
+            // Analisar casos sem botões
+            if (semBotoes.length > 0) {
+                html += `<div class="error"><h4>❌ Doações SEM botões (${semBotoes.length} casos)</h4>`;
+                
+                semBotoes.forEach((purchase, index) => {
+                    html += `
+                        <div class="data-item">
+                            <strong>Caso ${index + 1} - ID: ${purchase.id || 'N/A'}</strong><br>
+                            ${analisarCamposPurchase(purchase)}
+                            <div style="margin-top: 10px;">
+                                <strong>🔍 Diagnóstico:</strong><br>
+                                ${diagnosticarProblema(purchase)}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            // Mostrar alguns casos com botões para comparação
+            if (comBotoes.length > 0) {
+                html += `<div class="success"><h4>✅ Doações COM botões (${comBotoes.length} casos) - Primeiros 3 para comparação</h4>`;
+                
+                comBotoes.slice(0, 3).forEach((purchase, index) => {
+                    html += `
+                        <div class="data-item">
+                            <strong>Caso ${index + 1} - ID: ${purchase.id || 'N/A'}</strong><br>
+                            ${analisarCamposPurchase(purchase)}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+            
+            statusDiv.innerHTML = html;
+        }
+        
+        // Analisar os campos de uma compra
+        function analisarCamposPurchase(purchase) {
+            const campos = [
+                { nome: 'tipo', valor: purchase.tipo },
+                { nome: 'status', valor: purchase.status },
+                { nome: 'metodoPagamento', valor: purchase.metodoPagamento },
+                { nome: 'observacoes', valor: purchase.observacoes },
+                { nome: 'timestamp', valor: purchase.timestamp },
+                { nome: 'usuario', valor: purchase.usuario }
+            ];
+            
+            let html = '';
+            campos.forEach(campo => {
+                const problema = verificarProblemasCampo(campo.nome, campo.valor);
+                const classe = problema ? 'field-problem' : 'field-ok';
+                
+                html += `
+                    <div class="field-analysis ${classe}">
+                        <strong>${campo.nome}:</strong> "${campo.valor}" 
+                        ${campo.valor ? `(normalizado: "${normalizeString(campo.valor)}")` : ''}
+                        ${problema ? `<br><span style="color: red;">⚠️ ${problema}</span>` : ''}
+                    </div>
+                `;
+            });
+            
+            return html;
+        }
+        
+        // Verificar problemas específicos em um campo
+        function verificarProblemasCampo(nomeCampo, valor) {
+            if (!valor) {
+                return `Campo vazio ou nulo`;
+            }
+            
+            if (nomeCampo === 'tipo') {
+                const tipoNorm = normalizeString(valor);
+                if (!tipoNorm.includes('doacao')) {
+                    return `Não contém variação de "doação"`;
+                }
+            }
+            
+            if (nomeCampo === 'status') {
+                const statusNorm = normalizeString(valor);
+                if (!statusNorm.includes('pendente') && !statusNorm.includes('pending') && !statusNorm.includes('aguardando')) {
+                    return `Não é status pendente`;
+                }
+            }
+            
+            return null;
+        }
+        
+        // Diagnosticar por que um caso não tem botões
+        function diagnosticarProblema(purchase) {
+            const problemas = [];
+            
+            // Verificar se é doação
+            if (!isDoacaoRobusta(purchase)) {
+                const tipoNorm = normalizeString(purchase.tipo);
+                const metodoNorm = normalizeString(purchase.metodoPagamento);
+                const obsNorm = normalizeString(purchase.observacoes || '');
+                
+                problemas.push(`❌ NÃO É DOAÇÃO: tipo="${tipoNorm}", método="${metodoNorm}", obs="${obsNorm}"`);
+            }
+            
+            // Verificar se é pendente
+            if (!isStatusPendenteRobusta(purchase)) {
+                const statusNorm = normalizeString(purchase.status);
+                problemas.push(`❌ NÃO É PENDENTE: status="${statusNorm}"`);
+            }
+            
+            // Verificar campos obrigatórios
+            if (!purchase.tipo) problemas.push('❌ Campo "tipo" vazio ou nulo');
+            if (!purchase.status) problemas.push('❌ Campo "status" vazio ou nulo');
+            
+            return problemas.length > 0 ? problemas.join('<br>') : '✅ Nenhum problema detectado - isso é estranho!';
+        }
+        
+        // Comparar casos com e sem botões
+        async function compararCasos() {
+            const statusDiv = document.getElementById('comparacao');
+            statusDiv.innerHTML = '<div>🔄 Analisando...</div>';
+            
+            await carregarTodasCompras();
+            
+            const doacoes = todasCompras.filter(p => isDoacaoRobusta(p));
+            const comBotoes = doacoes.filter(p => isStatusPendenteRobusta(p));
+            const semBotoes = doacoes.filter(p => !isStatusPendenteRobusta(p));
+            
+            let html = `
+                <h3>🔄 Comparação: Doações Com vs Sem Botões</h3>
+                <div class="warning">
+                    <p><strong>Doações com botões:</strong> ${comBotoes.length}</p>
+                    <p><strong>Doações sem botões:</strong> ${semBotoes.length}</p>
+                </div>
+            `;
+            
+            // Tabela comparativa
+            html += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categoria</th>
+                            <th>Campo</th>
+                            <th>Com Botões</th>
+                            <th>Sem Botões</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // Analisar status
+            const statusComBotoes = comBotoes.map(p => normalizeString(p.status));
+            const statusSemBotoes = semBotoes.map(p => normalizeString(p.status));
+            
+            html += `
+                <tr>
+                    <td rowspan="2">Status</td>
+                    <td>Valores únicos com botões</td>
+                    <td>${[...new Set(statusComBotoes)].join(', ')}</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Valores únicos sem botões</td>
+                    <td>-</td>
+                    <td>${[...new Set(statusSemBotoes)].join(', ')}</td>
+                </tr>
+            `;
+            
+            // Analisar tipos
+            const tiposComBotoes = comBotoes.map(p => normalizeString(p.tipo));
+            const tiposSemBotoes = semBotoes.map(p => normalizeString(p.tipo));
+            
+            html += `
+                <tr>
+                    <td rowspan="2">Tipo</td>
+                    <td>Valores únicos com botões</td>
+                    <td>${[...new Set(tiposComBotoes)].join(', ')}</td>
+                    <td>-</td>
+                </tr>
+                <tr>
+                    <td>Valores únicos sem botões</td>
+                    <td>-</td>
+                    <td>${[...new Set(tiposSemBotoes)].join(', ')}</td>
+                </tr>
+            `;
+            
+            html += '</tbody></table>';
+            
+            statusDiv.innerHTML = html;
+        }
+        
+        // Testar a lógica manualmente com dados específicos
+        function testarLogicaManual() {
+            const statusDiv = document.getElementById('teste-manual');
+            
+            // Casos de teste manuais
+            const casosTest = [
+                { id: 'test1', tipo: 'Doação', status: 'Pendente' },
+                { id: 'test2', tipo: 'doacao', status: 'pendente' },
+                { id: 'test3', tipo: 'DOACAO', status: 'PENDENTE' },
+                { id: 'test4', tipo: 'Doação', status: 'Confirmado' },
+                { id: 'test5', tipo: 'Compra', status: 'Pendente' },
+                { id: 'test6', tipo: '', status: 'Pendente' },
+                { id: 'test7', tipo: 'Doação', status: '' },
+                { id: 'test8', tipo: null, status: null },
+                { id: 'test9', metodoPagamento: 'Doação PIX', status: 'Pendente' },
+                { id: 'test10', observacoes: 'Esta é uma doação', status: 'Pendente' }
+            ];
+            
+            let html = '<h3>🧪 Teste Manual da Lógica dos Botões</h3>';
+            
+            html += `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Status</th>
+                            <th>Método/Obs</th>
+                            <th>É Doação?</th>
+                            <th>É Pendente?</th>
+                            <th>Deve ter botões?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            casosTest.forEach(caso => {
+                const ehDoacacao = isDoacaoRobusta(caso);
+                const ehPendente = isStatusPendenteRobusta(caso);
+                const deveTerBotoes = deveExibirBotoes(caso);
+                
+                html += `
+                    <tr>
+                        <td>${caso.id}</td>
+                        <td>"${caso.tipo || 'null'}"</td>
+                        <td>"${caso.status || 'null'}"</td>
+                        <td>"${caso.metodoPagamento || caso.observacoes || 'N/A'}"</td>
+                        <td>${ehDoacacao ? '✅' : '❌'}</td>
+                        <td>${ehPendente ? '✅' : '❌'}</td>
+                        <td style="background: ${deveTerBotoes ? '#d4edda' : '#f8d7da'}">${deveTerBotoes ? '✅ SIM' : '❌ NÃO'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            statusDiv.innerHTML = html;
+        }
+        
+        // Inicializar quando a página carregar
+        window.addEventListener('load', function() {
+            console.log('🎯 Página carregada, inicializando Firebase...');
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html>

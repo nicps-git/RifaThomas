@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 ULTRA-DEBUG - Teste de Botões</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+        .log-output {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .purchase-row {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: #fff;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-test { background: #007bff; color: white; }
+        .btn-reload { background: #28a745; color: white; }
+        .btn-clear { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 ULTRA-DEBUG - Teste de Botões</h1>
+        <p><strong>Objetivo:</strong> Verificar se a função createActionButtons está funcionando corretamente</p>
+        
+        <div class="test-section">
+            <h2>🔧 Controles de Teste</h2>
+            <button class="btn-test" onclick="executarTeste()">🧪 Executar Teste</button>
+            <button class="btn-reload" onclick="location.reload()">🔄 Recarregar Página</button>
+            <button class="btn-clear" onclick="limparLogs()">🧹 Limpar Logs</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Log de Execução</h2>
+            <div id="logOutput" class="log-output">Aguardando teste...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Resultados dos Testes</h2>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        let originalConsoleLog = console.log;
+        let logOutput = document.getElementById('logOutput');
+        let testResults = document.getElementById('testResults');
+
+        // Interceptar console.log para exibir na página
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, arguments);
+            let message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            logOutput.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            logOutput.scrollTop = logOutput.scrollHeight;
+        };
+
+        function limparLogs() {
+            logOutput.textContent = 'Logs limpos...\n';
+            testResults.innerHTML = '';
+        }
+
+        // Dados de teste simulando compras
+        const testPurchases = [
+            {
+                id: 'test-001',
+                type: 'doacao',
+                status: 'pending',
+                paymentMethod: 'doacao',
+                name: 'João da Silva',
+                value: 50
+            },
+            {
+                id: 'test-002',
+                type: 'number',
+                status: 'pending',
+                paymentMethod: 'pix',
+                name: 'Maria Santos',
+                numbers: [1, 2, 3]
+            },
+            {
+                id: 'test-003',
+                type: 'doacao',
+                status: 'confirmed',
+                paymentMethod: 'doacao',
+                name: 'Pedro Costa',
+                value: 25
+            }
+        ];
+
+        // Função createActionButtons para teste (copiada do admin.js)
+        function createActionButtons(purchase) {
+            console.log('🚨🚨🚨 ULTRA-DEBUG INÍCIO 🚨🚨🚨');
+            console.log('Purchase recebida:', purchase);
+            console.log('Purchase ID:', purchase?.id);
+            console.log('Purchase Type:', purchase?.type);
+            console.log('Purchase Status:', purchase?.status);
+            console.log('Purchase Payment Method:', purchase?.paymentMethod);
+            
+            // FORÇA ABSOLUTA - Botões sempre aparecem
+            const forceButtons = `
+                <div class="action-buttons-force" style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    <button class="btn-edit-force" data-id="${purchase?.id || 'no-id'}" onclick="alert('Editar: ${purchase?.id}'); console.log('Botão Editar clicado para:', '${purchase?.id}');" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        ✏️ Editar
+                    </button>
+                    <button class="btn-debug-force" data-id="${purchase?.id || 'no-id'}" onclick="console.log('Debug Purchase:', ${JSON.stringify(purchase || {}).replace(/"/g, '&quot;')}); alert('Debug: ${purchase?.id}');" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        🔍 Debug
+                    </button>
+                    <button class="btn-confirm-force" data-id="${purchase?.id || 'no-id'}" onclick="alert('Confirmar: ${purchase?.id}'); console.log('Botão Confirmar clicado para:', '${purchase?.id}');" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        ✅ Confirmar
+                    </button>
+                    <button class="btn-reject-force" data-id="${purchase?.id || 'no-id'}" onclick="alert('Rejeitar: ${purchase?.id}'); console.log('Botão Rejeitar clicado para:', '${purchase?.id}');" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        ❌ Rejeitar
+                    </button>
+                </div>
+            `;
+            
+            console.log('🚨 ULTRA-DEBUG: Botões HTML criado:', forceButtons);
+            console.log('🚨 ULTRA-DEBUG: Tamanho do HTML:', forceButtons.length);
+            console.log('🚨🚨🚨 ULTRA-DEBUG FIM 🚨🚨🚨');
+            
+            return forceButtons;
+        }
+
+        function executarTeste() {
+            console.log('🚨 INICIANDO ULTRA-DEBUG TESTE');
+            console.log('===============================');
+            
+            testResults.innerHTML = '<h3>🔍 Testando cada compra:</h3>';
+            
+            testPurchases.forEach((purchase, index) => {
+                console.log(`\n--- Teste ${index + 1}: ${purchase.id} ---`);
+                
+                try {
+                    const buttonsHTML = createActionButtons(purchase);
+                    
+                    const purchaseDiv = document.createElement('div');
+                    purchaseDiv.className = 'purchase-row';
+                    purchaseDiv.innerHTML = `
+                        <h4>Compra: ${purchase.id} (${purchase.type})</h4>
+                        <p><strong>Status:</strong> ${purchase.status} | <strong>Método:</strong> ${purchase.paymentMethod}</p>
+                        <div><strong>Botões Gerados:</strong></div>
+                        ${buttonsHTML}
+                    `;
+                    
+                    testResults.appendChild(purchaseDiv);
+                    
+                    console.log(`✅ Teste ${index + 1} SUCESSO: ${buttonsHTML.length} chars de HTML gerados`);
+                    
+                } catch (error) {
+                    console.error(`❌ Teste ${index + 1} ERRO:`, error);
+                    
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'purchase-row';
+                    errorDiv.style.background = '#ffe6e6';
+                    errorDiv.innerHTML = `
+                        <h4>❌ ERRO na Compra: ${purchase.id}</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                    `;
+                    testResults.appendChild(errorDiv);
+                }
+            });
+            
+            console.log('\n===============================');
+            console.log('🚨 ULTRA-DEBUG TESTE CONCLUÍDO');
+        }
+
+        // Auto-executar teste ao carregar
+        window.addEventListener('load', function() {
+            setTimeout(executarTeste, 1000);
+        });
+    </script>
+</body>
+</html>

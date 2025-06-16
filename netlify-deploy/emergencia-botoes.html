@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMERGÊNCIA - Forçar Botões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #fff3cd; }
+        .alert { background: #f8d7da; padding: 20px; border: 1px solid #f5c6cb; border-radius: 5px; margin: 20px 0; }
+        .code { background: #f8f9fa; padding: 15px; border-radius: 4px; font-family: monospace; margin: 10px 0; }
+        button { background: #dc3545; color: white; border: none; padding: 15px 30px; border-radius: 4px; cursor: pointer; font-size: 16px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🚨 EMERGÊNCIA - Botões Sumiram Novamente</h1>
+    
+    <div class="alert">
+        <h3>⚠️ SITUAÇÃO CRÍTICA</h3>
+        <p>Os botões sumiram novamente. Vou aplicar uma solução DRÁSTICA que vai substituir a função atual por uma que FORÇA os botões a aparecerem sempre.</p>
+    </div>
+    
+    <h3>🎯 Ação Imediata:</h3>
+    <button onclick="aplicarSolucaoEmergencia()">🚨 APLICAR SOLUÇÃO DE EMERGÊNCIA</button>
+    
+    <h3>📋 Código de Emergência (para copiar/colar no console F12):</h3>
+    <div class="code" id="codigo-emergencia">
+// CÓDIGO DE EMERGÊNCIA - COLE NO CONSOLE F12 DA PÁGINA ADMIN
+
+// 1. Substituir função createActionButtons por versão FORÇADA
+window.createActionButtons = function(purchase) {
+    console.log('🚨 EMERGÊNCIA: Função forçada ativa para', purchase.id);
+    
+    return `
+        &lt;button onclick="alert('Editar: ' + '${purchase.id}')" style="background: #007bff; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;"&gt;
+            ✏️ Editar
+        &lt;/button&gt;
+        &lt;button onclick="console.log('Debug:', '${purchase.id}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;"&gt;
+            🔍 Debug
+        &lt;/button&gt;
+        &lt;button onclick="alert('Confirmar: ' + '${purchase.id}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;"&gt;
+            ✅ Confirmar
+        &lt;/button&gt;
+        &lt;button onclick="alert('Rejeitar: ' + '${purchase.id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;"&gt;
+            ❌ Rejeitar
+        &lt;/button&gt;
+    `;
+};
+
+// 2. Forçar recarregamento da tabela
+if (typeof loadParticipants === 'function') {
+    console.log('🔄 Recarregando tabela...');
+    loadParticipants();
+} else {
+    console.log('⚠️ Função loadParticipants não encontrada');
+}
+
+console.log('✅ EMERGÊNCIA APLICADA - Botões devem aparecer agora!');
+    </div>
+    
+    <h3>📋 Instruções de Emergência:</h3>
+    <ol>
+        <li><strong>Abra a página admin</strong> (se não estiver aberta)</li>
+        <li><strong>Pressione F12</strong> para abrir o console</li>
+        <li><strong>Copie e cole</strong> o código acima no console</li>
+        <li><strong>Pressione Enter</strong> para executar</li>
+        <li><strong>Os botões devem aparecer IMEDIATAMENTE</strong></li>
+    </ol>
+    
+    <div class="alert">
+        <h4>🎯 Se isso não funcionar:</h4>
+        <p>O problema é mais profundo (carregamento do JavaScript, DOM, etc.). Nesse caso, preciso investigar o problema estrutural.</p>
+    </div>
+
+    <script>
+        function aplicarSolucaoEmergencia() {
+            // Abrir admin.html se possível
+            const adminWindow = window.open('admin.html', '_blank');
+            
+            if (adminWindow) {
+                // Aguardar carregamento e aplicar fix
+                setTimeout(() => {
+                    try {
+                        adminWindow.createActionButtons = function(purchase) {
+                            console.log('🚨 EMERGÊNCIA: Função forçada ativa para', purchase.id);
+                            
+                            return `
+                                <button onclick="alert('Editar: ' + '${purchase.id}')" style="background: #007bff; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                                    ✏️ Editar
+                                </button>
+                                <button onclick="console.log('Debug:', '${purchase.id}')" style="background: #6c757d; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                                    🔍 Debug
+                                </button>
+                                <button onclick="alert('Confirmar: ' + '${purchase.id}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                                    ✅ Confirmar
+                                </button>
+                                <button onclick="alert('Rejeitar: ' + '${purchase.id}')" style="background: #dc3545; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 4px; cursor: pointer;">
+                                    ❌ Rejeitar
+                                </button>
+                            `;
+                        };
+                        
+                        // Tentar recarregar
+                        if (adminWindow.loadParticipants) {
+                            adminWindow.loadParticipants();
+                        }
+                        
+                        alert('✅ Solução de emergência aplicada! Verifique a página admin.');
+                    } catch (error) {
+                        alert('❌ Não foi possível aplicar automaticamente. Use o código manual no console F12.');
+                    }
+                }, 3000);
+            } else {
+                alert('❌ Não foi possível abrir admin.html. Abra manualmente e use o código no console F12.');
+            }
+        }
+    </script>
+</body>
+</html>

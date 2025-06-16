@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Final - Botões de Confirmação</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #d4edda; border-color: #c3e6cb; }
+        .warning { background: #fff3cd; border-color: #ffeaa7; }
+        .error { background: #f8d7da; border-color: #f5c6cb; }
+        .info { background: #d1ecf1; border-color: #bee5eb; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
+        .btn-test { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .highlight-success { background-color: #d4edda !important; }
+        .highlight-error { background-color: #f8d7da !important; }
+        .highlight-warning { background-color: #fff3cd !important; }
+        .code-block { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 11px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Teste Final - Correção dos Botões de Confirmação</h1>
+    
+    <div class="debug-section info">
+        <h2>📋 Resumo das Correções Aplicadas</h2>
+        <ul>
+            <li>✅ Função <code>normalizeString()</code> para remover acentos e normalizar texto</li>
+            <li>✅ Função <code>isDoacaoRobusta()</code> que verifica múltiplos campos e variações</li>
+            <li>✅ Função <code>isStatusPendenteRobusta()</code> que aceita diferentes formatos de status</li>
+            <li>✅ Atualização da função <code>createActionButtons()</code> para usar lógica robusta</li>
+            <li>✅ Atualização da função <code>loadParticipants()</code> para filtros robustos</li>
+        </ul>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🔗 Conexão Firebase</h2>
+        <div id="firebase-status">Verificando...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>🧪 Teste da Nova Lógica</h2>
+        <button class="btn-test" onclick="testarLogicaFinal()">Testar Lógica Completa</button>
+        <div id="teste-logica"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>📊 Análise Final dos Dados</h2>
+        <button class="btn-test" onclick="analiseFinalDados()">Carregar e Analisar Dados</button>
+        <div id="analise-final"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>✅ Resultados do Teste</h2>
+        <div id="resultados-teste"></div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        console.log('🚀 Iniciando teste final da correção dos botões...');
+        
+        let db = null;
+        let dadosCompletos = [];
+        
+        // Funções da nova lógica (copiadas do admin.js corrigido)
+        function normalizeString(str) {
+            if (!str) return '';
+            return str.toString().toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')  // Remove acentos
+                .replace(/[^\w\s]/g, '')         // Remove pontuação
+                .trim();
+        }
+        
+        function isDoacaoRobusta(purchase) {
+            if (!purchase) return false;
+            
+            const tipoNorm = normalizeString(purchase.tipo || '');
+            const metodoPagamentoNorm = normalizeString(purchase.metodoPagamento || purchase.paymentMethod || '');
+            const observacoesNorm = normalizeString(purchase.observacoes || purchase.notes || '');
+            
+            const variacoesDoacao = ['doacao', 'doacão', 'doação', 'donation'];
+            
+            return variacoesDoacao.some(variacao => 
+                tipoNorm.includes(variacao) || 
+                metodoPagamentoNorm.includes(variacao) ||
+                observacoesNorm.includes(variacao)
+            );
+        }
+        
+        function isStatusPendenteRobusta(purchase) {
+            if (!purchase) return false;
+            
+            const statusNorm = normalizeString(purchase.status || '');
+            const variacoesPendente = ['pendente', 'pending', 'aguardando', 'nao confirmado', 'naoconfirmado'];
+            
+            return variacoesPendente.some(variacao => statusNorm.includes(variacao));
+        }
+        
+        function deveExibirBotoes(purchase) {
+            return isDoacaoRobusta(purchase) && isStatusPendenteRobusta(purchase);
+        }
+        
+        // Inicializar Firebase
+        function initializeFirebase() {
+            try {
+                if (typeof firebase !== 'undefined' && firebase.apps.length === 0) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                db = firebase.firestore();
+                document.getElementById('firebase-status').innerHTML = '✅ Firebase conectado com sucesso';
+                return true;
+            } catch (error) {
+                document.getElementById('firebase-status').innerHTML = `❌ Erro: ${error.message}`;
+                console.error('Erro Firebase:', error);
+                return false;
+            }
+        }
+        
+        // Testar a nova lógica com casos pré-definidos
+        function testarLogicaFinal() {
+            const testeDiv = document.getElementById('teste-logica');
+            
+            const casosTeste = [
+                // Casos que DEVEM ter botões
+                { id: 'teste1', tipo: 'Doação', status: 'Pendente', expect: true },
+                { id: 'teste2', tipo: 'doacao', status: 'pendente', expect: true },
+                { id: 'teste3', tipo: 'DOACAO', status: 'PENDENTE', expect: true },
+                { id: 'teste4', metodoPagamento: 'Doação PIX', status: 'Pendente', expect: true },
+                { id: 'teste5', paymentMethod: 'donation', status: 'pending', expect: true },
+                { id: 'teste6', observacoes: 'Esta é uma doação', status: 'aguardando', expect: true },
+                
+                // Casos que NÃO devem ter botões
+                { id: 'teste7', tipo: 'Doação', status: 'Confirmado', expect: false },
+                { id: 'teste8', tipo: 'Compra', status: 'Pendente', expect: false },
+                { id: 'teste9', tipo: '', status: 'Pendente', expect: false },
+                { id: 'teste10', tipo: null, status: null, expect: false },
+            ];
+            
+            let html = '<h4>🧪 Resultados dos Testes de Lógica</h4>';
+            html += '<table><thead><tr><th>ID</th><th>Dados</th><th>Esperado</th><th>Resultado</th><th>Status</th></tr></thead><tbody>';
+            
+            let sucessos = 0;
+            let falhas = 0;
+            
+            casosTeste.forEach(caso => {
+                const resultado = deveExibirBotoes(caso);
+                const sucesso = resultado === caso.expect;
+                
+                if (sucesso) sucessos++;
+                else falhas++;
+                
+                const classe = sucesso ? 'highlight-success' : 'highlight-error';
+                const statusIcon = sucesso ? '✅' : '❌';
+                
+                html += `
+                    <tr class="${classe}">
+                        <td>${caso.id}</td>
+                        <td>${JSON.stringify(caso, null, 1).replace(/[\{\}\"]/g, '').replace(/,/g, '<br>')}</td>
+                        <td>${caso.expect ? 'TER botões' : 'NÃO ter botões'}</td>
+                        <td>${resultado ? 'TEM botões' : 'NÃO tem botões'}</td>
+                        <td>${statusIcon}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            
+            const resumoClasse = falhas === 0 ? 'success' : 'warning';
+            html += `
+                <div class="${resumoClasse}" style="margin-top: 15px; padding: 10px; border-radius: 4px;">
+                    <h4>📊 Resumo dos Testes</h4>
+                    <ul>
+                        <li><strong>Sucessos:</strong> ${sucessos}/${casosTeste.length}</li>
+                        <li><strong>Falhas:</strong> ${falhas}/${casosTeste.length}</li>
+                        <li><strong>Taxa de Sucesso:</strong> ${((sucessos/casosTeste.length)*100).toFixed(1)}%</li>
+                    </ul>
+                </div>
+            `;
+            
+            testeDiv.innerHTML = html;
+        }
+        
+        // Análise final dos dados reais do Firebase
+        async function analiseFinalDados() {
+            const analiseDiv = document.getElementById('analise-final');
+            analiseDiv.innerHTML = '<div>🔄 Carregando dados do Firebase...</div>';
+            
+            try {
+                const snapshot = await db.collection('purchases').get();
+                dadosCompletos = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Analisar os dados
+                const totalRegistros = dadosCompletos.length;
+                const doacoes = dadosCompletos.filter(p => isDoacaoRobusta(p));
+                const doacoesPendentes = doacoes.filter(p => isStatusPendenteRobusta(p));
+                const doacoesComBotoes = dadosCompletos.filter(p => deveExibirBotoes(p));
+                
+                let html = `
+                    <h4>📊 Análise dos Dados Reais</h4>
+                    <div class="info" style="padding: 10px; border-radius: 4px;">
+                        <ul>
+                            <li><strong>Total de registros:</strong> ${totalRegistros}</li>
+                            <li><strong>Doações identificadas:</strong> ${doacoes.length}</li>
+                            <li><strong>Doações pendentes:</strong> ${doacoesPendentes.length}</li>
+                            <li><strong>Registros que devem ter botões:</strong> ${doacoesComBotoes.length}</li>
+                        </ul>
+                    </div>
+                `;
+                
+                // Mostrar detalhes dos registros que devem ter botões
+                if (doacoesComBotoes.length > 0) {
+                    html += '<h4>✅ Registros que DEVEM ter botões:</h4>';
+                    html += '<table><thead><tr><th>ID</th><th>Tipo</th><th>Status</th><th>Método/Obs</th></tr></thead><tbody>';
+                    
+                    doacoesComBotoes.forEach(registro => {
+                        html += `
+                            <tr class="highlight-success">
+                                <td title="${registro.id}">${registro.id.substring(0, 8)}...</td>
+                                <td>${registro.tipo || 'N/A'}</td>
+                                <td>${registro.status || 'N/A'}</td>
+                                <td>${registro.metodoPagamento || registro.paymentMethod || registro.observacoes || 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                }
+                
+                // Verificar se há doações que NÃO estão pendentes (casos problemáticos anteriores)
+                const doacoesNaoPendentes = doacoes.filter(p => !isStatusPendenteRobusta(p));
+                if (doacoesNaoPendentes.length > 0) {
+                    html += '<h4>⚠️ Doações que NÃO têm botões (não pendentes):</h4>';
+                    html += '<table><thead><tr><th>ID</th><th>Tipo</th><th>Status</th><th>Motivo</th></tr></thead><tbody>';
+                    
+                    doacoesNaoPendentes.forEach(registro => {
+                        const motivo = `Status "${registro.status}" não é considerado pendente`;
+                        html += `
+                            <tr class="highlight-warning">
+                                <td title="${registro.id}">${registro.id.substring(0, 8)}...</td>
+                                <td>${registro.tipo || 'N/A'}</td>
+                                <td>${registro.status || 'N/A'}</td>
+                                <td>${motivo}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                }
+                
+                analiseDiv.innerHTML = html;
+                
+                // Atualizar resultados finais
+                atualizarResultadosFinais(totalRegistros, doacoesComBotoes.length, doacoesNaoPendentes.length);
+                
+            } catch (error) {
+                analiseDiv.innerHTML = `❌ Erro ao carregar dados: ${error.message}`;
+            }
+        }
+        
+        // Atualizar resultados finais
+        function atualizarResultadosFinais(total, comBotoes, problemáticos) {
+            const resultadosDiv = document.getElementById('resultados-teste');
+            
+            const status = problemáticos === 0 ? 'success' : 'warning';
+            
+            let html = `
+                <div class="${status}" style="padding: 15px; border-radius: 4px;">
+                    <h4>🎯 Resultados da Correção</h4>
+                    <ul>
+                        <li><strong>Status:</strong> ${problemáticos === 0 ? '✅ SUCESSO TOTAL' : '⚠️ PARCIALMENTE RESOLVIDO'}</li>
+                        <li><strong>Total de registros:</strong> ${total}</li>
+                        <li><strong>Registros com botões:</strong> ${comBotoes}</li>
+                        <li><strong>Casos problemáticos restantes:</strong> ${problemáticos}</li>
+                    </ul>
+                </div>
+            `;
+            
+            if (problemáticos === 0) {
+                html += `
+                    <div class="success" style="margin-top: 15px; padding: 15px; border-radius: 4px;">
+                        <h4>🎉 PROBLEMA RESOLVIDO!</h4>
+                        <p>Todos os registros de doação pendente agora devem exibir os botões de confirmação corretamente.</p>
+                        <p><strong>As correções implementadas foram:</strong></p>
+                        <ul>
+                            <li>Normalização de strings (remoção de acentos, pontuação, maiúsculas)</li>
+                            <li>Verificação de múltiplos campos (tipo, metodoPagamento, paymentMethod, observacoes, notes)</li>
+                            <li>Aceitação de múltiplas variações de "doação" e "pendente"</li>
+                            <li>Lógica robusta e tolerante a falhas</li>
+                        </ul>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="warning" style="margin-top: 15px; padding: 15px; border-radius: 4px;">
+                        <h4>⚠️ Casos Restantes</h4>
+                        <p>Ainda existem ${problemáticos} casos de doações que não têm botões, mas estes são doações que NÃO estão com status pendente.</p>
+                        <p>Isso é o comportamento correto - apenas doações pendentes devem ter botões de confirmação.</p>
+                    </div>
+                `;
+            }
+            
+            resultadosDiv.innerHTML = html;
+        }
+        
+        // Inicializar quando a página carregar
+        window.addEventListener('load', function() {
+            console.log('🎯 Página carregada, inicializando teste final...');
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html>

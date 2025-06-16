@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Rápido - Botões</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-item { margin: 15px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .should-show { background: #d4edda; }
+        .should-not-show { background: #f8f9fa; }
+        .problem { background: #f8d7da; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px; }
+        .btn { margin: 5px; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Rápido - Verificação de Botões</h1>
+    
+    <div id="status">Carregando...</div>
+    
+    <div id="results"></div>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        // Replicar as funções exatas do admin.js
+        function createActionButtons(purchase) {
+            console.log(`🔧 [BUTTON-DEBUG] Criando botões para compra ${purchase.id}:`);
+            console.log(`   - Status original: "${purchase.status}"`);
+            console.log(`   - PaymentMethod original: "${purchase.paymentMethod}"`);
+            console.log(`   - Nome: "${purchase.buyerName || purchase.name}"`);
+            
+            const buttons = [];
+            const status = (purchase.status || 'confirmed').toString().toLowerCase().trim();
+            const paymentMethod = (purchase.paymentMethod || '').toString().toLowerCase().trim();
+            
+            console.log(`   - Status processado: "${status}"`);
+            console.log(`   - PaymentMethod processado: "${paymentMethod}"`);
+            
+            // Detectar se é doação (múltiplas variações)
+            const isDonationMethod = paymentMethod === 'doacao' || 
+                                    paymentMethod === 'donation' || 
+                                    paymentMethod === 'doação' ||
+                                    paymentMethod.includes('doa');
+            
+            // Detectar se está pendente (múltiplas variações)
+            const isPendingStatus = status === 'pending' || 
+                                   status === 'pending_donation' || 
+                                   status === 'pendente' ||
+                                   status.includes('pending');
+            
+            // Detectar se NÃO está finalizado
+            const isNotFinalized = status !== 'confirmed' && 
+                                  status !== 'rejected' && 
+                                  status !== 'confirmado' && 
+                                  status !== 'rejeitado';
+            
+            console.log(`   - É método doação? ${isDonationMethod}`);
+            console.log(`   - Status é pendente? ${isPendingStatus}`);
+            console.log(`   - Não está finalizado? ${isNotFinalized}`);
+            
+            // Lógica expandida para mostrar botões
+            const shouldShowConfirmationButtons = isDonationMethod && isNotFinalized;
+            
+            console.log(`   - DEVE MOSTRAR BOTÕES? ${shouldShowConfirmationButtons}`);
+            
+            return {
+                shouldShow: shouldShowConfirmationButtons,
+                analysis: {
+                    status,
+                    paymentMethod,
+                    isDonationMethod,
+                    isPendingStatus,
+                    isNotFinalized,
+                    originalStatus: purchase.status,
+                    originalPaymentMethod: purchase.paymentMethod
+                }
+            };
+        }
+        
+        async function runDebug() {
+            try {
+                document.getElementById('status').innerHTML = '🔥 Conectando ao Firebase...';
+                
+                if (!window.FirebaseDB) {
+                    await new Promise(resolve => {
+                        window.addEventListener('firebaseReady', resolve);
+                    });
+                }
+                
+                document.getElementById('status').innerHTML = '📊 Carregando compras...';
+                
+                // Usar loadPurchases ao invés de acessar diretamente
+                const result = await window.FirebaseDB.loadPurchases();
+                
+                if (!result.success) {
+                    throw new Error(result.error);
+                }
+                
+                const purchases = result.data;
+                
+                document.getElementById('status').innerHTML = `✅ ${purchases.length} compras carregadas. Analisando...`;
+                
+                let html = '<h2>Análise Detalhada por Compra:</h2>';
+                let problemCount = 0;
+                
+                purchases.forEach((purchase, index) => {
+                    const analysis = createActionButtons(purchase);
+                    
+                    // Determinar se parece que deveria mostrar botões baseado nos dados
+                    const likelyDonation = (purchase.paymentMethod && 
+                                          purchase.paymentMethod.toLowerCase().includes('doa')) ||
+                                         (purchase.paymentMethod && 
+                                          purchase.paymentMethod.toLowerCase() === 'donation');
+                    
+                    const likelyPending = !purchase.status || 
+                                        purchase.status.toLowerCase().includes('pending') || 
+                                        purchase.status.toLowerCase() === 'pendente';
+                    
+                    const shouldProbablyShow = likelyDonation && likelyPending;
+                    
+                    if (shouldProbablyShow !== analysis.shouldShow) {
+                        problemCount++;
+                    }
+                    
+                    const className = analysis.shouldShow ? 'should-show' : 
+                                    (shouldProbablyShow ? 'problem' : 'should-not-show');
+                    
+                    html += `
+                        <div class="debug-item ${className}">
+                            <h4>${purchase.buyerName || purchase.name || 'Nome não disponível'} (#${index + 1})</h4>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <strong>Dados Originais:</strong>
+                                    <pre>Status: ${JSON.stringify(purchase.status)}
+PaymentMethod: ${JSON.stringify(purchase.paymentMethod)}
+ID: ${purchase.id}</pre>
+                                </div>
+                                
+                                <div>
+                                    <strong>Análise:</strong>
+                                    <pre>${JSON.stringify(analysis.analysis, null, 2)}</pre>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 10px;">
+                                <strong>Resultado:</strong> 
+                                <span style="color: ${analysis.shouldShow ? 'green' : 'red'}; font-weight: bold;">
+                                    ${analysis.shouldShow ? '✅ MOSTRA BOTÕES' : '❌ NÃO MOSTRA BOTÕES'}
+                                </span>
+                                
+                                ${shouldProbablyShow !== analysis.shouldShow ? 
+                                  '<span style="color: red; margin-left: 10px;">⚠️ POSSÍVEL PROBLEMA</span>' : 
+                                  ''}
+                            </div>
+                            
+                            ${analysis.shouldShow ? `
+                                <div style="margin-top: 10px;">
+                                    <button class="btn" style="background: #28a745; color: white;">✅ Confirmar</button>
+                                    <button class="btn" style="background: #dc3545; color: white;">❌ Rejeitar</button>
+                                    <button class="btn" style="background: #007bff; color: white;">✏️ Editar</button>
+                                </div>
+                            ` : `
+                                <div style="margin-top: 10px;">
+                                    <button class="btn" style="background: #007bff; color: white;">✏️ Editar</button>
+                                </div>
+                            `}
+                        </div>
+                    `;
+                });
+                
+                html += `
+                    <div class="debug-item" style="background: #e7f3ff; border-color: #007bff;">
+                        <h3>📊 Resumo Final:</h3>
+                        <p><strong>Total de compras:</strong> ${purchases.length}</p>
+                        <p><strong>Possíveis problemas:</strong> ${problemCount}</p>
+                        <p><strong>Compras que mostram botões:</strong> ${purchases.filter(p => createActionButtons(p).shouldShow).length}</p>
+                    </div>
+                `;
+                
+                document.getElementById('results').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ Erro: ${error.message}`;
+                console.error('Erro no debug:', error);
+            }
+        }
+        
+        // Aguardar DOM estar pronto
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.FirebaseDB) {
+                runDebug();
+            } else {
+                window.addEventListener('firebaseReady', runDebug);
+            }
+        });
+    </script>
+</body>
+</html>
