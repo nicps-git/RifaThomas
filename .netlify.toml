@@ -1,5 +1,8 @@
 [build]
   publish = "netlify-deploy"
+  ignore = "git diff --quiet HEAD^ HEAD"
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_CONFIG_PRODUCTION = "false"
+  SKIP_YARN_INSTALL = "true"
