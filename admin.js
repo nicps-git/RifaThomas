@@ -20,65 +20,141 @@ let adminData = {
     currentUser: null
 };
 
-// Inicializar painel administrativo
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar se Firebase está disponível
+// Função para aguardar sistema de autenticação estar disponível
+function waitForAuthSystem() {
+    return new Promise((resolve) => {
+        if (typeof window.bingoAuth !== 'undefined') {
+            resolve();
+            return;
+        }
+        
+        const checkAuth = () => {
+            if (typeof window.bingoAuth !== 'undefined') {
+                resolve();
+            } else {
+                setTimeout(checkAuth, 100);
+            }
+        };
+        
+        checkAuth();
+    });
+}
+
+// Função de inicialização com autenticação
+async function initializeAdminWithAuth() {
+    console.log('🔐 [ADMIN] Inicializando área administrativa...');
+    
+    // Aguardar sistema de autenticação estar disponível
+    await waitForAuthSystem();
+    console.log('🔐 [ADMIN] Sistema de autenticação carregado');
+    
+    // Verificar se está autenticado ou solicitar autenticação
+    let autenticado = window.bingoAuth.isAuthenticated();
+    console.log('🔐 [ADMIN] Status autenticação inicial:', autenticado);
+    
+    if (!autenticado) {
+        console.log('🔐 [ADMIN] Usuário não autenticado, solicitando login...');
+        autenticado = window.bingoAuth.requireAuth();
+        console.log('🔐 [ADMIN] Resultado da autenticação:', autenticado);
+        
+        if (!autenticado) {
+            console.log('❌ [ADMIN] Autenticação cancelada/falhou, redirecionando...');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+            return;
+        }
+    }
+    
+    console.log('✅ [ADMIN] Usuário autenticado com sucesso');
+    
+    // Continuar com a inicialização normal
     if (typeof FirebaseDB !== 'undefined') {
         initializeAdminWithFirebase();
     } else {
-        // Fallback para versão local
         initializeAdmin();
-        loadAdminData();
     }
-    
-    setupAdminEventListeners();
-    updateDashboard();
-    loadConfiguration();
+}
+
+// Inicializar painel administrativo
+document.addEventListener('DOMContentLoaded', function() {
+    // Usar nova função com autenticação
+    initializeAdminWithAuth().catch(error => {
+        console.error('❌ [ADMIN] Erro ao inicializar:', error);
+        alert('Erro ao inicializar área administrativa. Recarregue a página.');
+    });
 });
 
 // Inicializar com Firebase
 async function initializeAdminWithFirebase() {
     try {
-        // Verificar autenticação
-        const user = await FirebaseDB.initAuth();
+        console.log('🔥 [ADMIN] Inicializando com Firebase...');
         
-        if (!user) {
-            redirectToLogin();
+        // Verificar se Firebase está disponível
+        if (typeof FirebaseDB === 'undefined') {
+            console.log('⚠️ [ADMIN] Firebase não disponível, usando modo local');
+            initializeAdmin();
             return;
         }
         
-        // Verificar se é admin
-        const isAdmin = await FirebaseDB.isAdmin(user.uid);
-        if (!isAdmin) {
-            alert('Você não tem permissão de administrador!');
-            redirectToLogin();
-            return;
+        // Verificar autenticação Firebase se disponível
+        try {
+            const user = await FirebaseDB.initAuth();
+            if (!user) {
+                console.log('⚠️ [ADMIN] Usuário não autenticado no Firebase, continuando em modo local...');
+                initializeAdmin();
+                return;
+            }
+            
+            // Verificar se é admin (se a função existir)
+            if (typeof FirebaseDB.isAdmin === 'function') {
+                const isAdmin = await FirebaseDB.isAdmin(user.uid);
+                if (!isAdmin) {
+                    console.log('⚠️ [ADMIN] Usuário não é admin, usando modo local...');
+                    initializeAdmin();
+                    return;
+                }
+            }
+            
+            // Se chegou até aqui, inicializar com Firebase
+            console.log('✅ [ADMIN] Inicializando com Firebase...');
+            
+            adminData.currentUser = user;
+            adminData.firebaseReady = true;
+            
+            // Carregar dados do Firebase se as funções existirem
+            if (typeof loadDataFromFirebase === 'function') {
+                await loadDataFromFirebase();
+            }
+            
+            // Escutar mudanças em tempo real se a função existir
+            if (typeof FirebaseDB.onPurchasesChange === 'function') {
+                adminData.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
+                    adminData.purchases = purchases;
+                    if (typeof loadParticipants === 'function') loadParticipants();
+                    if (typeof updateDashboard === 'function') updateDashboard();
+                });
+            }
+            
+            // Inicializar admin
+            initializeAdmin();
+            
+        } catch (fbError) {
+            console.log('⚠️ [ADMIN] Erro no Firebase, continuando em modo local:', fbError);
+            initializeAdmin();
         }
-        
-        adminData.currentUser = user;
-        adminData.firebaseReady = true;
-        
-        // Carregar dados do Firebase
-        await loadDataFromFirebase();
-        
-        // Escutar mudanças em tempo real
-        adminData.unsubscribe = FirebaseDB.onPurchasesChange((purchases) => {
-            adminData.purchases = purchases;
-            loadParticipants();
-            updateDashboard();
-        });
-        
-        console.log('🔥 Admin Firebase conectado!');
         
     } catch (error) {
-        console.error('Erro ao inicializar Firebase admin:', error);
-        redirectToLogin();
+        console.error('❌ [ADMIN] Erro ao inicializar Firebase admin:', error);
+        console.log('🔄 [ADMIN] Tentando inicialização local como fallback...');
+        initializeAdmin();
     }
 }
 
 // Redirecionar para login
 function redirectToLogin() {
-    window.location.href = 'login.html';
+    console.log('🔄 [ADMIN] Redirecionando para index.html...');
+    window.location.href = 'index.html';
 }
 
 // Carregar dados do Firebase
@@ -107,64 +183,147 @@ async function loadDataFromFirebase() {
         updateDashboard();
         
     } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Erro ao carregar dados do Firebase:', error);
+        // Fallback para modo local
+        initializeAdmin();
     }
 }
 
-// Inicializar configurações do admin
+// Inicializar configurações do admin (modo local)
 function initializeAdmin() {
-    // Verificar autenticação (simplificado para demonstração)
-    if (!localStorage.getItem('adminAuth')) {
-        const password = prompt('Digite a senha do administrador:');
-        if (password === 'admin123') {
-            localStorage.setItem('adminAuth', 'true');
+    console.log('📊 [ADMIN] Inicializando em modo local...');
+    
+    try {
+        // Carregar dados administrativos
+        loadAdminData();
+        
+        // Verificar se elementos DOM existem antes de configurar listeners
+        if (document.readyState === 'loading') {
+            // Se ainda está carregando, aguardar
+            document.addEventListener('DOMContentLoaded', () => {
+                setupAdminEventListeners();
+                updateDashboard();
+            });
         } else {
-            alert('Senha incorreta!');
-            window.location.href = 'index.html';
-            return;
+            // DOM já carregado
+            setupAdminEventListeners();
+            updateDashboard();
+        }
+        
+        console.log('✅ [ADMIN] Inicialização completa!');
+        
+    } catch (error) {
+        console.error('❌ [ADMIN] Erro na inicialização:', error);
+        
+        // Tentar uma inicialização mais básica
+        try {
+            console.log('🔄 [ADMIN] Tentando inicialização básica...');
+            loadAdminData();
+            console.log('✅ [ADMIN] Inicialização básica concluída');
+        } catch (basicError) {
+            console.error('❌ [ADMIN] Falha na inicialização básica:', basicError);
+            throw basicError; // Re-throw para ser capturado pelo try-catch principal
         }
     }
 }
 
 // Carregar dados administrativos
 function loadAdminData() {
-    // Carregar compras
-    const purchases = localStorage.getItem('purchases');
-    if (purchases) {
-        adminData.purchases = JSON.parse(purchases);
-        ensurePurchaseIds(); // Garantir que todas as compras tenham IDs
-    }
+    console.log('📄 [ADMIN] Carregando dados administrativos...');
     
-    // Carregar configurações
-    const config = localStorage.getItem('adminConfig');
-    if (config) {
-        adminData.config = { ...adminData.config, ...JSON.parse(config) };
-    }
-    
-    // Carregar resultados do sorteio
-    const drawResults = localStorage.getItem('drawResults');
-    if (drawResults) {
-        adminData.drawResults = JSON.parse(drawResults);
+    try {
+        // Carregar compras
+        const purchases = localStorage.getItem('purchases');
+        if (purchases) {
+            try {
+                adminData.purchases = JSON.parse(purchases);
+                ensurePurchaseIds(); // Garantir que todas as compras tenham IDs
+                console.log(`✅ [ADMIN] ${adminData.purchases.length} compras carregadas`);
+            } catch (error) {
+                console.error('❌ [ADMIN] Erro ao carregar compras:', error);
+                adminData.purchases = [];
+            }
+        } else {
+            console.log('ℹ️ [ADMIN] Nenhuma compra encontrada no localStorage');
+            adminData.purchases = [];
+        }
+        
+        // Carregar configurações
+        const config = localStorage.getItem('adminConfig');
+        if (config) {
+            try {
+                adminData.config = { ...adminData.config, ...JSON.parse(config) };
+                console.log('✅ [ADMIN] Configurações carregadas');
+            } catch (error) {
+                console.error('❌ [ADMIN] Erro ao carregar configurações:', error);
+            }
+        } else {
+            console.log('ℹ️ [ADMIN] Usando configurações padrão');
+        }
+        
+        // Carregar resultados do sorteio
+        const drawResults = localStorage.getItem('drawResults');
+        if (drawResults) {
+            try {
+                adminData.drawResults = JSON.parse(drawResults);
+                console.log('✅ [ADMIN] Resultados do sorteio carregados');
+            } catch (error) {
+                console.error('❌ [ADMIN] Erro ao carregar resultados do sorteio:', error);
+                adminData.drawResults = null;
+            }
+        } else {
+            console.log('ℹ️ [ADMIN] Nenhum resultado de sorteio encontrado');
+            adminData.drawResults = null;
+        }
+        
+        console.log('✅ [ADMIN] Dados administrativos carregados com sucesso');
+        
+    } catch (error) {
+        console.error('❌ [ADMIN] Erro geral ao carregar dados:', error);
+        throw error;
     }
 }
 
 // Configurar event listeners do admin
 function setupAdminEventListeners() {
-    // Formulário de configuração
-    document.getElementById('config-form').addEventListener('submit', saveConfiguration);
+    console.log('🎛️ [ADMIN] Configurando event listeners...');
     
-    // Smooth scrolling para links do admin
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
+    try {
+        // Formulário de configuração
+        const configForm = document.getElementById('config-form');
+        if (configForm) {
+            configForm.addEventListener('submit', saveConfiguration);
+            console.log('✅ [ADMIN] Listener do formulário configurado');
+        } else {
+            console.log('⚠️ [ADMIN] Formulário config-form não encontrado');
+        }
+        
+        // Smooth scrolling para links do admin
+        const anchorLinks = document.querySelectorAll('a[href^="#"]');
+        if (anchorLinks.length > 0) {
+            anchorLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
                 });
-            }
-        });
+            });
+            console.log(`✅ [ADMIN] ${anchorLinks.length} links de âncora configurados`);
+        } else {
+            console.log('ℹ️ [ADMIN] Nenhum link de âncora encontrado');
+        }
+        
+        console.log('✅ [ADMIN] Event listeners configurados com sucesso');
+        
+    } catch (error) {
+        console.error('❌ [ADMIN] Erro ao configurar event listeners:', error);
+        // Não re-throw o erro para não quebrar a inicialização
+    }
     });
 }
 
