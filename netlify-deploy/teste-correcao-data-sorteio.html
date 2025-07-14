@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Correção Data do Sorteio</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: #f5f5f5; 
+        }
+        .container { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { 
+            background: #d4edda; 
+            border-color: #c3e6cb; 
+            color: #155724; 
+        }
+        .error { 
+            background: #f8d7da; 
+            border-color: #f5c6cb; 
+            color: #721c24; 
+        }
+        .info { 
+            background: #d1ecf1; 
+            border-color: #bee5eb; 
+            color: #0c5460; 
+        }
+        .warning { 
+            background: #fff3cd; 
+            border-color: #ffeaa7; 
+            color: #856404; 
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        #countdown-display {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .date-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗓️ Teste - Correção Data do Sorteio</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Objetivo do Teste</h3>
+            <p>Verificar se a data do sorteio foi corrigida de <strong>11/07/2025</strong> para <strong>18/07/2025</strong> e se o countdown está funcionando corretamente.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>📅 Informações Atuais</h3>
+            <div class="date-info">
+                <strong>Data/Hora Atual:</strong> <span id="current-date"></span><br>
+                <strong>Data do Sorteio Configurada:</strong> <span id="draw-date"></span><br>
+                <strong>Status do Sorteio:</strong> <span id="draw-status"></span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>⏰ Contador Regressivo</h3>
+            <div id="countdown-display">Carregando...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Testes</h3>
+            <button onclick="testarDataConfig()">📅 Testar Configuração de Data</button>
+            <button onclick="testarCountdown()">⏰ Testar Countdown</button>
+            <button onclick="simularDataPassada()">⏮️ Simular Data Passada</button>
+            <button onclick="simularDataFutura()">⏭️ Simular Data Futura</button>
+            <button onclick="limparLog()">🧹 Limpar Log</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Log de Testes</h3>
+            <div id="log" style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 5px; max-height: 300px; overflow-y: auto; font-family: monospace; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuração da rifa (copiada do script.js corrigido)
+        const RIFA_CONFIG = {
+            totalNumbers: 150,
+            ticketPrice: 40.00,
+            drawDate: new Date('2025-07-18T16:00:00'),
+            pixKey: 'contato@charifa.com',
+            theme: 'astronauta',
+            babyName: 'Thomas',
+            prizes: {
+                range1: { min: 1, max: 30, prize: '1 Fralda P' },
+                range2: { min: 31, max: 100, prize: '1 Fralda M' },
+                range3: { min: 101, max: 150, prize: '1 Fralda G' },
+                pix1: 'R$ 100,00',
+                pix2: 'R$ 200,00'
+            }
+        };
+
+        let currentConfig = RIFA_CONFIG;
+        let countdownInterval;
+
+        // Função de log
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function limparLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // Atualizar informações na tela
+        function atualizarInformacoes() {
+            const agora = new Date();
+            const dataSorteio = currentConfig.drawDate;
+            
+            document.getElementById('current-date').textContent = agora.toLocaleString('pt-BR');
+            document.getElementById('draw-date').textContent = dataSorteio.toLocaleString('pt-BR');
+            
+            if (agora < dataSorteio) {
+                document.getElementById('draw-status').textContent = 'FUTURO - Contagem regressiva ativa';
+                document.getElementById('draw-status').style.color = '#28a745';
+            } else {
+                document.getElementById('draw-status').textContent = 'PASSADO - Sorteio realizado';
+                document.getElementById('draw-status').style.color = '#dc3545';
+            }
+        }
+
+        // Função de countdown (copiada do script.js)
+        function startCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = currentConfig.drawDate.getTime() - now;
+                
+                if (distance < 0) {
+                    document.getElementById('countdown-display').innerHTML = '🎉 SORTEIO REALIZADO!';
+                    document.getElementById('countdown-display').style.background = '#f8d7da';
+                    document.getElementById('countdown-display').style.borderColor = '#f5c6cb';
+                    document.getElementById('countdown-display').style.color = '#721c24';
+                    return;
+                }
+                
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                document.getElementById('countdown-display').innerHTML = 
+                    `⏰ ${days}d ${hours}h ${minutes}m ${seconds}s`;
+                document.getElementById('countdown-display').style.background = '#d4edda';
+                document.getElementById('countdown-display').style.borderColor = '#c3e6cb';
+                document.getElementById('countdown-display').style.color = '#155724';
+            }
+            
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        // Funções de teste
+        function testarDataConfig() {
+            log('🧪 === TESTE: Configuração de Data ===');
+            
+            const dataEsperada = new Date('2025-07-18T16:00:00');
+            const dataConfigurada = currentConfig.drawDate;
+            
+            log(`📅 Data esperada: ${dataEsperada.toLocaleString('pt-BR')}`);
+            log(`📅 Data configurada: ${dataConfigurada.toLocaleString('pt-BR')}`);
+            
+            if (dataConfigurada.getTime() === dataEsperada.getTime()) {
+                log('✅ SUCESSO: Data está correta (18/07/2025 às 16:00)');
+            } else {
+                log('❌ ERRO: Data está incorreta');
+                log(`   Diferença: ${Math.abs(dataConfigurada.getTime() - dataEsperada.getTime())} ms`);
+            }
+            
+            const agora = new Date();
+            if (dataConfigurada > agora) {
+                log('✅ SUCESSO: Data do sorteio é no futuro (contagem regressiva deve aparecer)');
+            } else {
+                log('❌ ERRO: Data do sorteio é no passado (mostrará "SORTEIO REALIZADO!")');
+            }
+        }
+
+        function testarCountdown() {
+            log('🧪 === TESTE: Contador Regressivo ===');
+            log('🔄 Reiniciando contador...');
+            
+            startCountdown();
+            
+            setTimeout(() => {
+                const displayElement = document.getElementById('countdown-display');
+                const texto = displayElement.textContent;
+                
+                log(`⏰ Texto atual do countdown: "${texto}"`);
+                
+                if (texto.includes('SORTEIO REALIZADO!')) {
+                    log('❌ ERRO: Countdown mostra "SORTEIO REALIZADO!" - data pode estar incorreta');
+                } else if (texto.includes('d ') && texto.includes('h ') && texto.includes('m ') && texto.includes('s')) {
+                    log('✅ SUCESSO: Countdown mostra tempo restante corretamente');
+                } else {
+                    log('⚠️ AVISO: Formato do countdown não reconhecido');
+                }
+            }, 1100);
+        }
+
+        function simularDataPassada() {
+            log('🧪 === TESTE: Simulação Data Passada ===');
+            
+            // Salvar configuração original
+            const configOriginal = currentConfig.drawDate;
+            
+            // Definir data passada
+            currentConfig.drawDate = new Date('2025-07-10T16:00:00');
+            log('📅 Simulando data: 10/07/2025 (passada)');
+            
+            atualizarInformacoes();
+            startCountdown();
+            
+            setTimeout(() => {
+                const texto = document.getElementById('countdown-display').textContent;
+                log(`⏰ Resultado: "${texto}"`);
+                
+                if (texto.includes('SORTEIO REALIZADO!')) {
+                    log('✅ SUCESSO: Mostra "SORTEIO REALIZADO!" para data passada');
+                } else {
+                    log('❌ ERRO: Não está detectando data passada corretamente');
+                }
+                
+                // Restaurar configuração original
+                currentConfig.drawDate = configOriginal;
+                log('🔄 Restaurando configuração original...');
+                atualizarInformacoes();
+                startCountdown();
+            }, 1100);
+        }
+
+        function simularDataFutura() {
+            log('🧪 === TESTE: Simulação Data Futura ===');
+            
+            // Salvar configuração original
+            const configOriginal = currentConfig.drawDate;
+            
+            // Definir data futura
+            const dataFutura = new Date();
+            dataFutura.setDate(dataFutura.getDate() + 10); // 10 dias no futuro
+            currentConfig.drawDate = dataFutura;
+            
+            log(`📅 Simulando data: ${dataFutura.toLocaleString('pt-BR')} (futura)`);
+            
+            atualizarInformacoes();
+            startCountdown();
+            
+            setTimeout(() => {
+                const texto = document.getElementById('countdown-display').textContent;
+                log(`⏰ Resultado: "${texto}"`);
+                
+                if (texto.includes('d ') && texto.includes('h ') && texto.includes('m ') && texto.includes('s')) {
+                    log('✅ SUCESSO: Mostra contagem regressiva para data futura');
+                } else {
+                    log('❌ ERRO: Não está mostrando contagem regressiva corretamente');
+                }
+                
+                // Restaurar configuração original
+                currentConfig.drawDate = configOriginal;
+                log('🔄 Restaurando configuração original...');
+                atualizarInformacoes();
+                startCountdown();
+            }, 1100);
+        }
+
+        // Inicialização
+        window.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Página de teste carregada');
+            log('📅 Data configurada: 18/07/2025 às 16:00');
+            
+            atualizarInformacoes();
+            startCountdown();
+            
+            log('✅ Inicialização completa');
+            log('');
+            log('💡 Use os botões acima para executar testes específicos');
+        });
+    </script>
+</body>
+</html>

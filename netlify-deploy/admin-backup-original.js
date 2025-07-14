@@ -4,7 +4,7 @@ let adminData = {
     config: {
         totalNumbers: 150,
         ticketPrice: 40.00,
-        drawDate: new Date('2025-07-11T16:00:00'),
+        drawDate: new Date('2025-07-18T16:00:00'),
         pixKey: 'contato@charifa.com',
         prizes: {
             first: 'R$ 100,00',
@@ -362,7 +362,7 @@ function getParticipantStatus(purchase) {
 function loadConfiguration() {
     document.getElementById('config-total-numbers').value = adminData.config.totalNumbers;
     document.getElementById('config-ticket-price').value = adminData.config.ticketPrice;
-    document.getElementById('config-draw-date').value = '2025-07-11T16:00';
+    document.getElementById('config-draw-date').value = '2025-07-18T16:00';
     document.getElementById('config-pix-key').value = adminData.config.pixKey;
     document.getElementById('config-first-prize').value = adminData.config.prizes.first;
     document.getElementById('config-second-prize').value = adminData.config.prizes.second;

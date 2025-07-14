@@ -9,7 +9,7 @@ let adminData = {
     config: {
         totalNumbers: 150,
         ticketPrice: 40.00,
-        drawDate: new Date('2025-07-11T16:00:00'),
+        drawDate: new Date('2025-07-18T16:00:00'),
         pixKey: 'contato@charifa.com',
         prizes: {
             first: 'R$ 100,00',

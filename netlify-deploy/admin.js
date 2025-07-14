@@ -668,7 +668,7 @@ async function loadConfiguration() {
             'config-first-prize': finalConfig.prizes?.first || 'R$ 100,00',
             'config-second-prize': finalConfig.prizes?.second || 'R$ 200,00',
             'config-third-prize': finalConfig.prizes?.third || 'Fraldas por faixa',
-            'config-draw-date': finalConfig.drawDate ? new Date(finalConfig.drawDate).toISOString().slice(0, 16) : '2025-07-11T16:00'
+            'config-draw-date': finalConfig.drawDate ? new Date(finalConfig.drawDate).toISOString().slice(0, 16) : '2025-07-18T16:00'
         };
         
         let fieldsLoaded = 0;
@@ -698,7 +698,7 @@ async function loadConfiguration() {
             'config-first-prize': 'R$ 100,00',
             'config-second-prize': 'R$ 200,00',
             'config-third-prize': 'Fraldas por faixa',
-            'config-draw-date': '2025-07-11T16:00'
+            'config-draw-date': '2025-07-18T16:00'
         };
         
         Object.entries(defaultFields).forEach(([fieldId, value]) => {

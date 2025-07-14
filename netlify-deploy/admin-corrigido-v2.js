@@ -8,7 +8,7 @@ let adminData = {
     config: {
         totalNumbers: 150,
         ticketPrice: 40.00,
-        drawDate: new Date('2025-07-11T16:00:00'),
+        drawDate: new Date('2025-07-18T16:00:00'),
         pixKey: 'contato@charifa.com',
         prizes: {
             first: 'R$ 100,00',
@@ -407,7 +407,7 @@ function loadConfiguration() {
     const fields = {
         'config-total-numbers': adminData.config.totalNumbers,
         'config-ticket-price': adminData.config.ticketPrice,
-        'config-draw-date': '2025-07-11T16:00',
+        'config-draw-date': '2025-07-18T16:00',
         'config-pix-key': adminData.config.pixKey,
         'config-first-prize': adminData.config.prizes.first,
         'config-second-prize': adminData.config.prizes.second,
