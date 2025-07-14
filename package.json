@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "python -m http.server 8000",
     "deploy": "firebase deploy",
-    "build": "echo 'Build completed - static files ready'",
-    "test": "echo 'Tests would run here'"
+    "build": "echo 'Static site - no build process needed' && exit 0",
+    "test": "echo 'No tests specified' && exit 0",
+    "start": "echo 'Static site - use a web server to serve files' && exit 0"
   },
   "repository": {
     "type": "git",
@@ -23,7 +24,6 @@
   "author": "Desenvolvedor Rifa Thomas",
   "license": "MIT",
   "dependencies": {
-    "@firebasegen/default-connector": "file:dataconnect-generated/js/default-connector",
     "firebase": "^10.11.1"
   },
   "firebase": {
