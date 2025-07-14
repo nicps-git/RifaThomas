@@ -32,6 +32,14 @@
 - Sistema de status detalhado para Firebase e Dashboard
 - **Status:** COMPLETAMENTE RESOLVIDO
 
+### 4. ✅ Data do Sorteio Incorreta
+**Problema:** Página principal mostrando "SORTEIO REALIZADO!" quando deveria mostrar contagem regressiva
+**Solução:**
+- Corrigido RIFA_CONFIG.drawDate de 11/07/2025 para 18/07/2025 em todos os arquivos
+- Atualizado script.js, admin.js e arquivos de backup
+- Criado sistema automático de correção de datas
+- **Status:** COMPLETAMENTE RESOLVIDO
+
 ---
 
 ## 📂 ARQUIVOS CRIADOS/MODIFICADOS
@@ -43,6 +51,8 @@
 ### Arquivos de Teste e Diagnóstico:
 - ✅ `/netlify-deploy/teste-correcao-statusmessage.html` - Teste da correção statusMessage
 - ✅ `/netlify-deploy/verificar-correcao-statusmessage.sh` - Script de verificação
+- ✅ `/netlify-deploy/teste-correcao-data-sorteio.html` - Teste da correção de data
+- ✅ `/netlify-deploy/corrigir-data-sorteio.sh` - Script de correção automática de data
 - ✅ `/netlify-deploy/diagnostico-botoes-nao-funcionam.html` - Diagnóstico de botões
 - ✅ `/netlify-deploy/teste-botoes-implementados.html` - Teste dos botões
 - ✅ `/netlify-deploy/teste-final-definitivo.html` - Teste final completo
@@ -67,6 +77,7 @@
 1. `fix: implementar sistema real de confirmação/rejeição de participantes`
 2. `feat: adicionar sistema de verificação contínua dos botões admin`
 3. `fix: corrigir erro 'statusMessage is not defined' na função saveConfiguration`
+4. `fix: corrigir data do sorteio de 11/07/2025 para 18/07/2025`
 
 ---
 
@@ -82,7 +93,12 @@ firefox /home/nicps/Documents/Projetos/RifaThomas/netlify-deploy/teste-correcao-
 firefox /home/nicps/Documents/Projetos/RifaThomas/netlify-deploy/teste-final-definitivo.html
 ```
 
-### 3. Verificação da Correção:
+### 3. Teste da Correção de Data:
+```bash
+firefox /home/nicps/Documents/Projetos/RifaThomas/netlify-deploy/teste-correcao-data-sorteio.html
+```
+
+### 4. Verificação da Correção:
 ```bash
 cd /home/nicps/Documents/Projetos/RifaThomas
 ./netlify-deploy/verificar-correcao-statusmessage.sh
@@ -106,6 +122,13 @@ cd /home/nicps/Documents/Projetos/RifaThomas
 - ✅ Sistema de status detalhado do salvamento
 - ✅ Integração Firebase-only (sem localStorage)
 - ✅ Recarregamento automático das configurações após salvamento
+
+### Sistema de Data e Countdown:
+- ✅ Data do sorteio configurada corretamente para 18/07/2025 às 16:00
+- ✅ Contagem regressiva funcionando até a data do sorteio
+- ✅ Página principal mostra tempo restante em vez de "SORTEIO REALIZADO!"
+- ✅ Sistema automático de correção de datas implementado
+- ✅ Validação de datas futuras/passadas funcionando corretamente
 
 ### Sistema de Backup e Segurança:
 - ✅ Backup automático antes de alterações críticas
@@ -152,6 +175,7 @@ cd /home/nicps/Documents/Projetos/RifaThomas
 Todos os problemas reportados foram identificados, corrigidos e testados:
 - ✅ Botões de confirmação/rejeição funcionando perfeitamente
 - ✅ Alteração de data do sorteio sem erros
+- ✅ Data do sorteio corrigida (18/07/2025) - contagem regressiva funcionando
 - ✅ Branch publicada no repositório correto
 - ✅ Sistema de backup e segurança implementado
 - ✅ Testes e diagnósticos disponíveis
