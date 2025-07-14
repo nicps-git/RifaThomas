@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 ADMIN CORRIGIDO - Rifa Thomas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Loader específico para verificação */
+        .admin-loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .loader-content {
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 500px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-ok { color: #28a745; }
+        .status-error { color: #dc3545; }
+        
+        .admin-main { display: none; }
+        .admin-main.show { display: block; }
+    </style>
+</head>
+<body>
+    <!-- Loader inicial -->
+    <div id="admin-loader" class="admin-loader">
+        <div class="loader-content">
+            <h2>🔐 Verificando Acesso Administrativo</h2>
+            <div class="spinner"></div>
+            <p id="loader-status">Iniciando verificação...</p>
+            <div id="loader-details" style="font-size: 14px; color: #666; margin-top: 15px;">
+                Aguarde enquanto validamos suas credenciais
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteúdo principal -->
+    <div id="admin-main" class="admin-main">
+        <header>
+            <nav class="navbar">
+                <div class="nav-container">
+                    <h1 class="logo"><i class="fas fa-rocket"></i> Admin - Chá Rifa Thomas</h1>
+                    <ul class="nav-menu">
+                        <li><a href="index.html">← Voltar ao Site</a></li>
+                        <li><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#participantes">Participantes</a></li>
+                        <li><a href="sorteio.html" style="background: linear-gradient(45deg, #ff6b6b, #feca57); color: white; padding: 8px 16px; border-radius: 20px; text-decoration: none; font-weight: bold;">🎯 Sorteio</a></li>
+                        <li><a href="#configuracoes">Configurações</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </header>
+
+        <main class="admin-main-content">
+            <!-- Dashboard -->
+            <section id="dashboard" class="admin-section">
+                <div class="container">
+                    <h2>Dashboard</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="total-participants">0</span>
+                                <span class="stat-label">Participantes</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="total-revenue">R$ 0,00</span>
+                                <span class="stat-label">Receita</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="total-sold">0</span>
+                                <span class="stat-label">Números Vendidos</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="completion-rate">0%</span>
+                                <span class="stat-label">Progresso</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ações Rápidas -->
+                    <div style="margin-top: 30px; text-align: center;">
+                        <a href="sorteio.html" class="quick-action-btn" style="
+                            display: inline-block;
+                            background: linear-gradient(45deg, #ff6b6b, #feca57);
+                            color: white;
+                            padding: 15px 30px;
+                            border-radius: 25px;
+                            text-decoration: none;
+                            font-weight: bold;
+                            font-size: 1.1rem;
+                            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+                            transition: all 0.3s ease;
+                            margin: 0 10px;
+                        " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                            🎯 Realizar Sorteio
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Participantes -->
+            <section id="participantes" class="admin-section">
+                <div class="container">
+                    <h2>Participantes</h2>
+                    
+                    <!-- Filtros -->
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterParticipants('all')" id="filter-all">
+                            🔍 Todos
+                        </button>
+                        <button class="filter-btn" onclick="filterParticipants('pending_donation')" id="filter-pending_donation">
+                            🍼 Doações Pendentes
+                        </button>
+                        <button class="filter-btn" onclick="filterParticipants('confirmed')" id="filter-confirmed">
+                            ✅ Confirmados
+                        </button>
+                        <button class="filter-btn" onclick="filterParticipants('rejected')" id="filter-rejected">
+                            ❌ Rejeitados
+                        </button>
+                    </div>
+                    
+                    <!-- Controles de Atualização de Dados -->
+                    <div style="margin: 15px 0; padding: 15px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <strong>🔄 ATUALIZAÇÃO DE DADOS:</strong>
+                                <span id="last-update-time" style="font-size: 12px; color: #666;">Carregando...</span>
+                                <span id="auto-sync-status" style="font-size: 12px; padding: 2px 8px; border-radius: 12px; background: #28a745; color: white;">🟢 Auto-sync Ativo</span>
+                            </div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="refreshData()" 
+                                        style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    🔄 Atualizar Agora
+                                </button>
+                                <button onclick="toggleAutoSync()" id="auto-sync-btn"
+                                        style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    ⏸️ Pausar Auto-sync
+                                </button>
+                                <button onclick="forceFullRefresh()" 
+                                        style="background: #ffc107; color: #000; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    🔃 Recarregar Completo
+                                </button>
+                                <button onclick="showDataStats()" 
+                                        style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                                    📊 Estatísticas
+                                </button>
+                            </div>
+                        </div>
+                        <div id="sync-progress" style="margin-top: 10px; display: none;">
+                            <div style="background: #f8f9fa; border-radius: 10px; overflow: hidden; height: 6px;">
+                                <div id="sync-progress-bar" style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            <div id="sync-status-text" style="font-size: 12px; margin-top: 5px; color: #666;">Atualizando dados...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botões de Emergência para Corrigir Botões -->
+                    <div style="margin: 15px 0; padding: 15px; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ff9800;">
+                        <strong>🚨 CORREÇÃO DE EMERGÊNCIA:</strong> Se os botões não aparecerem, use:
+                        <div style="margin-top: 10px;">
+                            <button onclick="window.forcarBotoesEmergencia?.()" 
+                                    style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                                🚨 Forçar Botões
+                            </button>
+                            <button onclick="window.createSampleData?.(); window.loadParticipants?.()" 
+                                    style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                                📊 Criar Dados Teste
+                            </button>
+                            <button onclick="window.location.reload()" 
+                                    style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                                🔄 Recarregar Página
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="participants-table-container">
+                        <table class="participants-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>WhatsApp</th>
+                                    <th>Números</th>
+                                    <th>Valor</th>
+                                    <th>Método</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="participants-tbody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; padding: 40px; color: #666;">
+                                        📊 Carregando dados dos participantes...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configurações -->
+            <section id="configuracoes" class="admin-section">
+                <div class="container">
+                    <h2>Configurações da Rifa</h2>
+                    
+                    <form id="config-form" class="config-form">
+                        <h3>📊 Configurações Básicas</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="config-total-numbers">Total de Números:</label>
+                                <input type="number" id="config-total-numbers" min="100" max="10000" value="150" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="config-ticket-price">Preço do Bilhete (R$):</label>
+                                <input type="number" id="config-ticket-price" min="1" step="0.01" value="40.00" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="config-draw-date">Data do Sorteio:</label>
+                                <input type="datetime-local" id="config-draw-date" value="2025-07-11T16:00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="config-contact-phone">Telefone de Contato:</label>
+                                <input type="tel" id="config-contact-phone" value="(11) 99999-9999" required>
+                            </div>
+                        </div>
+                        
+                        <h3>💰 Configurações de Pagamento</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="config-pix-key">Chave PIX:</label>
+                                <input type="text" id="config-pix-key" value="contato@charifa.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="config-contact-email">Email de Contato:</label>
+                                <input type="email" id="config-contact-email" value="contato@rifaonline.com" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="config-baby-name">Nome do Bebê:</label>
+                                <input type="text" id="config-baby-name" value="Thomas" required>
+                            </div>
+                        </div>
+                        
+                        <h3>🏆 Prêmios</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="config-first-prize">1º Prêmio:</label>
+                                <input type="text" id="config-first-prize" value="R$ 100,00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="config-second-prize">2º Prêmio:</label>
+                                <input type="text" id="config-second-prize" value="R$ 200,00" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="config-third-prize">3º Prêmio:</label>
+                                <input type="text" id="config-third-prize" value="Fraldas por faixa" required>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="save-config-btn">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                    </form>
+                    
+                    <!-- Teste de Salvamento -->
+                    <div style="margin: 30px 0; padding: 20px; background: #e7f3ff; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <h4>🧪 Teste de Salvamento</h4>
+                        <p>Use os botões abaixo para testar e diagnosticar o sistema de salvamento:</p>
+                        <div style="margin: 15px 0;">
+                            <button onclick="if(typeof window.saveConfiguration === 'function') { console.log('✅ saveConfiguration encontrada'); alert('✅ Função saveConfiguration está disponível!'); } else { console.error('❌ saveConfiguration não encontrada'); alert('❌ Função saveConfiguration NÃO encontrada!'); }" 
+                                    style="background: #17a2b8; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                                🔍 Verificar Função
+                            </button>
+                            <button onclick="if(typeof window.forcarSaveConfiguration === 'function') { window.forcarSaveConfiguration(); alert('✅ Save de emergência configurado!'); } else { alert('❌ Função de emergência não encontrada!'); }" 
+                                    style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                                🚨 Forçar Save
+                            </button>
+                            <button onclick="const form = document.getElementById('config-form'); if(form && typeof window.saveConfiguration === 'function') { const e = {preventDefault: () => {}, target: form}; window.saveConfiguration(e); } else { alert('❌ Teste falhou!'); }" 
+                                    style="background: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                                🧪 Teste Manual
+                            </button>
+                            <button onclick="console.log('adminData:', typeof adminData !== 'undefined' ? adminData : 'não encontrado'); console.log('saveConfiguration:', typeof window.saveConfiguration); console.log('FirebaseDB:', typeof window.FirebaseDB); alert('Verifique o console para detalhes');" 
+                                    style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px;">
+                                🔧 Debug Console
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Ações Administrativas -->
+                    <div class="admin-actions" style="margin-top: 2rem;">
+                        <h3>⚡ Ações Rápidas</h3>
+                        <div class="action-buttons">
+                            <button onclick="exportParticipants()" class="action-btn report">
+                                <i class="fas fa-download"></i> Exportar Participantes
+                            </button>
+                            <button onclick="resetAllNumbers()" class="action-btn" style="background: #e74c3c; color: white;">
+                                <i class="fas fa-refresh"></i> Resetar Números
+                            </button>
+                            <button onclick="performDraw()" class="action-btn draw">
+                                <i class="fas fa-trophy"></i> Realizar Sorteio
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sistema de Auto-Sync -->
+                    <div class="auto-sync-controls" style="margin-top: 2rem;">
+                        <h3>🔄 Sistema de Atualização Automática</h3>
+                        <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                            <!-- Status do Auto-Sync -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span id="auto-sync-status-main" style="padding: 6px 12px; border-radius: 20px; color: white; font-weight: bold; font-size: 12px;">
+                                        🟢 Auto-sync Ativo
+                                    </span>
+                                    <span id="last-update-time-main" style="color: #666; font-size: 14px;">
+                                        Primeira execução...
+                                    </span>
+                                </div>
+                                <button id="auto-sync-btn-main" onclick="toggleAutoSync()" style="background: #ffc107; color: #000; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px;">
+                                    ⏸️ Pausar Auto-sync
+                                </button>
+                            </div>
+
+                            <!-- Progresso da Sincronização -->
+                            <div id="sync-progress-main" style="display: none; margin-bottom: 15px;">
+                                <div style="background: #e9ecef; border-radius: 4px; overflow: hidden; height: 20px; position: relative;">
+                                    <div id="sync-progress-bar-main" style="background: linear-gradient(90deg, #007bff, #0056b3); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 4px;"></div>
+                                    <span id="sync-progress-text-main" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #495057; font-size: 12px; font-weight: bold;">
+                                        Sincronizando...
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Botões de Controle -->
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button onclick="refreshData()" style="background: #007bff; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-sync-alt"></i> 🔄 Atualizar Agora
+                                </button>
+                                <button onclick="showDataStats()" style="background: #17a2b8; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-chart-bar"></i> 📊 Estatísticas
+                                </button>
+                                <button onclick="forceFullRefresh()" style="background: #fd7e14; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-redo"></i> 🔃 Recarregar Página
+                                </button>
+                            </div>
+
+                            <!-- Informações do Sistema -->
+                            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 14px;">
+                                    <div style="text-align: center; padding: 10px; background: #e8f4f8; border-radius: 6px;">
+                                        <div style="font-weight: bold; color: #17a2b8;">Atualização Automática</div>
+                                        <div style="color: #666; margin-top: 5px;">A cada 30 segundos</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 10px; background: #e8f5e8; border-radius: 6px;">
+                                        <div style="font-weight: bold; color: #28a745;">Sem Re-login</div>
+                                        <div style="color: #666; margin-top: 5px;">Mantém sessão ativa</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 10px; background: #fff3cd; border-radius: 6px;">
+                                        <div style="font-weight: bold; color: #856404;">Pausa Inteligente</div>
+                                        <div style="color: #666; margin-top: 5px;">Para quando aba inativa</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="admin.js"></script>
+    
+    <script>
+        // Sistema de verificação ÚNICO e SEM conflitos
+        console.log('🚀 Admin HTML carregado - sistema CORRIGIDO para evitar recarregamentos');
+        
+        let adminVerificationInProgress = false;
+        let adminVerificationCompleted = false;
+        
+        // Função ÚNICA para mostrar o painel principal
+        window.showAdminPanel = function(userEmail) {
+            if (adminVerificationCompleted) {
+                console.log('⚠️ Verificação já concluída, ignorando chamada duplicada');
+                return;
+            }
+            
+            adminVerificationCompleted = true;
+            
+            const loader = document.getElementById('admin-loader');
+            const main = document.getElementById('admin-main');
+            
+            if (loader) loader.style.display = 'none';
+            if (main) {
+                main.style.display = 'block';
+                main.classList.add('show');
+            }
+            
+            // Adicionar info do admin
+            const adminInfo = document.createElement('div');
+            adminInfo.innerHTML = `
+                <div style="position: fixed; top: 10px; right: 10px; background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 12px 20px; border-radius: 8px; z-index: 9999; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <span><i class="fas fa-user-shield"></i> ${userEmail}</span>
+                        <button onclick="adminLogout()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 12px;">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(adminInfo);
+            document.body.style.paddingTop = '60px';
+            
+            console.log('✅ Painel administrativo exibido com sucesso');
+        };
+        
+        // Função ÚNICA para mostrar erro com opções de recuperação
+        window.showAdminError = function(errorMessage) {
+            if (adminVerificationCompleted) {
+                console.log('⚠️ Verificação já concluída, ignorando erro');
+                return;
+            }
+            
+            adminVerificationCompleted = true;
+            
+            const loaderContent = document.querySelector('.loader-content');
+            if (loaderContent) {
+                loaderContent.innerHTML = `
+                    <h2 style="color: #dc3545;">❌ Problema de Autenticação</h2>
+                    <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #f5c6cb;">
+                        <strong>Erro:</strong> ${errorMessage}
+                    </div>
+                    <div style="background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #ffeaa7;">
+                        <strong>💡 Soluções:</strong><br>
+                        • O sistema de autenticação Firebase pode estar temporariamente indisponível<br>
+                        • Suas credenciais podem ter expirado<br>
+                        • Há um problema de conectividade com o Firebase
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="window.location.reload()" style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🔄 Tentar Novamente
+                        </button>
+                        <button onclick="window.location.href='login.html'" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🔐 Fazer Login
+                        </button>
+                        <button onclick="window.location.href='admin-bypass-auth.html'" style="background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🆘 Acesso de Emergência
+                        </button>
+                        <button onclick="window.location.href='diagnostico-firebase-auth.html'" style="background: #6c757d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                            🔍 Diagnóstico
+                        </button>
+                    </div>
+                    <p style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+                        Se o problema persistir, use o "Acesso de Emergência" para acessar o painel administrativo.
+                    </p>
+                `;
+            }
+        };
+        
+        // Função ÚNICA para atualizar status
+        window.updateAdminStatus = function(message, isError = false) {
+            const statusEl = document.getElementById('loader-status');
+            const detailsEl = document.getElementById('loader-details');
+            
+            if (statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = isError ? 'status-error' : 'status-ok';
+            }
+            
+            if (detailsEl) {
+                detailsEl.textContent = message;
+            }
+            
+            console.log(`🔐 [STATUS] ${message}`);
+        };
+        
+        // Função de logout
+        window.adminLogout = async function() {
+            if (confirm('Tem certeza que deseja sair do painel administrativo?')) {
+                try {
+                    if (typeof window.FirebaseDB !== 'undefined') {
+                        const result = await window.FirebaseDB.adminLogout();
+                        if (result.success) {
+                            window.location.href = 'login.html';
+                        } else {
+                            alert('Erro no logout: ' + result.error);
+                        }
+                    } else {
+                        window.location.href = 'login.html';
+                    }
+                } catch (error) {
+                    console.error('Erro no logout:', error);
+                    window.location.href = 'login.html';
+                }
+            }
+        };
+        
+        // Flags para prevenir execução múltipla
+        window.adminSystemReady = false;
+        window.firebaseLoaded = false;
+        
+        // Função para verificar autenticação com estratégia mais robusta
+        async function verifyAdminAuth() {
+            console.log('🔐 Verificando autenticação de administrador...');
+            
+            try {
+                // Aguardar FirebaseDB estar disponível
+                if (typeof window.FirebaseDB === 'undefined') {
+                    console.log('⏳ Aguardando FirebaseDB...');
+                    await waitForFirebaseDB();
+                }
+                
+                console.log('✅ FirebaseDB disponível, prosseguindo...');
+                
+                // Estratégia 1: Verificar se já há admin logado
+                console.log('🔍 Verificando admin atual...');
+                let result = await window.FirebaseDB.getCurrentAdmin();
+                
+                if (!result.success || !result.isAdmin) {
+                    console.log('❌ Nenhum admin logado, tentando login automático...');
+                    
+                    // Estratégia 2: Tentar login automático
+                    const loginResult = await window.FirebaseDB.adminLogin('admin@rifathomas.com', 'casaVERDE123');
+                    
+                    if (loginResult.success) {
+                        console.log('✅ Login automático bem-sucedido');
+                        
+                        // Aguardar sincronização
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        
+                        // Verificar novamente
+                        result = await window.FirebaseDB.getCurrentAdmin();
+                        
+                        if (!result.success || !result.isAdmin) {
+                            throw new Error('Falha na verificação pós-login');
+                        }
+                    } else {
+                        throw new Error(`Login automático falhou: ${loginResult.error}`);
+                    }
+                }
+                
+                // Dupla verificação com isAdmin
+                if (typeof window.FirebaseDB.isAdmin === 'function' && firebase.auth().currentUser) {
+                    const adminCheck = await window.FirebaseDB.isAdmin(firebase.auth().currentUser.uid);
+                    if (!adminCheck) {
+                        throw new Error('Permissões de administrador não verificadas');
+                    }
+                }
+                
+                // Se chegou aqui, está autenticado como admin
+                window.updateAdminStatus('Autenticado como administrador');
+                console.log('✅ Autenticação de administrador confirmada');
+                // Continuar carregamento normal
+                document.querySelector('.admin-main').style.display = 'block';
+                document.querySelector('.admin-loader').style.display = 'none';
+                
+            } catch (error) {
+                console.error('❌ Falha na verificação de admin:', error);
+                window.showAdminError(error.message || 'Acesso não autorizado');
+                return false;
+            }
+        }
+        
+        // Função auxiliar para aguardar FirebaseDB
+        function waitForFirebaseDB() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 20;
+                
+                const check = () => {
+                    if (typeof window.FirebaseDB !== 'undefined') {
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Timeout: FirebaseDB não carregou'));
+                    } else {
+                        attempts++;
+                        window.updateAdminStatus(`Aguardando Firebase... (${attempts}/${maxAttempts})`);
+                        setTimeout(check, 500);
+                    }
+                };
+                
+                check();
+            });
+        }
+        
+        // Aguardar Firebase estar pronto
+        if (typeof window.FirebaseDB !== 'undefined') {
+            window.firebaseLoaded = true;
+            console.log('🔥 Firebase já disponível no carregamento');
+            verifyAdminAuth(); // Verificar imediatamente
+        } else {
+            window.addEventListener('firebaseReady', () => {
+                window.firebaseLoaded = true;
+                console.log('🔥 Firebase carregado via evento');
+                verifyAdminAuth(); // Verificar quando Firebase estiver pronto
+            });
+            
+            // Timeout de segurança
+            setTimeout(() => {
+                if (!window.firebaseLoaded) {
+                    window.showAdminError('Timeout na conexão com Firebase. Verifique sua conexão e tente novamente.');
+                }
+            }, 10000);
+        }
+        
+        // Controle para evitar múltiplas inicializações
+        console.log('✅ Admin HTML preparado - aguardando admin.js inicializar o sistema');
+    </script>
+</body>
+</html>
