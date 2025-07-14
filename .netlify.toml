@@ -1,6 +1,6 @@
 [build]
   publish = "netlify-deploy"
-  command = "echo 'Static site deploy - Node.js $(node --version)'"
+  command = "./build.sh"
 
 [build.environment]
   NODE_VERSION = "18.19.0"
@@ -8,3 +8,18 @@
   NODE_ENV = "production"
   DISABLE_YARN_INSTALL = "true"
   SKIP_YARN_INSTALL = "true"
+  CI = "true"
+  BUILD_IMAGE = "focal"
+  UBUNTU_VERSION = "20.04"
+
+[context.production.environment]
+  NODE_VERSION = "18.19.0"
+  NETLIFY_BUILD_IMAGE = "focal"
+
+[context.deploy-preview.environment]
+  NODE_VERSION = "18.19.0"
+  NETLIFY_BUILD_IMAGE = "focal"
+
+[context.branch-deploy.environment]
+  NODE_VERSION = "18.19.0"
+  NETLIFY_BUILD_IMAGE = "focal"
