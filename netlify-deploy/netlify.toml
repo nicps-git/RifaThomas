@@ -1,10 +1,7 @@
 [build]
-  publish = "netlify-deploy"
+  publish = "."
   command = ""
 
 [build.environment]
   NODE_VERSION = "18"
   NETLIFY_BUILD_IMAGE = "focal"
-  
-[build.processing]
-  skip_processing = false

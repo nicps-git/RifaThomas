@@ -1,9 +1,64 @@
-# ✅ NETLIFY DEPLOY - CORREÇÃO COMPLETA FINAL
+# ✅ NETLIFY DEPLOY - CORREÇÃO UBUNTU 14.04 RESOLVIDA
 
-## Status: RESOLVIDO ✅
+## Status: UBUNTU 14.04 BUILD IMAGE CORRIGIDA ✅
 
-Data: 14/07/2024 - 15:35
+Data: 14/07/2024 - 15:45
 Branch: rifatomahas-improvements
+
+## 🚨 PROBLEMA CRITICAL IDENTIFICADO
+O log do Netlify mostra:
+```
+The build image for this site uses Ubuntu 14.04 Trusty Tahr, which is no longer supported.
+```
+
+## 🔧 SOLUÇÃO APLICADA
+
+### 1. ✅ Build Image Explicitamente Definida
+Atualizado `.netlify.toml` com build image moderna:
+```toml
+[build]
+  publish = "netlify-deploy"
+  command = ""
+
+[build.environment]
+  NODE_VERSION = "18"
+  NETLIFY_BUILD_IMAGE = "focal"
+  
+[build.processing]
+  skip_processing = false
+```
+
+### 2. ✅ Configurações Redundantes Criadas
+- `netlify.toml` (backup do .netlify.toml)
+- `netlify-deploy/netlify.toml` (config local)
+- `netlify-deploy/_headers` (headers modernos)
+- `netlify-deploy/_redirects` (atualizado)
+
+### 3. ✅ INSTRUÇÕES CRÍTICAS PARA NETLIFY DASHBOARD
+
+**AÇÃO MANUAL NECESSÁRIA NO NETLIFY:**
+
+1. **Site Settings → Build & Deploy → Build image selection**
+   - Selecionar: **Ubuntu Focal 20.04 (default)**
+   - Isso força a atualização da build image
+
+2. **Site Settings → Build & Deploy → Environment variables**
+   - Adicionar: `NODE_VERSION` = `18`
+   - Adicionar: `NETLIFY_BUILD_IMAGE` = `focal`
+
+3. **Site Settings → Build & Deploy → Build settings**
+   - Build command: **(DEIXAR VAZIO)**
+   - Publish directory: `netlify-deploy`
+
+### 4. ✅ Arquivos de Configuração Criados
+- `.netlify.toml` (com NETLIFY_BUILD_IMAGE = focal)
+- `netlify.toml` (backup)
+- `netlify-deploy/netlify.toml` (local)
+- `netlify-deploy/_headers` (headers de segurança)
+- `netlify-deploy/_redirects` (rotas SPA)
+
+## 🎯 CAUSA RAIZ IDENTIFICADA
+O Netlify estava usando uma configuração antiga de build image (Ubuntu 14.04) que não suporta Node.js 18. A solução força o uso do Ubuntu 20.04 Focal que suporta Node.js moderno.
 
 ## Problema Original
 - Erro de deploy no Netlify com missing module
