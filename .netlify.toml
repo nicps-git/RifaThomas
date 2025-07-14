@@ -2,5 +2,4 @@
   publish = "netlify-deploy"
 
 [build.environment]
-  NODE_VERSION = "18.19.1"
-  NETLIFY_BUILD_IMAGE = "focal"
+  NODE_VERSION = "18"
