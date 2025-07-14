@@ -1,7 +1,7 @@
 [build]
-  # Como é um site estático, não precisamos de build command
+  # Site estático com validação
   publish = "netlify-deploy"
-  command = "echo 'Static site - no build needed'"
+  command = "./netlify-build.sh"
 
 [build.environment]
   NODE_VERSION = "18"

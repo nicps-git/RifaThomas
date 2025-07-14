@@ -1,0 +1,12 @@
+{
+  "name": "rifa-thomas-static",
+  "version": "1.0.0",
+  "description": "Site estático da Rifa Thomas",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Static site - no build needed'",
+    "start": "echo 'Static site ready'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

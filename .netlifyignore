@@ -1,0 +1,41 @@
+# Ignorar arquivos que não são necessários para o deploy
+node_modules/
+package.json
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignorar arquivos de desenvolvimento
+*.md
+.git/
+.gitignore
+.env*
+
+# Ignorar backups e arquivos temporários
+*-backup*/
+*.backup*
+*.log
+*.tmp
+
+# Ignorar scripts e configurações Firebase
+functions/
+dataconnect-generated/
+firebase.json
+firestore.rules
+firestore.indexes.json
+.firebaserc
+
+# Ignorar documentação e scripts
+*.sh
+CHECKLIST.md
+PREREQUISITES.md
+README.md
+STATUS_*.md
+GUIA_*.md
+SOLUCAO_*.md
+RELATORIO_*.md
+PROBLEMA_*.md
+
+# Manter apenas netlify-deploy/
+# (o publish directory será usado)
