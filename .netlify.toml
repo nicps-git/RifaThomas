@@ -1,43 +1,5 @@
 [build]
-  # Site estático com validação
   publish = "netlify-deploy"
-  command = "./netlify-build.sh"
 
 [build.environment]
   NODE_VERSION = "18"
-
-# Headers para os arquivos estáticos
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-
-# Headers específicos para JavaScript
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-    Content-Type = "application/javascript"
-
-# Headers específicos para CSS
-[[headers]]
-  for = "/*.css"
-  [headers.values]
-    Content-Type = "text/css"
-
-# Redirects para SPA behavior (se necessário)
-[[redirects]]
-  from = "/admin"
-  to = "/admin.html"
-  status = 200
-
-[[redirects]]
-  from = "/sorteio"
-  to = "/sorteio.html"
-  status = 200
-
-# Configuração de funções (se necessário para Firebase Functions)
-[functions]
-  directory = "functions"

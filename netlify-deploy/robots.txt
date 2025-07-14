@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://rifa-thomas.netlify.app/sitemap.xml
