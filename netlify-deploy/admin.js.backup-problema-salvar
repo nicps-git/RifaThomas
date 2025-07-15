@@ -20,7 +20,6 @@ let adminData = {
 // Flags de controle
 let initializationInProgress = false;
 let systemInitialized = false;
-let configurationJustSaved = false; // Flag para evitar recarregar após salvar
 
 console.log('🚀 Admin.js carregado - versão corrigida para dados');
 
@@ -633,13 +632,6 @@ function getPaymentMethodText(method) {
 async function loadConfiguration() {
     console.log('⚙️ Carregando configurações no formulário...');
     
-    // Verificar se configuração foi recém salva - não recarregar
-    if (configurationJustSaved) {
-        console.log('🚫 Configuração recém salva - pulando reload para manter valores');
-        configurationJustSaved = false; // Reset da flag
-        return;
-    }
-    
     try {
         let config = {};
         
@@ -726,33 +718,7 @@ async function saveConfiguration(event) {
     console.log('💾 Salvando configurações...');
     
     try {
-        // Coletar dados do formulário com logs detalhados
-        console.log('📋 Coletando dados do formulário...');
-        
-        // Verificar se os campos existem antes de coletar valores
-        const fields = {
-            'config-total-numbers': 'totalNumbers',
-            'config-ticket-price': 'ticketPrice', 
-            'config-draw-date': 'drawDate',
-            'config-contact-phone': 'contactPhone',
-            'config-contact-email': 'contactEmail',
-            'config-pix-key': 'pixKey',
-            'config-baby-name': 'babyName',
-            'config-first-prize': 'firstPrize',
-            'config-second-prize': 'secondPrize',
-            'config-third-prize': 'thirdPrize'
-        };
-        
-        // Verificar e coletar cada campo
-        Object.entries(fields).forEach(([fieldId, configKey]) => {
-            const element = document.getElementById(fieldId);
-            if (element) {
-                console.log(`✅ ${fieldId} encontrado, valor: "${element.value}"`);
-            } else {
-                console.error(`❌ ${fieldId} NÃO encontrado no DOM!`);
-            }
-        });
-        
+        // Coletar dados do formulário
         const newConfig = {
             totalNumbers: parseInt(document.getElementById('config-total-numbers').value),
             ticketPrice: parseFloat(document.getElementById('config-ticket-price').value),
@@ -768,29 +734,6 @@ async function saveConfiguration(event) {
             },
             lastUpdated: new Date().toISOString()
         };
-        
-        // Log detalhado dos valores coletados - especialmente os problemáticos
-        console.log('📊 Valores coletados do formulário:');
-        console.log('  📱 contactPhone:', newConfig.contactPhone);
-        console.log('  📧 contactEmail:', newConfig.contactEmail);
-        console.log('  💳 pixKey:', newConfig.pixKey);
-        console.log('  👶 babyName:', newConfig.babyName);
-        console.log('  📅 drawDate:', newConfig.drawDate);
-        console.log('  🎯 totalNumbers:', newConfig.totalNumbers);
-        console.log('  💰 ticketPrice:', newConfig.ticketPrice);
-        
-        // Verificar se algum campo importante está vazio
-        const requiredFields = {
-            contactPhone: newConfig.contactPhone,
-            contactEmail: newConfig.contactEmail,
-            pixKey: newConfig.pixKey
-        };
-        
-        Object.entries(requiredFields).forEach(([key, value]) => {
-            if (!value || value.trim() === '') {
-                console.warn(`⚠️ Campo ${key} está vazio: "${value}"`);
-            }
-        });
         
         // Validações básicas
         if (newConfig.totalNumbers < 100 || newConfig.totalNumbers > 10000) {
@@ -821,9 +764,6 @@ async function saveConfiguration(event) {
         
         console.log('✅ Configurações salvas no Firebase com sucesso');
         
-        // Marcar que configuração foi salva para evitar reload automático
-        configurationJustSaved = true;
-        
         // Array de status de salvamento
         const statusMessages = ['Firebase: Sucesso'];
         
@@ -841,9 +781,15 @@ async function saveConfiguration(event) {
             statusMessages.push('Dashboard: Erro');
         }
         
-        // NÃO recarregar automaticamente - manter valores salvos no formulário
-        // O problema era que loadConfiguration() estava sobrepondo os valores salvos
-        console.log('✅ Mantendo valores salvos no formulário (não recarregando)');
+        // Recarregar as configurações no formulário para confirmar salvamento
+        setTimeout(async () => {
+            try {
+                await loadConfiguration();
+                console.log('🔄 Configurações recarregadas no formulário');
+            } catch (reloadError) {
+                console.warn('⚠️ Erro ao recarregar configurações:', reloadError);
+            }
+        }, 500);
         
         // Notificação de sucesso
         showNotification(`⚙️ Configurações salvas no Firebase com sucesso!`, 'success');
